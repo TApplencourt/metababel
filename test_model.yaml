@@ -6,9 +6,13 @@
     - :name: vpid
       :field_class:
         :type: integer_signed
+        :field_value_range: 32
+        :cast_type: uint32_t
     - :name: vtid
       :field_class:
         :type: integer_signed
+        :field_value_range: 32
+        :cast_type: uint32_t
   :event_classes:
   - :name: lttng_ust_ze_profiling:event_profiling_results
     :payload_field_class:

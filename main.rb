@@ -31,12 +31,12 @@ btx_dispatch_<%= e.name_sanitized %>(
   // Call all the callbacks who where registered
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ( ( p = utarray_next(callbacks, p) ) ) {
-    (*p)(<%= arg_variables.map{ |s| s.name}.join(" ,") %>);
+    (*p)(<%= arg_variables.map{ |s| s.name}.join(", ")%>);
   }
 }
 
 void
-btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, void *callback)
+btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, <%= e.name_sanitized %>_callback_f *callback)
 {
   // Look-up our dispatcher
   <%= hash_type %> *s = NULL;
@@ -56,10 +56,9 @@ btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name 
 
 EOS
   declaration_template = <<EOF
-typedef void <%= e.name_sanitized %>_callback_f(<%= arg_variables.map{ |s| s.type}.join(",") %> );
-
+typedef void <%= e.name_sanitized %>_callback_f(<%= arg_variables.map{ |s| s.type}.join(", ") %>);
 void
-btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, void *callback)
+btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, <%= e.name_sanitized %>_callback_f *callback)
 EOF
 
   { :declaration => ERB.new(declaration_template, trim_mode: "<>").result(binding).indent(Babeltrace2Gen::BTPrinter::INDENT_INCREMENT.size*indent),

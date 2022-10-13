@@ -32,12 +32,12 @@ btx_dispatch_lttng_ust_ze_profiling_event_profiling_results(
   // Call all the callbacks who where registered
   lttng_ust_ze_profiling_event_profiling_results_callback_f **p = NULL;
   while ( ( p = utarray_next(callbacks, p) ) ) {
-    (*p)(usr_event_cc_f_m_0 ,usr_event_cc_f_m_1 ,usr_event_p_f_m_0);
+    (*p)(usr_event_cc_f_m_0, usr_event_cc_f_m_1, usr_event_p_f_m_0);
   }
 }
 
 void
-btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(name_to_dispatcher_t **name_to_dispatcher, void *callback)
+btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(name_to_dispatcher_t **name_to_dispatcher, lttng_ust_ze_profiling_event_profiling_results_callback_f *callback)
 {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
@@ -108,12 +108,12 @@ btx_dispatch_lttng_ust_interval_inHost(
   // Call all the callbacks who where registered
   lttng_ust_interval_inHost_callback_f **p = NULL;
   while ( ( p = utarray_next(callbacks, p) ) ) {
-    (*p)(usr_event_cc_f_m_0 ,usr_event_cc_f_m_1 ,usr_event_cc_f_m_2 ,usr_event_cc_f_m_3 ,usr_event_cc_f_m_4 ,usr_event_p_f_m_0 ,usr_event_p_f_m_1 ,usr_event_p_f_m_2);
+    (*p)(usr_event_cc_f_m_0, usr_event_cc_f_m_1, usr_event_cc_f_m_2, usr_event_cc_f_m_3, usr_event_cc_f_m_4, usr_event_p_f_m_0, usr_event_p_f_m_1, usr_event_p_f_m_2);
   }
 }
 
 void
-btx_register_callbacks_lttng_ust_interval_inHost(name_to_dispatcher_t **name_to_dispatcher, void *callback)
+btx_register_callbacks_lttng_ust_interval_inHost(name_to_dispatcher_t **name_to_dispatcher, lttng_ust_interval_inHost_callback_f *callback)
 {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
