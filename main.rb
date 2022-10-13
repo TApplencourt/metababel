@@ -19,8 +19,7 @@ def get_dispatchers(e, hash_type, hash_name, event_name: "event", indent: 0)
     e.get_getter(event: event_name, arg_variables: arg_variables)
   }
 
-  definition = <<EOS
-
+  definition_template = <<EOS
 static void
 btx_dispatch_<%= e.name_sanitized %>(
   UT_array *callbacks,
@@ -30,38 +29,41 @@ btx_dispatch_<%= e.name_sanitized %>(
 <% end %>
 <%= body %>
   // Call all the callbacks who where registered
-  int *p;
-  for(p=(int*)utarray_front(callbacks);
-      p!=NULL;
-      p=(int*)utarray_next(callbacks, p)) {
-    printf("%d\\n",*p);
+  <%= e.name_sanitized %>_callback_f **p = NULL;
+  while ( ( p = utarray_next(callbacks, p) ) ) {
+    (*p)(<%= arg_variables.map{ |s| s.name}.join(" ,") %>);
   }
-
 }
 
 void
-btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, int i)
+btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, void *callback)
 {
   // Look-up our dispatcher
   <%= hash_type %> *s = NULL;
   HASH_FIND_STR(*<%= hash_name %>, "<%= e.name %>", s);
   if (!s) {
-    // We didn't find the dispatcher, so we need to r
-    // Create
+    // We didn't find the dispatcher, so we need to
+    // Create it
     s = (<%= hash_type %> *) malloc(sizeof(<%= hash_type %>));
     s-> name = "<%= e.name %>";
     s-> dispatcher = &btx_dispatch_<%= e.name_sanitized %>;
-    utarray_new(s->callbacks, &ut_int_icd);
-    // and Register
+    utarray_new(s->callbacks, &ut_ptr_icd);
+    // and Register it
     HASH_ADD_KEYPTR(hh, *<%= hash_name %>, s->name, strlen(s->name), s);
   }
-  utarray_push_back(s->callbacks, &i);
+  utarray_push_back(s->callbacks, &callback);
 }
 
 EOS
+  declaration_template = <<EOF
+typedef void <%= e.name_sanitized %>_callback_f(<%= arg_variables.map{ |s| s.type}.join(",") %> );
 
-  { :register_func_signature => "void btx_register_callbacks_#{e.name_sanitized}(#{hash_type}  **#{hash_name}, int i)",
-    :body => ERB.new(definition, trim_mode: "<>").result(binding).indent(Babeltrace2Gen::BTPrinter::INDENT_INCREMENT.size*indent),
+void
+btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, void *callback)
+EOF
+
+  { :declaration => ERB.new(declaration_template, trim_mode: "<>").result(binding).indent(Babeltrace2Gen::BTPrinter::INDENT_INCREMENT.size*indent),
+    :definition => ERB.new(definition_template, trim_mode: "<>").result(binding).indent(Babeltrace2Gen::BTPrinter::INDENT_INCREMENT.size*indent),
   }
 end
 
@@ -77,7 +79,7 @@ def wrote_dispatchers(component_name, hash_type, hash_name, t)
 #pragma once
 #include "dispacher_t.h"
 <% functions.each do |f| %>
-<%= f[:register_func_signature] %>; 
+<%= f[:declaration] %>;
 <% end %>
 EOS
 
@@ -86,9 +88,10 @@ EOS
 #include "uthash.h"
 #include "utarray.h"
 #include "dispacher_t.h"
+#include "<%= component_name %>_dispatch.h"
 #include <stdio.h>
 <% functions.each do |f| %>
-<%= f[:body] %>
+<%= f[:definition] %>
 <% end %>
 EOS
 

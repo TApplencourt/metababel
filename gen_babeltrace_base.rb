@@ -460,7 +460,7 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'uint64_t', arg_variables)
+      variable = bt_get_variable(field, 'uint32_t', arg_variables)
       pr "bt_field_integer_unsigned_set_value(#{field}, #{variable});"
     end
 

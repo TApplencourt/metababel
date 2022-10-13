@@ -2,8 +2,8 @@
 #include "uthash.h"
 #include "utarray.h"
 #include "dispacher_t.h"
+#include "xprof_dispatch.h"
 #include <stdio.h>
-
 static void
 btx_dispatch_lttng_ust_ze_profiling_event_profiling_results(
   UT_array *callbacks,
@@ -30,37 +30,30 @@ btx_dispatch_lttng_ust_ze_profiling_event_profiling_results(
     }
   }
   // Call all the callbacks who where registered
-  int *p;
-  for(p=(int*)utarray_front(callbacks);
-      p!=NULL;
-      p=(int*)utarray_next(callbacks, p)) {
-    printf("%d\n",*p);
+  lttng_ust_ze_profiling_event_profiling_results_callback_f **p = NULL;
+  while ( ( p = utarray_next(callbacks, p) ) ) {
+    (*p)(usr_event_cc_f_m_0 ,usr_event_cc_f_m_1 ,usr_event_p_f_m_0);
   }
-
 }
 
 void
-btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(name_to_dispatcher_t **name_to_dispatcher, int i)
+btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(name_to_dispatcher_t **name_to_dispatcher, void *callback)
 {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(*name_to_dispatcher, "lttng_ust_ze_profiling:event_profiling_results", s);
-  // We didn't find the dispatcher, so we need to register it
   if (!s) {
-
-    // Create
+    // We didn't find the dispatcher, so we need to
+    // Create it
     s = (name_to_dispatcher_t *) malloc(sizeof(name_to_dispatcher_t));
     s-> name = "lttng_ust_ze_profiling:event_profiling_results";
     s-> dispatcher = &btx_dispatch_lttng_ust_ze_profiling_event_profiling_results;
-    utarray_new(s->callbacks, &ut_int_icd);
-
-    // Register
+    utarray_new(s->callbacks, &ut_ptr_icd);
+    // and Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
   }
-
-  utarray_push_back(s->callbacks, &i);
+  utarray_push_back(s->callbacks, &callback);
 }
-
 
 static void
 btx_dispatch_lttng_ust_interval_inHost(
@@ -113,34 +106,28 @@ btx_dispatch_lttng_ust_interval_inHost(
     }
   }
   // Call all the callbacks who where registered
-  int *p;
-  for(p=(int*)utarray_front(callbacks);
-      p!=NULL;
-      p=(int*)utarray_next(callbacks, p)) {
-    printf("%d\n",*p);
+  lttng_ust_interval_inHost_callback_f **p = NULL;
+  while ( ( p = utarray_next(callbacks, p) ) ) {
+    (*p)(usr_event_cc_f_m_0 ,usr_event_cc_f_m_1 ,usr_event_cc_f_m_2 ,usr_event_cc_f_m_3 ,usr_event_cc_f_m_4 ,usr_event_p_f_m_0 ,usr_event_p_f_m_1 ,usr_event_p_f_m_2);
   }
-
 }
 
 void
-btx_register_callbacks_lttng_ust_interval_inHost(name_to_dispatcher_t **name_to_dispatcher, int i)
+btx_register_callbacks_lttng_ust_interval_inHost(name_to_dispatcher_t **name_to_dispatcher, void *callback)
 {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(*name_to_dispatcher, "lttng_ust_interval:inHost", s);
-  // We didn't find the dispatcher, so we need to register it
   if (!s) {
-
-    // Create
+    // We didn't find the dispatcher, so we need to
+    // Create it
     s = (name_to_dispatcher_t *) malloc(sizeof(name_to_dispatcher_t));
     s-> name = "lttng_ust_interval:inHost";
     s-> dispatcher = &btx_dispatch_lttng_ust_interval_inHost;
-    utarray_new(s->callbacks, &ut_int_icd);
-
-    // Register
+    utarray_new(s->callbacks, &ut_ptr_icd);
+    // and Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
   }
-
-  utarray_push_back(s->callbacks, &i);
+  utarray_push_back(s->callbacks, &callback);
 }
 

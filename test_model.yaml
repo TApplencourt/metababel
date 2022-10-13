@@ -17,7 +17,6 @@
         - :name: hEvent 
           :field_class:
             :type: integer_unsigned
-
 - :name: interval_stream_class
   :event_common_context_field_class:
     :type: structure
