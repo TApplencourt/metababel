@@ -66,7 +66,7 @@ EOF
   }
 end
 
-def wrote_dispatchers(component_name, hash_type, hash_name, t)
+def wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
   functions = t.stream_classes.map { |s|
     s.event_classes.map { |e|
       get_dispatchers(e, hash_type, hash_name)
@@ -87,19 +87,20 @@ EOS
 #include "uthash.h"
 #include "utarray.h"
 #include "dispacher_t.h"
-#include "<%= component_name %>_dispatch.h"
+#include "dispatch.h"
 #include <stdio.h>
 <% functions.each do |f| %>
 <%= f[:definition] %>
 <% end %>
 EOS
 
-  File.open("#{component_name}_dispatch.h", 'w') do |f|
+
+  File.open(File.join(folder, "dispatch.h"), 'w') do |f|
     declaration = ERB.new(declaration_template, trim_mode: "<>").result(binding)
     f.write(declaration)
   end
 
-  File.open("#{component_name}_dispatch.c", 'w') do |f|
+  File.open(File.join(folder, "dispatch.c"), 'w') do |f|
     definition = ERB.new(definition_template, trim_mode: "<>").result(binding)
     f.write(definition)
   end
@@ -123,22 +124,31 @@ raise OptionParser::MissingArgument if options[:file].nil?
 raise OptionParser::MissingArgument if options[:component].nil?
 
 SRC_DIR = ENV['SRC_DIR'] || '.'
+template = ""
 if options[:component] == "SINK"
   template = File.read(File.join(SRC_DIR, "template/sink.c.erb"))
+elsif options[:component] == "FILTER"
+  template = File.read(File.join(SRC_DIR, "template/filter.c.erb"))
+end
+
+
+
   # Need to be passed as arguments
   component_name = "xprof"
-  plugin_name = "sink"
+  plugin_name = "roger"
 
   hash_type = "name_to_dispatcher_t"
   hash_name = "name_to_dispatcher"
 
-  File.open("#{component_name}.c", 'w') do |f|
+  folder = "#{options[:component]}.#{component_name}"
+  Dir.mkdir(folder) unless File.exists?(folder)
+
+  File.open(File.join(folder, "#{component_name}.c"), 'w') do |f|
     str = ERB.new(template, trim_mode: "<>").result(binding)
     f.write(str)
   end
 
   y = YAML::load_file(options[:file])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_dispatchers(component_name, hash_type, hash_name, t)
-end
+  wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
 

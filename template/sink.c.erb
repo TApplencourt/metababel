@@ -4,10 +4,11 @@
 #include "uthash.h"
 
 #include "dispacher_t.h"
-#include "<%= component_name %>_dispatch.h"
+#include "dispatch.h"
 
 #include "my_callbacks.h"
 
+// Losely based on https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-sink-cmp-cls.html
 struct <%= component_name %>_usr_data {};
 
 struct <%= component_name %>_common_data {
@@ -28,7 +29,7 @@ void lockup_dispatcher(struct <%= component_name %>_common_data* common_data,
  * Consume Message
  */
 
-/* TODO: This function should call the callbacks */
+static
 bt_component_class_sink_consume_method_status <%= component_name %>_consume(bt_self_component_sink *self_component_sink) {
   bt_component_class_sink_consume_method_status status =
       BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_OK;
@@ -89,8 +90,7 @@ end:
 /*
  * Initializes the sink component.
  */
-
-// TODO: This should initialize the callbacks
+static
 bt_component_class_initialize_method_status <%= component_name %>_initialize(bt_self_component_sink *self_component_sink,
                           bt_self_component_sink_configuration *configuration,
                           const bt_value *params,
@@ -120,6 +120,7 @@ bt_component_class_initialize_method_status <%= component_name %>_initialize(bt_
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
+static
 void <%= component_name %>_finalize(bt_self_component_sink *self_component_sink) {
   struct <%= component_name %>_common_data *common_data = bt_self_component_get_data(
       bt_self_component_sink_as_self_component(self_component_sink));
@@ -134,6 +135,7 @@ void <%= component_name %>_finalize(bt_self_component_sink *self_component_sink)
  *
  * This is where we can create our upstream message iterator.
  */
+static
 bt_component_class_sink_graph_is_configured_method_status
 <%= component_name %>_graph_is_configured(bt_self_component_sink *self_component_sink) {
   /* Retrieve our private data from the component's user data */
