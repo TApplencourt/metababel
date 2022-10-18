@@ -12,16 +12,6 @@ module Babeltrace2Gen
     def bt_set_conditionally(guard)
       yield guard ? 'BT_TRUE' : 'BT_FALSE' unless guard.nil?
     end
-
-    def bt_get_variable(field, type, arg_variables)
-      if arg_variables.empty? || arg_variables.first.is_a?(GeneratedArg)
-        variable = "usr_#{field}"
-        arg_variables << GeneratedArg.new(type, variable)
-        variable
-      else
-        arg_variables.shift
-      end
-    end
   end
 
   module BTPrinter
@@ -52,9 +42,9 @@ module Babeltrace2Gen
     # Maybe not the best place
     def name_sanitized
       raise unless @name
+
       @name.gsub(/[^0-9A-Za-z\-]/, '_')
     end
-
   end
 
   def self.context(**args, &block)
@@ -64,20 +54,16 @@ module Babeltrace2Gen
   module BTLocator
     attr_reader :parent, :variable
 
-    def root
-      @parent ? @parent.root : self
+    def rec_stream_class
+      is_a?(Babeltrace2Gen::BTStreamClass) ? self : @parent.rec_stream_class
     end
 
-    def stream_class
-      @parent ? @parent.stream_class : nil
+    def rec_event_class
+      is_a?(Babeltrace2Gen::BTEventClass) ? self : @parent.rec_event_class
     end
 
-    def trace_class
-      @parent ? @parent.trace_class : nil
-    end
-
-    def event_class
-      @parent ? @parent.event_class : nil
+    def rec_menber_class
+      is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_menber_class
     end
 
     def find_field_class_path(path, variable)
@@ -95,13 +81,13 @@ module Babeltrace2Gen
       m = path.match(/\A(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)(.*)/)
       case m[1]
       when 'PACKET_CONTEXT'
-        pr "#{variable} = #{stream_class.packet_context_field_class.variable};"
+        pr "#{variable} = #{rec_stream_class.packet_context_field_class.variable};"
       when 'EVENT_COMMON_CONTEXT'
-        pr "#{variable} = #{stream_class.event_common_context_field_class.variable};"
+        pr "#{variable} = #{rec_stream_class.event_common_context_field_class.variable};"
       when 'EVENT_SPECIFIC_CONTEXT'
-        pr "#{variable} = #{event_class.specific_context_field_class.varible};"
+        pr "#{variable} = #{rec_event_class.specific_context_field_class.varible};"
       when 'EVENT_PAYLOAD'
-        pr "#{variable} = #{event_class.payload_field_class.variable};"
+        pr "#{variable} = #{rec_event_class.payload_field_class.variable};"
       else
         raise "invalid path #{path}"
       end
@@ -136,10 +122,6 @@ module Babeltrace2Gen
 
         BTStreamClass.from_h(self, m)
       end
-    end
-
-    def trace_class
-      self
     end
 
     def get_declarator(self_component:, variable:)
@@ -290,56 +272,57 @@ module Babeltrace2Gen
     end
 
     def get_setter(event:, arg_variables:)
-        if stream_class.event_common_context_field_class
-          field = "#{event}_cc_f"
-          scope do
-            pr "bt_field *#{field} = bt_event_borrow_common_context_field(#{event});"
-            stream_class.event_common_context_field_class.get_setter(variable: field, arg_variables: arg_variables)
-          end
+      if stream_class.event_common_context_field_class
+        field = "#{event}_cc_f"
+        scope do
+          pr "bt_field *#{field} = bt_event_borrow_common_context_field(#{event});"
+          stream_class.event_common_context_field_class.get_setter(variable: field, arg_variables: arg_variables)
         end
+      end
 
-        if @specific_context_field_class
-          field = "#{event}_sc_f"
-          scope do
-            pr "bt_field *#{field} = bt_event_borrow_specific_context_field(#{event});"
-            @specific_context_field_class.get_setter(variable: field, arg_variables: arg_variables)
-          end
+      if @specific_context_field_class
+        field = "#{event}_sc_f"
+        scope do
+          pr "bt_field *#{field} = bt_event_borrow_specific_context_field(#{event});"
+          @specific_context_field_class.get_setter(variable: field, arg_variables: arg_variables)
         end
+      end
 
-        if @payload_field_class
-          field = "#{event}_p_f"
-          scope do
-            pr "bt_field *#{field} = bt_event_borrow_payload_field(#{event});"
-            @payload_field_class.get_setter(variable: field, arg_variables: arg_variables)
-          end
+      if @payload_field_class
+        field = "#{event}_p_f"
+        scope do
+          pr "bt_field *#{field} = bt_event_borrow_payload_field(#{event});"
+          @payload_field_class.get_setter(variable: field, arg_variables: arg_variables)
         end
+      end
     end
 
     def get_getter(event:, arg_variables:)
-        if stream_class.event_common_context_field_class
-          field = "#{event}_cc_f"
-          scope do
-            pr "const bt_field *#{field} = bt_event_borrow_common_context_field_const(#{event});"
-            stream_class.event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
-          end
+      if rec_stream_class.event_common_context_field_class
+        field = "#{event}_cc_f"
+        scope do
+          pr "const bt_field *#{field} = bt_event_borrow_common_context_field_const(#{event});"
+          rec_stream_class.event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
         end
+      end
 
-        if @specific_context_field_class
-          field = "#{event}_sc_f"
-          scope do
-            pr "const bt_field *#{field} = bt_event_borrow_specific_context_field_const(#{event});"
-            @specific_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
-          end
+      if @specific_context_field_class
+        field = "#{event}_sc_f"
+        scope do
+          pr "const bt_field *#{field} = bt_event_borrow_specific_context_field_const(#{event});"
+          @specific_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
         end
+      end
 
-        if @payload_field_class
-          field = "#{event}_p_f"
-          scope do
-            pr "const bt_field *#{field} = bt_event_borrow_payload_field_const(#{event});"
-            @payload_field_class.get_getter(variable: field, arg_variables: arg_variables)
-          end
+      if @payload_field_class
+        field = "#{event}_p_f"
+        scope do
+          pr "const bt_field *#{field} = bt_event_borrow_payload_field_const(#{event});"
+          @payload_field_class.get_getter(variable: field, arg_variables: arg_variables)
+        end
       end
     end
+
     def event_class
       self
     end
@@ -390,32 +373,52 @@ module Babeltrace2Gen
     def get_declarator(*args, **dict)
       raise NotImplementedError, self.class
     end
+
+    def bt_get_variable(_field, arg_variables)
+      if arg_variables.empty? || arg_variables.first.is_a?(GeneratedArg)
+        variable = rec_menber_class.name
+        type = @cast_type || self.class.instance_variable_get(:@bt_type)
+        arg_variables << GeneratedArg.new(type, variable)
+        variable
+      else
+        arg_variables.shift
+      end
+    end
+
+    def get_getter(field:, arg_variables:)
+      bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
+      variable = bt_get_variable(field, arg_variables)
+      cast_func = @cast_type ? "(#{@cast_type})" : ''
+      pr "#{variable} = #{cast_func}#{bt_func_get}(#{field});"
+    end
+
+    def get_setter(field:, arg_variables:)
+      bt_func_get = self.class.instance_variable_get(:@bt_func) % 'set'
+      variable = bt_get_variable(field, arg_variables)
+      cast_func = @cast_type ? "(#{self.class.instance_variable_get(:@bt_type)})" : ''
+      pr "#{bt_func_get}(#{field}, #{variable});"
+    end
   end
 
   class BTFieldClass::Bool < BTFieldClass
     extend BTFromH
     include BTUtils
 
+    @bt_type = 'bt_bool'
+    @bt_func = 'bt_field_bool_%s_value'
+
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_bool_create(#{trace_class});"
     end
-
-    def get_setter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'bt_bool', arg_variables)
-      pr "bt_field_bit_array_set_value_as_integer(#{field}, #{variable});"
-    end
-
-    def get_getter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'bt_bool', arg_variables)
-      pr "#{variable} = bt_field_bit_array_get_value_as_integer(#{field});"
-    end
-
   end
 
   class BTFieldClass::BitArray < BTFieldClass
     extend BTFromH
     include BTUtils
     attr_reader :length
+
+    @bt_type = 'uint64_t'
+    @bt_func = 'bt_field_bit_array_%s_value_as_integer'
 
     def initialize(parent:, length:)
       @parent = parent
@@ -424,11 +427,6 @@ module Babeltrace2Gen
 
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_bit_array_create(#{trace_class}, #{@length});"
-    end
-
-    def get_setter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'uint64_t', arg_variables)
-      pr "#{varialbe} = bt_field_bit_array_set_value_as_integer(#{field});"
     end
   end
 
@@ -454,40 +452,26 @@ module Babeltrace2Gen
 
   class BTFieldClass::Integer::Unsigned < BTFieldClass::Integer
     extend BTFromH
+
+    @bt_type = 'uint64_t'
+    @bt_func = 'bt_field_integer_unsigned_%s_value'
+
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_integer_unsigned_create(#{trace_class});"
       super(variable: variable)
     end
-
-    def get_setter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'uint32_t', arg_variables)
-      pr "bt_field_integer_unsigned_set_value(#{field}, #{variable});"
-    end
-
-    def get_getter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'uint64_t', arg_variables)
-      pr "#{variable} = bt_field_integer_unsigned_get_value(#{field});"
-    end
-
   end
 
   class BTFieldClass::Integer::Signed < BTFieldClass::Integer
     extend BTFromH
+
+    @bt_type = 'int64_t'
+    @bt_func = 'bt_field_integer_signed_%s_value'
+
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_integer_signed_create(#{trace_class});"
       super(variable: variable)
     end
-
-    def get_setter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'int64_t', arg_variables)
-      pr "bt_field_integer_signed_set_value(#{field}, #{variable});"
-    end
-
-    def get_getter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'int64_t', arg_variables)
-      pr "#{variable} = bt_field_integer_signed_get_value(#{field});"
-    end
-
   end
 
   class BTFieldClass::Real < BTFieldClass
@@ -540,18 +524,11 @@ module Babeltrace2Gen
     extend BTFromH
     include BTUtils
 
+    @bt_type = 'const char*'
+    @bt_func = 'bt_field_string_%s_value'
+
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_string_create(#{trace_class});"
-    end
-
-    def get_setter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'const char*', arg_variables)
-      pr "bt_field_string_set_value(#{field}, #{variable});"
-    end
-  
-    def get_getter(field:, arg_variables:)
-      variable = bt_get_variable(field, 'const char*', arg_variables)
-      pr "#{variable} = bt_field_string_get_value(#{field});"
     end
   end
 
@@ -614,25 +591,25 @@ module Babeltrace2Gen
     end
   end
 
+  class BTMemberClass
+    include BTLocator
+    attr_reader :parent, :name, :field_class
+
+    def initialize(parent:, name:, field_class:)
+      @parent = parent
+      @name = name
+      @field_class = BTFieldClass.from_h(self, field_class)
+    end
+  end
+
   class BTFieldClass::Structure < BTFieldClass
     extend BTFromH
 
     attr_reader :members
 
-    class Member
-      include BTLocator
-      attr_reader :parent, :name, :field_class
-
-      def initialize(parent:, name:, field_class:)
-        @parent = parent
-        @name = name
-        @field_class = BTFieldClass.from_h(self, field_class)
-      end
-    end
-
     def initialize(parent:, members: [])
       @parent = parent
-      @members = members.collect { |m| Member.new(parent: self, **m) }
+      @members = members.collect { |m| BTMemberClass.new(parent: self, **m) }
     end
 
     def [](index)
@@ -676,7 +653,6 @@ module Babeltrace2Gen
         end
       end
     end
-
   end
 
   class BTFieldClass::Option < BTFieldClass
