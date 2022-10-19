@@ -13,95 +13,32 @@ class String
   end
 end
 
-def get_dispatchers(e, hash_type, hash_name, event_name: "event", indent: 0)
-  arg_variables = []
-  body = Babeltrace2Gen.context(indent: 1) {
-    e.get_getter(event: event_name, arg_variables: arg_variables)
-  }
-
-  definition_template = <<EOS
-static void
-btx_dispatch_<%= e.name_sanitized %>(
-  UT_array *callbacks,
-  const bt_event *#{event_name}) {
-<% arg_variables.each do |s| %>
-  <%= s.type %> <%= s.name %>;
-<% end %>
-<%= body %>
-  // Call all the callbacks who where registered
-  <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ( ( p = utarray_next(callbacks, p) ) ) {
-    (*p)(<%= arg_variables.map{ |s| s.name}.join(", ")%>);
-  }
-}
-
-void
-btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, <%= e.name_sanitized %>_callback_f *callback)
-{
-  // Look-up our dispatcher
-  <%= hash_type %> *s = NULL;
-  HASH_FIND_STR(*<%= hash_name %>, "<%= e.name %>", s);
-  if (!s) {
-    // We didn't find the dispatcher, so we need to
-    // Create it
-    s = (<%= hash_type %> *) malloc(sizeof(<%= hash_type %>));
-    s-> name = "<%= e.name %>";
-    s-> dispatcher = &btx_dispatch_<%= e.name_sanitized %>;
-    utarray_new(s->callbacks, &ut_ptr_icd);
-    // and Register it
-    HASH_ADD_KEYPTR(hh, *<%= hash_name %>, s->name, strlen(s->name), s);
-  }
-  utarray_push_back(s->callbacks, &callback);
-}
-
-EOS
-  declaration_template = <<EOF
-typedef void <%= e.name_sanitized %>_callback_f(<%= arg_variables.map{ |s| s.type}.join(", ") %>);
-void
-btx_register_callbacks_<%= e.name_sanitized %>(<%= hash_type %> **<%= hash_name %>, <%= e.name_sanitized %>_callback_f *callback)
-EOF
-
-  { :declaration => ERB.new(declaration_template, trim_mode: "<>").result(binding).indent(Babeltrace2Gen::BTPrinter::INDENT_INCREMENT.size*indent),
-    :definition => ERB.new(definition_template, trim_mode: "<>").result(binding).indent(Babeltrace2Gen::BTPrinter::INDENT_INCREMENT.size*indent),
-  }
+Dispatcher = Struct.new(:name, :args, :body) do
+  def name_sanitized
+    name.gsub(/[^0-9A-Za-z\-]/, '_')
+  end
 end
 
 def wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
-  functions = t.stream_classes.map { |s|
-    s.event_classes.map { |e|
-      get_dispatchers(e, hash_type, hash_name)
+  event_name = "event"
+  event_classes = t.stream_classes.map(&:event_classes).flatten
+  dispatchers = event_classes.map { |e|
+    arg_variables = []
+    body = Babeltrace2Gen.context(indent: 1) {
+      e.get_getter(event: event_name, arg_variables: arg_variables)
     }
-  }.flatten
-
-
-  declaration_template = <<EOS
-#pragma once
-#include "dispacher_t.h"
-<% functions.each do |f| %>
-<%= f[:declaration] %>;
-<% end %>
-EOS
-
-  definition_template = <<EOS
-#include <babeltrace2/babeltrace.h>
-#include "uthash.h"
-#include "utarray.h"
-#include "dispacher_t.h"
-#include "dispatch.h"
-#include <stdio.h>
-<% functions.each do |f| %>
-<%= f[:definition] %>
-<% end %>
-EOS
-
+    Dispatcher.new(e.name, arg_variables, body)
+  }
 
   File.open(File.join(folder, "dispatch.h"), 'w') do |f|
-    declaration = ERB.new(declaration_template, trim_mode: "<>").result(binding)
+    template = File.read(File.join(SRC_DIR, "template/dispatch.h.erb"))
+    declaration = ERB.new(template, trim_mode: "<>").result(binding)
     f.write(declaration)
   end
 
   File.open(File.join(folder, "dispatch.c"), 'w') do |f|
-    definition = ERB.new(definition_template, trim_mode: "<>").result(binding)
+    template = File.read(File.join(SRC_DIR, "template/dispatch.c.erb"))
+    definition = ERB.new(template, trim_mode: "<>").result(binding)
     f.write(definition)
   end
 end
@@ -131,8 +68,6 @@ elsif options[:component] == "FILTER"
   template = File.read(File.join(SRC_DIR, "template/filter.c.erb"))
 end
 
-
-
   # Need to be passed as arguments
   component_name = "xprof"
   plugin_name = "roger"
@@ -151,4 +86,3 @@ end
   y = YAML::load_file(options[:file])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
-

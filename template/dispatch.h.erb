@@ -1,0 +1,12 @@
+#pragma once
+#include "dispacher_t.h"
+
+<% dispatchers.each do |e| %>
+ <%# The signature type of callbacks %>
+typedef void <%= e.name_sanitized %>_callback_f(<%= e.args.map{ |s| s.type}.join(", ") %>);
+ <%# The Function who register the callbacks to the dispatcher %> 
+void
+btx_register_callbacks_<%= e.name_sanitized %>(
+  <%= hash_type %> **<%= hash_name %>, 
+  <%= e.name_sanitized %>_callback_f *callback);
+<% end %>
