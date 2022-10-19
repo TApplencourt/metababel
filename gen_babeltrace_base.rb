@@ -175,10 +175,6 @@ module Babeltrace2Gen
       @id = id
     end
 
-    def stream_class
-      self
-    end
-
     def get_declarator(trace_class:, variable:)
       if @id
         pr "#{variable} = bt_stream_class_create_with_id(#{trace_class}, #{@id});"
@@ -322,10 +318,6 @@ module Babeltrace2Gen
         end
       end
     end
-
-    def event_class
-      self
-    end
   end
 
   class BTFieldClass
@@ -402,7 +394,6 @@ module Babeltrace2Gen
 
   class BTFieldClass::Bool < BTFieldClass
     extend BTFromH
-    include BTUtils
 
     @bt_type = 'bt_bool'
     @bt_func = 'bt_field_bool_%s_value'
@@ -414,7 +405,6 @@ module Babeltrace2Gen
 
   class BTFieldClass::BitArray < BTFieldClass
     extend BTFromH
-    include BTUtils
     attr_reader :length
 
     @bt_type = 'uint64_t'
@@ -433,8 +423,6 @@ module Babeltrace2Gen
   class BTFieldClass::Integer < BTFieldClass
     attr_reader :field_value_range, :preferred_display_base
 
-    include BTUtils
-
     def initialize(parent:, field_value_range: nil, preferred_display_base: nil)
       @parent = parent
       @field_value_range = field_value_range
@@ -448,7 +436,6 @@ module Babeltrace2Gen
       end
     end
   end
-  BTFieldClassInteger = BTFieldClass::Integer
 
   class BTFieldClass::Integer::Unsigned < BTFieldClass::Integer
     extend BTFromH
@@ -522,7 +509,6 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
-    include BTUtils
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
