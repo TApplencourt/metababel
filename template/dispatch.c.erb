@@ -8,7 +8,7 @@
 static void
 btx_dispatch_<%= e.name_sanitized %>(
   UT_array *callbacks,
-  const bt_event *<%= event_name%>) 
+  const bt_event *<%= event_name %>)
 {
  <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
@@ -18,13 +18,13 @@ btx_dispatch_<%= e.name_sanitized %>(
   // Their type are declared in 'dispatch.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ( ( p = utarray_next(callbacks, p) ) ) {
-    (*p)(<%= e.args.map{ |s| s.name}.join(", ")%>);
+    (*p)(<%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
 
 void
 btx_register_callbacks_<%= e.name_sanitized %>(
-  <%= hash_type %> **<%= hash_name %>, 
+  <%= hash_type %> **<%= hash_name %>,
   <%= e.name_sanitized %>_callback_f *callback)
 {
   // Look-up our dispatcher
