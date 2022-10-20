@@ -17,7 +17,7 @@ str_.gsub!(/<%=\s+(.*?)\s*%>/){ |m|
 }
 
 # Handle <%
-str_.gsub!(/<%\s+(.*?)\s*%>/){ |m|
+str_.gsub!(/<%#?\s+(.*?)\s*%>/){ |m|
     new_str =  "//___#{i}___"
     i=i+1
     d_sub[new_str] = m

@@ -1,43 +1,38 @@
-#include <babeltrace2/babeltrace.h>
-#include "uthash.h"
-#include "utarray.h"
+#include "create.h"
 #include "dispacher_t.h"
 #include "dispatch.h"
-#include "create.h"
+#include "utarray.h"
+#include "uthash.h"
+#include <babeltrace2/babeltrace.h>
 
 <% dispatchers.each do |e| %>
-static void
-btx_dispatch_<%= e.name_sanitized %>(
-  UT_array *callbacks,
-  struct <%= component_name %>_common_data *common_data,
-  const bt_event *<%= event_name %>)
-{
- <% e.args.each do |s| %>
+static void btx_dispatch_<%= e.name_sanitized %>(
+    UT_array *callbacks, struct <%= component_name %>_common_data *common_data,
+    const bt_event *<%= event_name %>) {
+  <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
- <% end %>
-<%= e.body %>
+  <% end %>
+  <%= e.body %>
   // Call all the callbacks who where registered
   // Their type are declared in 'dispatch.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ( ( p = utarray_next(callbacks, p) ) ) {
+  while ((p = utarray_next(callbacks, p))) {
     (*p)(common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
 
-void
-btx_register_callbacks_<%= e.name_sanitized %>(
-  <%= hash_type %> **<%= hash_name %>,
-  <%= e.name_sanitized %>_callback_f *callback)
-{
+void btx_register_callbacks_<%= e.name_sanitized %>(
+    <%= hash_type %> **<%= hash_name %>,
+    <%= e.name_sanitized %>_callback_f *callback) {
   // Look-up our dispatcher
   <%= hash_type %> *s = NULL;
   HASH_FIND_STR(*<%= hash_name %>, "<%= e.name %>", s);
   if (!s) {
     // We didn't find the dispatcher, so we need to:
     // 1. Create it
-    s = (<%= hash_type %> *) malloc(sizeof(<%= hash_type %>));
-    s-> name = "<%= e.name %>";
-    s-> dispatcher = (void *) &btx_dispatch_<%= e.name_sanitized %>;
+    s = (<%= hash_type %> *)malloc(sizeof(<%= hash_type %>));
+    s->name = "<%= e.name %>";
+    s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
     utarray_new(s->callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *<%= hash_name %>, s->name, strlen(s->name), s);

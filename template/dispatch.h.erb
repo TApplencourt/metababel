@@ -1,15 +1,14 @@
 #pragma once
-#include "dispacher_t.h"
 #include "create.h"
+#include "dispacher_t.h"
 
 <% dispatchers.each do |e| %>
- <%# The signature type of callbacks %>
+<%# The signature type of callbacks %>
 typedef void <%= e.name_sanitized %>_callback_f(
-  struct <%= component_name %>_common_data *common_data, 
-  <%= e.args.map{ |s| s.type}.join(", ") %>);
- <%# The Function who register the callbacks to the dispatcher %>
-void
-btx_register_callbacks_<%= e.name_sanitized %>(
-  <%= hash_type %> **<%= hash_name %>,
-  <%= e.name_sanitized %>_callback_f *callback);
+    struct <%= component_name %>_common_data *common_data,
+    <%= e.args.map{ |s| s.type }.join(", ") %>);
+<%# The Function who register the callbacks to the dispatcher %>
+void btx_register_callbacks_<%= e.name_sanitized %>(
+    <%= hash_type %> **<%= hash_name %>,
+    <%= e.name_sanitized %>_callback_f *callback);
 <% end %>
