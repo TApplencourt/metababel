@@ -124,8 +124,7 @@ module Babeltrace2Gen
       end
     end
 
-    def get_declarator(self_component:, variable:)
-      pr "bt_trace_class *#{variable} = bt_trace_class_create(#{self_component});"
+    def get_declarator(variable:)
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
         pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{variable}, #{v});"
       end
@@ -268,11 +267,11 @@ module Babeltrace2Gen
     end
 
     def get_setter(event:, arg_variables:)
-      if stream_class.event_common_context_field_class
+      if rec_stream_class.event_common_context_field_class
         field = "#{event}_cc_f"
         scope do
           pr "bt_field *#{field} = bt_event_borrow_common_context_field(#{event});"
-          stream_class.event_common_context_field_class.get_setter(variable: field, arg_variables: arg_variables)
+          rec_stream_class.event_common_context_field_class.get_setter(variable: field, arg_variables: arg_variables)
         end
       end
 
