@@ -3,11 +3,13 @@
 #include "utarray.h"
 #include "dispacher_t.h"
 #include "dispatch.h"
+#include "create.h"
 
 <% dispatchers.each do |e| %>
 static void
 btx_dispatch_<%= e.name_sanitized %>(
   UT_array *callbacks,
+  struct <%= component_name %>_common_data *common_data,
   const bt_event *<%= event_name %>)
 {
  <% e.args.each do |s| %>
@@ -18,7 +20,7 @@ btx_dispatch_<%= e.name_sanitized %>(
   // Their type are declared in 'dispatch.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ( ( p = utarray_next(callbacks, p) ) ) {
-    (*p)(<%= e.args.map{ |s| s.name }.join(", ") %>);
+    (*p)(common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
 
@@ -35,7 +37,7 @@ btx_register_callbacks_<%= e.name_sanitized %>(
     // 1. Create it
     s = (<%= hash_type %> *) malloc(sizeof(<%= hash_type %>));
     s-> name = "<%= e.name %>";
-    s-> dispatcher = &btx_dispatch_<%= e.name_sanitized %>;
+    s-> dispatcher = (void *) &btx_dispatch_<%= e.name_sanitized %>;
     utarray_new(s->callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *<%= hash_name %>, s->name, strlen(s->name), s);

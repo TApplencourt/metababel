@@ -5,6 +5,7 @@
 
 typedef void (dispatcher_t)
     ( UT_array *callbacks,
+      void * common_data,
       const bt_event *message);
 
 struct name_to_dispatcher_s {
