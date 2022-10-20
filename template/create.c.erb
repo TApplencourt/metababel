@@ -1,0 +1,63 @@
+#include "create.h"
+#include "dispatch.h"
+#include "utlist.h"
+#include <babeltrace2/babeltrace.h>
+
+void btx_downstream_push_message(
+    struct <%= component_name %>_common_data *common_data,
+    const bt_message *message) {
+  struct el *elt;
+  if (common_data->pool) {
+    elt = common_data->pool;
+    DL_DELETE(common_data->pool, elt);
+  } else {
+    elt = (struct el *)malloc(sizeof *elt);
+  }
+  elt->message = message;
+  DL_APPEND(common_data->queue, elt);
+}
+
+bt_trace_class *
+btx_downstream_trace_class_create_rec(bt_self_component *self_component) {
+  bt_trace_class *trace_class = bt_trace_class_create(self_component);
+  <%= body_declarator_classes %>
+  return trace_class;
+}
+
+bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
+  bt_trace *trace = bt_trace_create(trace_class);
+  <% downstream_streams.each_with_index do |_,i| %>
+  {
+    bt_stream_class *stream_class =
+        bt_trace_class_borrow_stream_class_by_index(trace_class, <%= i %>);
+    bt_stream_create(stream_class, trace);
+  }
+  <% end %>
+  return trace;
+}
+
+<% downstream_events.each do |e| %>
+static void btx_set_message_<%= e.name_sanitized %>(
+    bt_event *event,
+    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+  <%= e.body %>
+}
+
+void btx_push_message_<%= e.name_sanitized %>(
+    struct <%= component_name %>_common_data *common_data,
+    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+  // Stream
+  bt_stream *stream = bt_trace_borrow_stream_by_index(
+      common_data->downstream_trace, <%= e.index_stream_class %>);
+  bt_stream_class *stream_class = bt_stream_borrow_class(stream);
+  bt_event_class *event_class = bt_stream_class_borrow_event_class_by_index(
+      stream_class, <%= e.index_event_class %>);
+  bt_message *message = bt_message_event_create(
+      common_data->self_message_iterator, event_class, stream);
+  bt_event *downstream_event = bt_message_event_borrow_event(message);
+
+  btx_set_message_<%= e.name_sanitized %>(
+      downstream_event, <%= e.args.map{ |s| s.name }.join(", ") %>);
+  btx_downstream_push_message(common_data, message);
+}
+<% end %>

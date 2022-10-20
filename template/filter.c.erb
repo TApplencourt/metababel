@@ -1,8 +1,8 @@
+#include "uthash.h"
+#include "utlist.h"
 #include <babeltrace2/babeltrace.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "uthash.h"
-#include "utlist.h"
 
 #include "dispacher_t.h"
 #include "dispatch.h"
@@ -13,16 +13,16 @@
 
 /* Message iterator's private data */
 struct <%= component_name %>_message_iterator {
-    /* (Weak) link to the component's private data */
-    struct <%= component_name %>_common_data *common_data;
-    /* Upstream message iterator (owned by this) */
-    bt_message_iterator *message_iterator;
+  /* (Weak) link to the component's private data */
+  struct <%= component_name %>_common_data *common_data;
+  /* Upstream message iterator (owned by this) */
+  bt_message_iterator *message_iterator;
 };
 
-static
-void lockup_dispatcher(struct <%= component_name %>_common_data* common_data, 
-                       const bt_event_class* event_class, <%= hash_type %>** s) {
-  const char * class_name = bt_event_class_get_name(event_class);
+static void
+lockup_dispatcher(struct <%= component_name %>_common_data *common_data,
+                  const bt_event_class *event_class, <%= hash_type %> **s) {
+  const char *class_name = bt_event_class_get_name(event_class);
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
 
@@ -31,34 +31,34 @@ void lockup_dispatcher(struct <%= component_name %>_common_data* common_data,
  */
 
 /* TODO: This function should call the callbacks */
-static
-bt_message_iterator_class_next_method_status <%= component_name %>_message_iterator_next(
-        bt_self_message_iterator *self_message_iterator,
-        bt_message_array_const messages, uint64_t capacity,
-        uint64_t *count)
-{
+static bt_message_iterator_class_next_method_status
+<%= component_name %>_message_iterator_next(
+    bt_self_message_iterator *self_message_iterator,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
   struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
-    bt_self_message_iterator_get_data(self_message_iterator);
+      bt_self_message_iterator_get_data(self_message_iterator);
 
   /* Consume a batch of messages from the upstream message iterator */
   bt_message_array_const upstream_messages;
   uint64_t upstream_message_count;
   bt_message_iterator_next_status next_status;
 
-  struct <%= component_name %>_common_data *common_data = <%= component_name %>_iter->common_data;
- 
+  struct <%= component_name %>_common_data *common_data =
+      <%= component_name %>_iter->common_data;
+
 consume_upstream_messages:
 
   if (common_data->queue)
     goto pop_queued_messages;
 
-  next_status = bt_message_iterator_next(<%= component_name %>_iter->message_iterator,
-      &upstream_messages, &upstream_message_count);
- 
+  next_status =
+      bt_message_iterator_next(<%= component_name %>_iter->message_iterator,
+                               &upstream_messages, &upstream_message_count);
+
   /* Initialize the return status to a success */
   bt_message_iterator_class_next_method_status status =
-    BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+      BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
@@ -80,7 +80,8 @@ consume_upstream_messages:
   }
 
   /* For each consumed message */
-  for (uint64_t upstream_i = 0; upstream_i < upstream_message_count; upstream_i++) {
+  for (uint64_t upstream_i = 0; upstream_i < upstream_message_count;
+       upstream_i++) {
     /* Current message */
     const bt_message *upstream_message = upstream_messages[upstream_i];
     /* Move as is if it's not an event message */
@@ -89,10 +90,10 @@ consume_upstream_messages:
     }
     /* Borrow the event message's event and its class */
     const bt_event *event =
-      bt_message_event_borrow_event_const(upstream_message);
+        bt_message_event_borrow_event_const(upstream_message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
-    <%= hash_type %>* s = NULL;
+    <%= hash_type %> *s = NULL;
     lockup_dispatcher(common_data, event_class, &s);
     if (s) {
       (*(s->dispatcher))(s->callbacks, common_data, event);
@@ -112,7 +113,8 @@ consume_upstream_messages:
 
 pop_queued_messages:
 
-  for (*count=0; *count < upstream_message_count && common_data->queue; (*count)++) {
+  for (*count = 0; *count < upstream_message_count && common_data->queue;
+       (*count)++) {
     struct el *elt = common_data->queue;
     messages[*count] = elt->message;
     DL_DELETE(common_data->queue, elt);
@@ -126,14 +128,15 @@ end:
 /*
  * Initializes the filter component.
  */
-static
-bt_component_class_initialize_method_status <%= component_name %>_initialize(
-      bt_self_component_filter *self_component_filter,
-      bt_self_component_filter_configuration *configuration,
-      const bt_value *params, void *initialize_method_data) {
+static bt_component_class_initialize_method_status
+<%= component_name %>_initialize(
+    bt_self_component_filter *self_component_filter,
+    bt_self_component_filter_configuration *configuration,
+    const bt_value *params, void *initialize_method_data) {
 
   /* Allocate a private data structure */
-  struct <%= component_name %>_common_data *common_data = calloc(1, sizeof(struct <%= component_name %>_common_data));
+  struct <%= component_name %>_common_data *common_data =
+      calloc(1, sizeof(struct <%= component_name %>_common_data));
 
   /* Register User Callbacks */
   usr_register_callbacks(&common_data->name_to_dispatcher);
@@ -141,108 +144,113 @@ bt_component_class_initialize_method_status <%= component_name %>_initialize(
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
       bt_self_component_filter_as_self_component(self_component_filter),
-        common_data);
+      common_data);
 
-    /*
-     * Add an input port named `in` to the filter component.
-     *
-     * This is needed so that this filter component can be connected to
-     * a filter or a source component. With a connected upstream
-     * component, this filter component's message iterator can create a
-     * message iterator to consume messages.
-     *
-     * Add an output port named `out` to the filter component.
-     *
-     * This is needed so that this filter component can be connected to
-     * a filter or a sink component. Once a downstream component is
-     * connected, it can create our message iterator.
-     */
-    bt_self_component_filter_add_input_port(self_component_filter,
-        "in", NULL, &common_data->in_port);
-    bt_self_component_filter_add_output_port(self_component_filter,
-        "out", NULL, NULL);
+  /*
+   * Add an input port named `in` to the filter component.
+   *
+   * This is needed so that this filter component can be connected to
+   * a filter or a source component. With a connected upstream
+   * component, this filter component's message iterator can create a
+   * message iterator to consume messages.
+   *
+   * Add an output port named `out` to the filter component.
+   *
+   * This is needed so that this filter component can be connected to
+   * a filter or a sink component. Once a downstream component is
+   * connected, it can create our message iterator.
+   */
+  bt_self_component_filter_add_input_port(self_component_filter, "in", NULL,
+                                          &common_data->in_port);
+  bt_self_component_filter_add_output_port(self_component_filter, "out", NULL,
+                                           NULL);
 
-    /* Create message that will be used by the filter */
-    bt_self_component *self_component = bt_self_component_filter_as_self_component(self_component_filter);
-     /* Create a `trace_class` and all the children classes (stream and events) */
-    bt_trace_class *trace_class = btx_downstream_trace_class_create_rec(self_component);
-    /* Instanciate a `downstream_trace` of `trace_class` and all the children stream */
-    common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
-    return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
+  /* Create message that will be used by the filter */
+  bt_self_component *self_component =
+      bt_self_component_filter_as_self_component(self_component_filter);
+  /* Create a `trace_class` and all the children classes (stream and events) */
+  bt_trace_class *trace_class =
+      btx_downstream_trace_class_create_rec(self_component);
+  /* Instanciate a `downstream_trace` of `trace_class` and all the children
+   * stream */
+  common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
+  return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
 /*
  * Initializes the message iterator.
  */
-static
-bt_message_iterator_class_initialize_method_status
+static bt_message_iterator_class_initialize_method_status
 <%= component_name %>_message_iterator_initialize(
-        bt_self_message_iterator *self_message_iterator,
-        bt_self_message_iterator_configuration *configuration,
-        bt_self_component_port_output *self_port)
-{
-    /* Allocate a private data structure */
-    struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
-        malloc(sizeof(*<%= component_name %>_iter));
+    bt_self_message_iterator *self_message_iterator,
+    bt_self_message_iterator_configuration *configuration,
+    bt_self_component_port_output *self_port) {
+  /* Allocate a private data structure */
+  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
+      malloc(sizeof(*<%= component_name %>_iter));
 
-    /* Retrieve the component's private data from its user data */
-    struct <%= component_name %>_common_data *<%= component_name %>_common_data = bt_self_component_get_data(
-        bt_self_message_iterator_borrow_component(self_message_iterator));
+  /* Retrieve the component's private data from its user data */
+  struct <%= component_name %>_common_data *<%= component_name %>_common_data =
+      bt_self_component_get_data(
+          bt_self_message_iterator_borrow_component(self_message_iterator));
 
-    /* Save a link to the self_message_iterator */
-    <%= component_name %>_common_data -> self_message_iterator = self_message_iterator;
+  /* Save a link to the self_message_iterator */
+  <%= component_name %>_common_data->self_message_iterator =
+      self_message_iterator;
 
-    /* Keep a link to the component's private data */
-    <%= component_name %>_iter->common_data = <%= component_name %>_common_data;
- 
-    /* Create the uptream message iterator */
-    bt_message_iterator_create_from_message_iterator(self_message_iterator,
-        <%= component_name %>_common_data->in_port, &<%= component_name %>_iter->message_iterator);
- 
-    /* Set the message iterator's user data to our private data structure */
-    bt_self_message_iterator_set_data(self_message_iterator, <%= component_name %>_iter);
- 
-    return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
+  /* Keep a link to the component's private data */
+  <%= component_name %>_iter->common_data = <%= component_name %>_common_data;
+
+  /* Create the uptream message iterator */
+  bt_message_iterator_create_from_message_iterator(
+      self_message_iterator, <%= component_name %>_common_data->in_port,
+      &<%= component_name %>_iter->message_iterator);
+
+  /* Set the message iterator's user data to our private data structure */
+  bt_self_message_iterator_set_data(self_message_iterator,
+                                    <%= component_name %>_iter);
+
+  return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
-static
-void <%= component_name %>_finalize(bt_self_component_filter *self_component_filter) {
-  struct <%= component_name %>_common_data *common_data = bt_self_component_get_data(
-      bt_self_component_filter_as_self_component(self_component_filter));
+static void <%= component_name %>_finalize(
+    bt_self_component_filter *self_component_filter) {
+  struct <%= component_name %>_common_data *common_data =
+      bt_self_component_get_data(
+          bt_self_component_filter_as_self_component(self_component_filter));
   /* Free the allocated structure */
   free(common_data->usr_data);
 
   struct el *elt, *tmp;
-  DL_FOREACH_SAFE(common_data->pool,elt,tmp) {
-    DL_DELETE(common_data->pool,elt);
+  DL_FOREACH_SAFE(common_data->pool, elt, tmp) {
+    DL_DELETE(common_data->pool, elt);
     free(elt);
   }
   free(common_data);
 }
 
-static
-void <%= component_name %>_message_iterator_finalize(
-        bt_self_message_iterator *self_message_iterator)
-{
-    /* Retrieve our private data from the message iterator's user data */
-    struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
-        bt_self_message_iterator_get_data(self_message_iterator);
- 
-    /* Free the allocated structure */
-    free(<%= component_name %>_iter);
+static void <%= component_name %>_message_iterator_finalize(
+    bt_self_message_iterator *self_message_iterator) {
+  /* Retrieve our private data from the message iterator's user data */
+  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
+      bt_self_message_iterator_get_data(self_message_iterator);
+
+  /* Free the allocated structure */
+  free(<%= component_name %>_iter);
 }
 
 /* Mandatory */
 BT_PLUGIN_MODULE();
 
 BT_PLUGIN(<%= plugin_name %>);
-BT_PLUGIN_FILTER_COMPONENT_CLASS(<%= component_name %>, <%= component_name %>_message_iterator_next);
+BT_PLUGIN_FILTER_COMPONENT_CLASS(<%= component_name %>,
+                                 <%= component_name %>_message_iterator_next);
 
-BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD(<%= component_name %>,
-                                                 <%= component_name %>_initialize);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD(<%= component_name %>,
-                                               <%= component_name %>_finalize);
+BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD(
+    <%= component_name %>, <%= component_name %>_initialize);
+BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD(
+    <%= component_name %>, <%= component_name %>_finalize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
     <%= component_name %>, <%= component_name %>_message_iterator_initialize);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(<%= component_name %>,
-    <%= component_name %>_message_iterator_finalize);
+BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(
+    <%= component_name %>, <%= component_name %>_message_iterator_finalize);
