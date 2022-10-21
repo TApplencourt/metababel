@@ -1,5 +1,5 @@
-#include "create.h"
 #include "dispatch.h"
+#include "component.h"
 #include "utlist.h"
 #include <babeltrace2/babeltrace.h>
 
@@ -26,7 +26,7 @@ btx_downstream_trace_class_create_rec(bt_self_component *self_component) {
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   bt_trace *trace = bt_trace_create(trace_class);
-  <% downstream_streams.each_with_index do |_,i| %>
+  <% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream_class *stream_class =
         bt_trace_class_borrow_stream_class_by_index(trace_class, <%= i %>);

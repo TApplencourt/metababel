@@ -1,9 +1,9 @@
-#include "create.h"
 #include "dispacher_t.h"
 #include "dispatch.h"
 #include "utarray.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
+#include "component.h"
 
 <% dispatchers.each do |e| %>
 static void btx_dispatch_<%= e.name_sanitized %>(

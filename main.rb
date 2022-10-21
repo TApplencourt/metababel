@@ -69,7 +69,7 @@ def wrote_creates(folder, component_name, hash_type, hash_name, t)
       t.get_declarator(variable: 'trace_class')
     end
 
-    downstream_streams = t.stream_classes
+    stream_classes = t.stream_classes
 
     erb_render_and_save('create.h', folder, binding)
     erb_render_and_save('create.c', folder, binding)
@@ -118,6 +118,8 @@ File.open(File.join(folder, "#{component_name}.c"), 'w') do |f|
   str = ERB.new(template, trim_mode: '<>').result(binding)
   f.write(str)
 end
+
+erb_render_and_save('component.h', folder, binding)
 
 y = YAML.load_file(options[:upstream])
 t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)

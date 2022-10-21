@@ -1,25 +1,6 @@
 #pragma once
 #include <babeltrace2/babeltrace.h>
-#include "dispacher_t.h" 
-
-struct el {
-  const bt_message *message;
-  struct el *next, *prev;
-};
-
-struct <%= component_name %>_usr_data {};
-
-struct <%= component_name %>_common_data {
-  /* Component's input port (weak) */
-  bt_self_component_port_input *in_port;
-  bt_trace *downstream_trace;
-  bt_self_message_iterator *self_message_iterator;
-
-  <%= hash_type %> *name_to_dispatcher;
-  struct <%= component_name %>_usr_data *usr_data;
-  struct el *queue;
-  struct el *pool;
-};
+#include "component.h"
 
 void btx_downstream_push_message(
     struct <%= component_name %>_common_data *common_data,
