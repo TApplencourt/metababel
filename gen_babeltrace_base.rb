@@ -463,6 +463,9 @@ module Babeltrace2Gen
   class BTFieldClass::Real < BTFieldClass
   end
 
+    @bt_type = 'float'
+    @bt_func = 'bt_field_real_single_precision_%s_value'
+
   class BTFieldClass::Real::SinglePrecision < BTFieldClass::Real
     extend BTFromH
     def get_declarator(trace_class:, variable:)
@@ -471,6 +474,10 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Real::DoublePrecision < BTFieldClass::Real
+
+    @bt_type = 'double'
+    @bt_func = 'bt_field_real_double_precision_%s_value'
+
     extend BTFromH
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_real_double_precision_create(#{trace_class});"
