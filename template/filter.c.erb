@@ -97,8 +97,10 @@ consume_upstream_messages:
     lockup_dispatcher(common_data, event_class, &s);
     if (s) {
       (*(s->dispatcher))(s->callbacks, common_data, event);
+      bt_message_put_ref(upstream_message);
+    } else {
+      btx_downstream_push_message(common_data, upstream_message);
     }
-    bt_message_put_ref(upstream_message);
   }
 
   if (!common_data->queue) {
