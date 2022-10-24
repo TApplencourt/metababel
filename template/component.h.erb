@@ -3,7 +3,22 @@
 
 struct <%= component_name %>_usr_data {};
 
-<% if options[:component] == 'FILTER' %>
+<% if options[:component] == 'SOURCE' %>
+struct el {
+  const bt_message *message;
+  struct el *next, *prev;
+};
+
+struct <%= component_name %>_common_data {
+  struct <%= component_name %>_usr_data *usr_data;
+  bt_trace *downstream_trace;
+  /* Used by create.c */
+  bt_self_message_iterator *self_message_iterator;
+  /* Handling the downstream message queue */
+  struct el *queue;
+  struct el *pool;
+};
+<% elsif options[:component] == 'FILTER' %>
 struct el {
   const bt_message *message;
   struct el *next, *prev;
@@ -15,6 +30,7 @@ struct <%= component_name %>_common_data {
   /* Component's input port (weak) */
   bt_self_component_port_input *in_port;
   bt_trace *downstream_trace;
+  /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
   /* Handling the downstream message queue */
   struct el *queue;

@@ -102,6 +102,8 @@ if options[:component] == 'SINK'
   template = File.read(File.join(SRC_DIR, 'template/sink.c.erb'))
 elsif options[:component] == 'FILTER'
   template = File.read(File.join(SRC_DIR, 'template/filter.c.erb'))
+elsif options[:component] == 'SOURCE'
+  template = File.read(File.join(SRC_DIR, 'template/source.c.erb'))
 end
 
 # Need to be passed as arguments
@@ -121,11 +123,13 @@ end
 
 erb_render_and_save('component.h', folder, binding)
 
-y = YAML.load_file(options[:upstream])
-t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
+if options[:component] == 'FILTER' or  options[:component] == 'SINK'
+  y = YAML.load_file(options[:upstream])
+  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
+end 
 
-if options[:component] == 'FILTER'
+if options[:component] == 'FILTER' or  options[:component] == 'SOURCE'
   y = YAML.load_file(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, component_name, hash_type, hash_name, t)
