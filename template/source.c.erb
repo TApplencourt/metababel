@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "create.h"
 #include "component.h"
+#include "create.h"
 #include "my_callbacks.h"
 
 /* Loosely inspired by
- * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-src-cmp-cls.html 
+ * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-src-cmp-cls.html
  */
 
 /* Message iterator's private data */
@@ -21,12 +21,10 @@ struct <%= component_name %>_message_iterator {
 /*
  *  Handle Upstream Messages
  */
-static
-bt_message_iterator_class_next_method_status source_message_iterator_next(
-        bt_self_message_iterator *self_message_iterator,
-        bt_message_array_const messages, uint64_t capacity,
-        uint64_t *count)
-{
+static bt_message_iterator_class_next_method_status
+source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
+                             bt_message_array_const messages, uint64_t capacity,
+                             uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
   struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
       bt_self_message_iterator_get_data(self_message_iterator);
@@ -36,13 +34,14 @@ bt_message_iterator_class_next_method_status source_message_iterator_next(
 
   /* Initialize the return status to a success */
   bt_message_iterator_class_next_method_status status =
-    BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+      BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 
-  /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must not put any message into the message array */
-  if (!common_data->queue) 
-       status= BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+  /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
+   * not put any message into the message array */
+  if (!common_data->queue)
+    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
 
- for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
+  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
     struct el *elt = common_data->queue;
     messages[*count] = elt->message;
     DL_DELETE(common_data->queue, elt);
@@ -56,41 +55,39 @@ bt_message_iterator_class_next_method_status source_message_iterator_next(
 /*
  * Initializes the source component.
  */
-bt_component_class_initialize_method_status source_initialize(
-        bt_self_component_source *self_component_source,
-        bt_self_component_source_configuration *configuration,
-        const bt_value *params, void *initialize_method_data)
-{
+bt_component_class_initialize_method_status
+source_initialize(bt_self_component_source *self_component_source,
+                  bt_self_component_source_configuration *configuration,
+                  const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
   struct <%= component_name %>_common_data *common_data =
       calloc(1, sizeof(struct <%= component_name %>_common_data));
 
- 
-    /* Upcast `self_component_source` to the `bt_self_component` type */
-    bt_self_component *self_component =
-        bt_self_component_source_as_self_component(self_component_source);
+  /* Upcast `self_component_source` to the `bt_self_component` type */
+  bt_self_component *self_component =
+      bt_self_component_source_as_self_component(self_component_source);
 
-    bt_trace_class *trace_class =
-        btx_downstream_trace_class_create_rec(self_component);
+  bt_trace_class *trace_class =
+      btx_downstream_trace_class_create_rec(self_component);
 
-    /* Instantiate a `downstream_trace` of `trace_class` and all the children
-     * stream */
-    common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
- 
-    /* Set the component's user data to our private data structure */
-    bt_self_component_set_data(self_component, common_data);
+  /* Instantiate a `downstream_trace` of `trace_class` and all the children
+   * stream */
+  common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
 
-    /*
-     * Add an output port named `out` to the source component.
-     *
-     * This is needed so that this source component can be connected to
-     * a filter or a sink component. Once a downstream component is
-     * connected, it can create our message iterator.
-     */
-    bt_self_component_source_add_output_port(self_component_source,
-        "out", NULL, NULL);
- 
-    return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
+  /* Set the component's user data to our private data structure */
+  bt_self_component_set_data(self_component, common_data);
+
+  /*
+   * Add an output port named `out` to the source component.
+   *
+   * This is needed so that this source component can be connected to
+   * a filter or a sink component. Once a downstream component is
+   * connected, it can create our message iterator.
+   */
+  bt_self_component_source_add_output_port(self_component_source, "out", NULL,
+                                           NULL);
+
+  return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
 /*
@@ -117,19 +114,12 @@ source_message_iterator_initialize(
   /* Keep a link to the component's private data */
   <%= component_name %>_iter->common_data = <%= component_name %>_common_data;
 
-  /* Enqueue all the message stream creation */
-  //btx_enqueue_messages_stream_beginnng_create(self_message_iterator, <%= component_name %>_common_data->trace);
-
-  bt_stream *stream = bt_trace_borrow_stream_by_index(
-       <%= component_name %>_common_data->downstream_trace, 0);
-  // Need for the muxer
-  bt_message* message = bt_message_stream_beginning_create(self_message_iterator, stream);
-  btx_downstream_push_message( <%= component_name %>_common_data, message);
-
-  btx_push_user_messages( <%= component_name %>_common_data);
-
-  bt_message* message2 = bt_message_stream_end_create(self_message_iterator, stream);
-  btx_downstream_push_message( <%= component_name %>_common_data, message2);
+  /* Beging of the stream */
+  btx_push_messages_stream_beginning(<%= component_name %>_common_data);
+  /* User message */
+  btx_push_user_messages(<%= component_name %>_common_data);
+  /* End of the stream */
+  btx_push_messages_stream_end(<%= component_name %>_common_data);
 
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,

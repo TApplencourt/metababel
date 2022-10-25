@@ -1,6 +1,6 @@
 #pragma once
-#include <babeltrace2/babeltrace.h>
 #include "component.h"
+#include <babeltrace2/babeltrace.h>
 
 void btx_downstream_push_message(
     struct <%= component_name %>_common_data *common_data,
@@ -10,6 +10,11 @@ bt_trace_class *
 btx_downstream_trace_class_create_rec(bt_self_component *self_component);
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class);
+
+void btx_push_messages_stream_beginning(
+    struct <%= component_name %>_common_data *common_data);
+void btx_push_messages_stream_end(
+    struct <%= component_name %>_common_data *common_data);
 
 <% downstream_events.each do |e| %>
 void btx_push_message_<%= e.name_sanitized %>(

@@ -1,5 +1,5 @@
-#include "dispatch.h"
 #include "component.h"
+#include "dispatch.h"
 #include "utlist.h"
 #include <babeltrace2/babeltrace.h>
 
@@ -41,6 +41,32 @@ static void btx_set_message_<%= e.name_sanitized %>(
     bt_event *event,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
   <%= e.body %>
+}
+
+void btx_push_messages_stream_beginning(
+    struct <%= component_name %>_common_data *common_data) {
+  bt_trace *trace = common_data->downstream_trace;
+  <% stream_classes.each_with_index do |_,i| %>
+  {
+    bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+    bt_message *message = bt_message_stream_beginning_create(
+        common_data->self_message_iterator, stream);
+    btx_downstream_push_message(common_data, message);
+  }
+  <% end %>
+}
+
+void btx_push_messages_stream_end(
+    struct <%= component_name %>_common_data *common_data) {
+  bt_trace *trace = common_data->downstream_trace;
+  <% stream_classes.each_with_index do |_,i| %>
+  {
+    bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+    bt_message *message = bt_message_stream_end_create(
+        common_data->self_message_iterator, stream);
+    btx_downstream_push_message(common_data, message);
+  }
+  <% end %>
 }
 
 void btx_push_message_<%= e.name_sanitized %>(
