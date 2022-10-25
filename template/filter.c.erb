@@ -14,7 +14,7 @@
  */
 
 /* Message iterator's private data */
-struct <%= component_name %>_message_iterator {
+struct message_iterator_s {
   /* (Weak) link to the component's private data */
   struct common_data_s *common_data;
   /* Upstream message iterator (owned by this) */
@@ -38,11 +38,11 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                              uint64_t *count) {
 
   /* Retrieve our private data from the message iterator's user data */
-  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
+  struct message_iterator_s *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   struct common_data_s *common_data =
-      <%= component_name %>_iter->common_data;
+      message_iterator_private_data->common_data;
 
   /* Initialize the return status to a success */
   bt_message_iterator_class_next_method_status status =
@@ -62,7 +62,7 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
   bt_message_array_const upstream_messages;
 
   bt_message_iterator_next_status next_status =
-      bt_message_iterator_next(<%= component_name %>_iter->message_iterator,
+      bt_message_iterator_next(message_iterator_private_data->message_iterator,
                                &upstream_messages, &upstream_message_count);
 
   /* We cannot have any message left in the downstream queue
@@ -70,7 +70,7 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
     /* End of iteration: put the message iterator's reference */
-    bt_message_iterator_put_ref(<%= component_name %>_iter->message_iterator);
+    bt_message_iterator_put_ref(message_iterator_private_data->message_iterator);
     status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
     goto end;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
@@ -197,29 +197,29 @@ filter_message_iterator_initialize(
     bt_self_message_iterator_configuration *configuration,
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
-  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
-      malloc(sizeof(*<%= component_name %>_iter));
+  struct message_iterator_s *message_iterator_private_data =
+      malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
-  struct common_data_s *<%= component_name %>_common_data =
+  struct common_data_s *common_data =
       bt_self_component_get_data(
           bt_self_message_iterator_borrow_component(self_message_iterator));
 
   /* Save a link to the self_message_iterator */
-  <%= component_name %>_common_data->self_message_iterator =
+  common_data->self_message_iterator =
       self_message_iterator;
 
   /* Keep a link to the component's private data */
-  <%= component_name %>_iter->common_data = <%= component_name %>_common_data;
+  message_iterator_private_data->common_data = common_data;
 
   /* Create the upstream message iterator */
   bt_message_iterator_create_from_message_iterator(
-      self_message_iterator, <%= component_name %>_common_data->in_port,
-      &<%= component_name %>_iter->message_iterator);
+      self_message_iterator, common_data->in_port,
+      &message_iterator_private_data->message_iterator);
 
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,
-                                    <%= component_name %>_iter);
+                                    message_iterator_private_data);
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -242,11 +242,11 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
 static void filter_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
-  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
+  struct message_iterator_s *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   /* Free the allocated structure */
-  free(<%= component_name %>_iter);
+  free(message_iterator_private_data);
 }
 
 /* Mandatory */

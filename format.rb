@@ -1,7 +1,6 @@
 require 'open3'
 
-str_ = File.read(ARGV[0])
-
+def format_erb(str_)
 r = /<%\s+(.*?)\s*%>/
 
 d_sub = {}
@@ -31,4 +30,12 @@ d_sub.each { |k,v|
   str_.gsub!(/#{k}/,v)
 }
 
-File.write(ARGV[0], str_)
+str_
+end
+
+ARGV.each { |f|
+  
+  str_ = File.read(ARGV[0])
+  str_ = format_erb(str_)
+  File.write(ARGV[0], str_)
+}

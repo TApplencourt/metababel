@@ -13,7 +13,7 @@
  */
 
 /* Message iterator's private data */
-struct <%= component_name %>_message_iterator {
+struct message_iterator_s {
   /* (Weak) link to the component's private data */
   struct common_data_s *common_data;
 };
@@ -26,11 +26,11 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                              bt_message_array_const messages, uint64_t capacity,
                              uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
-  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
+  struct message_iterator_s *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   struct common_data_s *common_data =
-      <%= component_name %>_iter->common_data;
+      message_iterator_private_data->common_data;
 
   /* Initialize the return status to a success */
   bt_message_iterator_class_next_method_status status =
@@ -99,31 +99,31 @@ source_message_iterator_initialize(
     bt_self_message_iterator_configuration *configuration,
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
-  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
-      malloc(sizeof(*<%= component_name %>_iter));
+  struct message_iterator_s *message_iterator_private_data =
+      malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
-  struct common_data_s *<%= component_name %>_common_data =
+  struct common_data_s *common_data =
       bt_self_component_get_data(
           bt_self_message_iterator_borrow_component(self_message_iterator));
 
   /* Save a link to the self_message_iterator */
-  <%= component_name %>_common_data->self_message_iterator =
+  common_data->self_message_iterator =
       self_message_iterator;
 
   /* Keep a link to the component's private data */
-  <%= component_name %>_iter->common_data = <%= component_name %>_common_data;
+  message_iterator_private_data->common_data = common_data;
 
   /* Beging of the stream */
-  btx_push_messages_stream_beginning(<%= component_name %>_common_data);
+  btx_push_messages_stream_beginning(common_data);
   /* User message */
-  btx_push_user_messages(<%= component_name %>_common_data);
+  btx_push_user_messages(common_data);
   /* End of the stream */
-  btx_push_messages_stream_end(<%= component_name %>_common_data);
+  btx_push_messages_stream_end(common_data);
 
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,
-                                    <%= component_name %>_iter);
+                                    message_iterator_private_data);
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -146,11 +146,11 @@ static void source_finalize(bt_self_component_source *self_component_source) {
 static void source_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
-  struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
+  struct message_iterator_s *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   /* Free the allocated structure */
-  free(<%= component_name %>_iter);
+  free(message_iterator_private_data);
 }
 
 /* Mandatory */
