@@ -69,18 +69,19 @@ void btx_push_messages_stream_end(struct common_data_s *common_data) {
 void btx_push_message_<%= e.name_sanitized %>(
     struct common_data_s *common_data,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
-  // Stream
   bt_stream *stream = bt_trace_borrow_stream_by_index(
       common_data->downstream_trace, <%= e.index_stream_class %>);
   bt_stream_class *stream_class = bt_stream_borrow_class(stream);
   bt_event_class *event_class = bt_stream_class_borrow_event_class_by_index(
       stream_class, <%= e.index_event_class %>);
+
   bt_message *message = bt_message_event_create(
       common_data->self_message_iterator, event_class, stream);
   bt_event *downstream_event = bt_message_event_borrow_event(message);
 
   btx_set_message_<%= e.name_sanitized %>(
       downstream_event, <%= e.args.map{ |s| s.name }.join(", ") %>);
+
   btx_downstream_push_message(common_data, message);
 }
 <% end %>
