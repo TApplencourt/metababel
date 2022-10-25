@@ -3,9 +3,8 @@
 #include "utlist.h"
 #include <babeltrace2/babeltrace.h>
 
-void btx_downstream_push_message(
-    struct common_data_s *common_data,
-    const bt_message *message) {
+void btx_downstream_push_message(struct common_data_s *common_data,
+                                 const bt_message *message) {
   struct el *elt;
   if (common_data->pool) {
     elt = common_data->pool;
@@ -43,8 +42,7 @@ static void btx_set_message_<%= e.name_sanitized %>(
   <%= e.body %>
 }
 
-void btx_push_messages_stream_beginning(
-    struct common_data_s *common_data) {
+void btx_push_messages_stream_beginning(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
   {
@@ -56,8 +54,7 @@ void btx_push_messages_stream_beginning(
   <% end %>
 }
 
-void btx_push_messages_stream_end(
-    struct common_data_s *common_data) {
+void btx_push_messages_stream_end(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
   {

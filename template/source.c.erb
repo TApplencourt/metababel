@@ -60,8 +60,7 @@ source_initialize(bt_self_component_source *self_component_source,
                   bt_self_component_source_configuration *configuration,
                   const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
-  struct common_data_s *common_data =
-      calloc(1, sizeof(struct common_data_s));
+  struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
@@ -103,13 +102,11 @@ source_message_iterator_initialize(
       malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_message_iterator_borrow_component(self_message_iterator));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_message_iterator_borrow_component(self_message_iterator));
 
   /* Save a link to the self_message_iterator */
-  common_data->self_message_iterator =
-      self_message_iterator;
+  common_data->self_message_iterator = self_message_iterator;
 
   /* Keep a link to the component's private data */
   message_iterator_private_data->common_data = common_data;
@@ -129,9 +126,8 @@ source_message_iterator_initialize(
 }
 
 static void source_finalize(bt_self_component_source *self_component_source) {
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_component_source_as_self_component(self_component_source));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_component_source_as_self_component(self_component_source));
   /* Free the allocated structure */
   free(common_data->usr_data);
 

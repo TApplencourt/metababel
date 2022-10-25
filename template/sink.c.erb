@@ -13,9 +13,9 @@
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-sink-cmp-cls.html
  */
 
-static void
-lockup_dispatcher(struct common_data_s *common_data,
-                  const bt_event_class *event_class, <%= hash_type %> **s) {
+static void lockup_dispatcher(struct common_data_s *common_data,
+                              const bt_event_class *event_class,
+                              <%= hash_type %> **s) {
   const char *class_name = bt_event_class_get_name(event_class);
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
@@ -31,9 +31,8 @@ sink_consume(bt_self_component_sink *self_component_sink) {
 
   /* Retrieve our private data from the component's user data */
   /* This containt user data and the message iterator */
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_component_sink_as_self_component(self_component_sink));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_component_sink_as_self_component(self_component_sink));
 
   /* Consume a batch of messages from the upstream message iterator */
   bt_message_array_const messages;
@@ -89,8 +88,7 @@ sink_initialize(bt_self_component_sink *self_component_sink,
                 bt_self_component_sink_configuration *configuration,
                 const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
-  struct common_data_s *common_data =
-      calloc(1, sizeof(struct common_data_s));
+  struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
   /* Register User Callbacks */
   btx_usr_register_callbacks(&common_data->name_to_dispatcher);
@@ -113,9 +111,8 @@ sink_initialize(bt_self_component_sink *self_component_sink,
 }
 
 static void sink_finalize(bt_self_component_sink *self_component_sink) {
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_component_sink_as_self_component(self_component_sink));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_component_sink_as_self_component(self_component_sink));
   /* Free the allocated structure */
   free(common_data->usr_data);
   free(common_data);
@@ -130,9 +127,8 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
 static bt_component_class_sink_graph_is_configured_method_status
 sink_graph_is_configured(bt_self_component_sink *self_component_sink) {
   /* Retrieve our private data from the component's user data */
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_component_sink_as_self_component(self_component_sink));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_component_sink_as_self_component(self_component_sink));
 
   /* Borrow our unique port */
   bt_self_component_port_input *in_port =

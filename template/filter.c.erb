@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "component.h"
 #include "create.h"
 #include "dispatch.h"
 #include "my_callbacks.h"
-#include "component.h"
 
 /* Loosely inspired by
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-flt-cmp-cls.html
@@ -21,9 +21,9 @@ struct message_iterator_s {
   bt_message_iterator *message_iterator;
 };
 
-static void
-lockup_dispatcher(struct common_data_s *common_data,
-                  const bt_event_class *event_class, <%= hash_type %> **s) {
+static void lockup_dispatcher(struct common_data_s *common_data,
+                              const bt_event_class *event_class,
+                              <%= hash_type %> **s) {
   const char *class_name = bt_event_class_get_name(event_class);
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
@@ -70,7 +70,8 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
     /* End of iteration: put the message iterator's reference */
-    bt_message_iterator_put_ref(message_iterator_private_data->message_iterator);
+    bt_message_iterator_put_ref(
+        message_iterator_private_data->message_iterator);
     status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
     goto end;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
@@ -146,8 +147,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
                   const bt_value *params, void *initialize_method_data) {
 
   /* Allocate a private data structure */
-  struct common_data_s *common_data =
-      calloc(1, sizeof(struct common_data_s));
+  struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
   /* Register User Callbacks */
   btx_usr_register_callbacks(&common_data->name_to_dispatcher);
@@ -201,13 +201,11 @@ filter_message_iterator_initialize(
       malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_message_iterator_borrow_component(self_message_iterator));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_message_iterator_borrow_component(self_message_iterator));
 
   /* Save a link to the self_message_iterator */
-  common_data->self_message_iterator =
-      self_message_iterator;
+  common_data->self_message_iterator = self_message_iterator;
 
   /* Keep a link to the component's private data */
   message_iterator_private_data->common_data = common_data;
@@ -225,9 +223,8 @@ filter_message_iterator_initialize(
 }
 
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
-  struct common_data_s *common_data =
-      bt_self_component_get_data(
-          bt_self_component_filter_as_self_component(self_component_filter));
+  struct common_data_s *common_data = bt_self_component_get_data(
+      bt_self_component_filter_as_self_component(self_component_filter));
   /* Free the allocated structure */
   free(common_data->usr_data);
 
