@@ -5,7 +5,7 @@
 <% dispatchers.each do |e| %>
 <%# The signature type of callbacks %>
 typedef void <%= e.name_sanitized %>_callback_f(
-    struct <%= component_name %>_common_data *common_data,
+    struct common_data_s *common_data,
     <%= e.args.map{ |s| s.type }.join(", ") %>);
 <%# The Function who register the callbacks to the dispatcher %>
 void btx_register_callbacks_<%= e.name_sanitized %>(

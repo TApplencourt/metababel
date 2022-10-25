@@ -15,7 +15,7 @@
 /* Message iterator's private data */
 struct <%= component_name %>_message_iterator {
   /* (Weak) link to the component's private data */
-  struct <%= component_name %>_common_data *common_data;
+  struct common_data_s *common_data;
 };
 
 /*
@@ -29,7 +29,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   struct <%= component_name %>_message_iterator *<%= component_name %>_iter =
       bt_self_message_iterator_get_data(self_message_iterator);
 
-  struct <%= component_name %>_common_data *common_data =
+  struct common_data_s *common_data =
       <%= component_name %>_iter->common_data;
 
   /* Initialize the return status to a success */
@@ -60,8 +60,8 @@ source_initialize(bt_self_component_source *self_component_source,
                   bt_self_component_source_configuration *configuration,
                   const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
-  struct <%= component_name %>_common_data *common_data =
-      calloc(1, sizeof(struct <%= component_name %>_common_data));
+  struct common_data_s *common_data =
+      calloc(1, sizeof(struct common_data_s));
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
@@ -103,7 +103,7 @@ source_message_iterator_initialize(
       malloc(sizeof(*<%= component_name %>_iter));
 
   /* Retrieve the component's private data from its user data */
-  struct <%= component_name %>_common_data *<%= component_name %>_common_data =
+  struct common_data_s *<%= component_name %>_common_data =
       bt_self_component_get_data(
           bt_self_message_iterator_borrow_component(self_message_iterator));
 
@@ -129,7 +129,7 @@ source_message_iterator_initialize(
 }
 
 static void source_finalize(bt_self_component_source *self_component_source) {
-  struct <%= component_name %>_common_data *common_data =
+  struct common_data_s *common_data =
       bt_self_component_get_data(
           bt_self_component_source_as_self_component(self_component_source));
   /* Free the allocated structure */

@@ -4,7 +4,7 @@
 #include <babeltrace2/babeltrace.h>
 
 void btx_downstream_push_message(
-    struct <%= component_name %>_common_data *common_data,
+    struct common_data_s *common_data,
     const bt_message *message) {
   struct el *elt;
   if (common_data->pool) {
@@ -44,7 +44,7 @@ static void btx_set_message_<%= e.name_sanitized %>(
 }
 
 void btx_push_messages_stream_beginning(
-    struct <%= component_name %>_common_data *common_data) {
+    struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
   {
@@ -57,7 +57,7 @@ void btx_push_messages_stream_beginning(
 }
 
 void btx_push_messages_stream_end(
-    struct <%= component_name %>_common_data *common_data) {
+    struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
   {
@@ -70,7 +70,7 @@ void btx_push_messages_stream_end(
 }
 
 void btx_push_message_<%= e.name_sanitized %>(
-    struct <%= component_name %>_common_data *common_data,
+    struct common_data_s *common_data,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
   // Stream
   bt_stream *stream = bt_trace_borrow_stream_by_index(

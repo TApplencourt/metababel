@@ -9,7 +9,7 @@ struct el {
   struct el *next, *prev;
 };
 
-struct <%= component_name %>_common_data {
+struct common_data_s {
   struct <%= component_name %>_usr_data *usr_data;
   bt_trace *downstream_trace;
   /* Used by create.c */
@@ -24,7 +24,7 @@ struct el {
   struct el *next, *prev;
 };
 
-struct <%= component_name %>_common_data {
+struct common_data_s {
   <%= hash_type %> *name_to_dispatcher;
   struct <%= component_name %>_usr_data *usr_data;
   /* Component's input port (weak) */
@@ -37,7 +37,7 @@ struct <%= component_name %>_common_data {
   struct el *pool;
 };
 <% elsif options[:component] == 'SINK' %>
-struct <%= component_name %>_common_data {
+struct common_data_s {
   <%= hash_type %> *name_to_dispatcher;
   struct <%= component_name %>_usr_data *usr_data;
   /* Upstream message iterator (owned by this) */
