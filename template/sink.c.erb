@@ -93,12 +93,8 @@ sink_initialize(bt_self_component_sink *self_component_sink,
       calloc(1, sizeof(struct <%= component_name %>_common_data));
 
   /* Register User Callbacks */
-  usr_register_callbacks(&common_data->name_to_dispatcher);
+  btx_usr_register_callbacks(&common_data->name_to_dispatcher);
 
-  // btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(&common_data->name_to_dispatcher,
-  // 10);
-  // btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(&common_data->name_to_dispatcher,
-  // 20);
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
       bt_self_component_sink_as_self_component(self_component_sink),

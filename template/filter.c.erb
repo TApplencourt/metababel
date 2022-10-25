@@ -150,7 +150,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
       calloc(1, sizeof(struct <%= component_name %>_common_data));
 
   /* Register User Callbacks */
-  usr_register_callbacks(&common_data->name_to_dispatcher);
+  btx_usr_register_callbacks(&common_data->name_to_dispatcher);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
