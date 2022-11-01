@@ -91,7 +91,6 @@ OptionParser.new do |opts|
   opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
     options[:downstream] = p
   end
-
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component].nil?
@@ -123,14 +122,14 @@ end
 
 erb_render_and_save('component.h', folder, binding)
 
-if options[:component] == 'FILTER' or  options[:component] == 'SINK'
-  y = YAML.load_file(options[:upstream])
-  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
-end 
-
-if options[:component] == 'FILTER' or  options[:component] == 'SOURCE'
+if %w[SOURCE FILTER].include?(options[:component])
   y = YAML.load_file(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, component_name, hash_type, hash_name, t)
+end
+
+if %w[FILTER SINK].include?(options[:component])
+  y = YAML.load_file(options[:upstream])
+  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
 end
