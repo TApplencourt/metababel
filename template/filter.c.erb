@@ -150,7 +150,9 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
   /* Register User Callbacks */
-  btx_usr_register_callbacks(&common_data->name_to_dispatcher);
+  btx_register_usr_callbacks(&common_data->name_to_dispatcher);
+  /* Register User Data */
+  btx_initialize_usr_data(common_data);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
@@ -225,6 +227,8 @@ filter_message_iterator_initialize(
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
   struct common_data_s *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
+
+  btx_finalize_usr_data(common_data);
   /* Free the allocated structure */
   free(common_data->usr_data);
 

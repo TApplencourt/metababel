@@ -1,7 +1,9 @@
 #pragma once
 #include "component.h"
 #include <babeltrace2/babeltrace.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 void btx_downstream_push_message(struct common_data_s *common_data,
                                  const bt_message *message);
 
@@ -18,3 +20,6 @@ void btx_push_message_<%= e.name_sanitized %>(
     struct common_data_s *common_data,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>);
 <% end %>
+#ifdef __cplusplus
+}
+#endif

@@ -1,10 +1,10 @@
+#include "component.h"
+#include "dispatch.h"
+#include "my_callbacks.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "component.h"
-#include "dispatch.h"
-#include "my_callbacks.h"
 
 /* Losely based by
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-sink-cmp-cls.html
@@ -88,7 +88,9 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
   /* Register User Callbacks */
-  btx_usr_register_callbacks(&common_data->name_to_dispatcher);
+  btx_register_usr_callbacks(&common_data->name_to_dispatcher);
+  /* Register User Data */
+  btx_initialize_usr_data(common_data);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
@@ -110,6 +112,7 @@ sink_initialize(bt_self_component_sink *self_component_sink,
 static void sink_finalize(bt_self_component_sink *self_component_sink) {
   struct common_data_s *common_data = bt_self_component_get_data(
       bt_self_component_sink_as_self_component(self_component_sink));
+  btx_finalize_usr_data(common_data);
   /* Free the allocated structure */
   free(common_data->usr_data);
   free(common_data);
