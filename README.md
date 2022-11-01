@@ -4,18 +4,18 @@ Need to link with a object file who export the symbol `btx_usr_register_callback
 
 ## Source:
 
-Need to with a object file who export the symbol `btx_push_user_messages(struct xprof_common_data *common_data)`.
+Need to with a object file who export the symbol `btx_push_usr_messages(struct xprof_common_data *common_data)`.
 
 ## Source  & Filter
 	
-In the callbacks, and in the `btx_push_user_messages`, you have access to `btx_push_message_{stream_class_name}_#{event_class_name}(struct xprof_common_data *common_data, ...).
+In the callbacks, and in the `btx_push_usr_messages`, you have access to `btx_push_message_{stream_class_name}_#{event_class_name}(struct xprof_common_data *common_data, ...).
 
 # Source Description
 
 At initialization, we push messages to the downstream queue. 
 
 1. `btx_push_messages_stream_beginning`
-2. `btx_push_user_messages`
+2. `btx_push_usr_messages`
 3. `btx_push_messages_stream_end`
 
 ```mermaid
