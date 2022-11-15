@@ -6,11 +6,14 @@ EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_cl
   def name_sanitized
     name.gsub(/[^0-9A-Za-z\-]/, '_')
   end
+
 end
 
 def erb_render_and_save(basename, out_folder, b)
   template = File.read(File.join(SRC_DIR, "template/#{basename}.erb"))
-  str = ERB.new(template, trim_mode: '<>').result(b)
+  # We need to trim line who contain with space, because we indent ou erb <% modifier
+  # But then we want to remove them!
+  str = ERB.new(template, trim_mode: '<>').result(b).gsub(/^ +$\n/, "")
   File.open(File.join(out_folder, basename), 'w') do |f|
     f.write(str)
   end
@@ -26,6 +29,10 @@ class Babeltrace2Gen::BTTraceClass
   end
 end
 
+# We preprent an emptu new line from the body as a hack, to correct the indentation
+# Indeeed the <%= body %> will be indented, but we don't don't want it,
+# in the body string is already indented
+# But we clean the white space empty line afterward \o/
 def wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
   event_name = 'event'
   dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
@@ -33,7 +40,7 @@ def wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables, body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables, "\n"+body, index_stream_class, index_event_class)
   end
 
   erb_render_and_save('dispatch.h', folder, binding)
@@ -47,11 +54,11 @@ def wrote_creates(folder, component_name, hash_type, hash_name, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables, body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables, "\n"+body, index_stream_class, index_event_class)
   end
 
   self_component = 'self_component'
-  body_declarator_classes = Babeltrace2Gen.context(indent: 1) do
+  body_declarator_classes = "\n"+Babeltrace2Gen.context(indent: 1) do
     t.get_declarator(variable: 'trace_class')
   end
 

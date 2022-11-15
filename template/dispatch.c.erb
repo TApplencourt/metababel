@@ -9,10 +9,10 @@ static void
 btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
                                      struct common_data_s *common_data,
                                      const bt_event *<%= event_name %>) {
-<% e.args.each do |s| %>
+  <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
-<% end %>
-<%= e.body %>
+  <% end %>
+  <%= e.body %>
   // Call all the callbacks who where registered
   // Their type are declared in 'dispatch.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
