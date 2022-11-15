@@ -19,19 +19,19 @@ void btx_downstream_push_message(struct common_data_s *common_data,
 bt_trace_class *
 btx_downstream_trace_class_create_rec(bt_self_component *self_component) {
   bt_trace_class *trace_class = bt_trace_class_create(self_component);
-  <%= body_declarator_classes %>
+<%= body_declarator_classes %>
   return trace_class;
 }
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   bt_trace *trace = bt_trace_create(trace_class);
-  <% stream_classes.each_with_index do |_,i| %>
+<% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream_class *stream_class =
         bt_trace_class_borrow_stream_class_by_index(trace_class, <%= i %>);
     bt_stream_create(stream_class, trace);
   }
-  <% end %>
+<% end %>
   return trace;
 }
 
@@ -39,31 +39,31 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
 static void btx_set_message_<%= e.name_sanitized %>(
     bt_event *event,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
-  <%= e.body %>
+<%= e.body %>
 }
 
 void btx_push_messages_stream_beginning(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
-  <% stream_classes.each_with_index do |_,i| %>
+<% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
     bt_message *message = bt_message_stream_beginning_create(
         common_data->self_message_iterator, stream);
     btx_downstream_push_message(common_data, message);
   }
-  <% end %>
+<% end %>
 }
 
 void btx_push_messages_stream_end(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
-  <% stream_classes.each_with_index do |_,i| %>
+<% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
     bt_message *message = bt_message_stream_end_create(
         common_data->self_message_iterator, stream);
     btx_downstream_push_message(common_data, message);
   }
-  <% end %>
+<% end %>
 }
 
 void btx_push_message_<%= e.name_sanitized %>(

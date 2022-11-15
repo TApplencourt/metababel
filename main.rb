@@ -1,18 +1,7 @@
 require 'yaml'
 require 'optparse'
 require 'erb'
-
 require './gen_babeltrace_base'
-
-class String
-  # https://apidock.com/rails/String/indent
-  def indent(amount, indent_string: nil, indent_empty_lines: false)
-    indent_string = indent_string || self[/^[ \t]/] || ' '
-    re = indent_empty_lines ? /^/ : /^(?!$)/
-    gsub(re, indent_string * amount)
-  end
-end
-
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z\-]/, '_')
@@ -39,41 +28,37 @@ end
 
 def wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
   event_name = 'event'
-  begin
-    dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
-      arg_variables = []
-      body = Babeltrace2Gen.context(indent: 1) do
-        e.get_getter(event: event_name, arg_variables: arg_variables)
-      end
-      EventInfo.new(e.name, arg_variables, body, index_stream_class, index_event_class)
+  dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
+    arg_variables = []
+    body = Babeltrace2Gen.context(indent: 1) do
+      e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-
-    erb_render_and_save('dispatch.h', folder, binding)
-    erb_render_and_save('dispatch.c', folder, binding)
+    EventInfo.new(e.name, arg_variables, body, index_stream_class, index_event_class)
   end
+
+  erb_render_and_save('dispatch.h', folder, binding)
+  erb_render_and_save('dispatch.c', folder, binding)
 end
 
 def wrote_creates(folder, component_name, hash_type, hash_name, t)
   event_name = 'event'
-  begin
-    downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
-      arg_variables = []
-      body = Babeltrace2Gen.context(indent: 1) do
-        e.get_setter(event: event_name, arg_variables: arg_variables)
-      end
-      EventInfo.new(e.name, arg_variables, body, index_stream_class, index_event_class)
+  downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
+    arg_variables = []
+    body = Babeltrace2Gen.context(indent: 1) do
+      e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-
-    self_component = 'self_component'
-    body_declarator_classes = Babeltrace2Gen.context(indent: 1) do
-      t.get_declarator(variable: 'trace_class')
-    end
-
-    stream_classes = t.stream_classes
-
-    erb_render_and_save('create.h', folder, binding)
-    erb_render_and_save('create.c', folder, binding)
+    EventInfo.new(e.name, arg_variables, body, index_stream_class, index_event_class)
   end
+
+  self_component = 'self_component'
+  body_declarator_classes = Babeltrace2Gen.context(indent: 1) do
+    t.get_declarator(variable: 'trace_class')
+  end
+
+  stream_classes = t.stream_classes
+
+  erb_render_and_save('create.h', folder, binding)
+  erb_render_and_save('create.c', folder, binding)
 end
 
 options = {}
