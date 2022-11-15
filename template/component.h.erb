@@ -45,6 +45,7 @@ struct common_data_s {
   struct el *queue;
   struct el *pool;
 };
+
 <% elsif options[:component] == 'FILTER' %>
 struct common_data_s {
   <%= hash_type %> *name_to_dispatcher;
@@ -58,6 +59,7 @@ struct common_data_s {
   struct el *queue;
   struct el *pool;
 };
+
 <% elsif options[:component] == 'SINK' %>
 struct common_data_s {
   <%= hash_type %> *name_to_dispatcher;
@@ -65,6 +67,15 @@ struct common_data_s {
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };
+
+<% end %>
+/* Users functions to implement */
+void btx_initialize_usr_data(common_data_t *common_data);
+void btx_finalize_usr_data(common_data_t *common_data);
+<% if options[:component] == 'SOURCE'  %>
+void btx_push_usr_messages(struct common_data_s *common_data);
+<% elsif ['FILTER', 'SINK'].include?(options[:component]) %>
+void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher);
 <% end %>
 
 #ifdef __cplusplus
