@@ -11,8 +11,11 @@ end
 
 def erb_render_and_save(basename, out_folder, b)
   template = File.read(File.join(SRC_DIR, "template/#{basename}.erb"))
-  # We need to trim line who contain with space, because we indent ou erb <% modifier
-  # But then we want to remove them!
+  # We need to trim line who contain only with space, because we indent our erb <% %> 
+  # But we really want to remove those line
+  # The trim_mode remove when it's start with
+  # And the regex remove the when who are indented
+  # Maybe related to `https://github.com/ruby/erb/issues/24` 
   str = ERB.new(template, trim_mode: '<>').result(b).gsub(/^ +$\n/, "")
   File.open(File.join(out_folder, basename), 'w') do |f|
     f.write(str)
