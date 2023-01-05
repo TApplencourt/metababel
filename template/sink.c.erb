@@ -58,7 +58,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
   for (uint64_t i = 0; i < message_count; i++) {
     const bt_message *message = messages[i];
     if (bt_message_get_type(message) != BT_MESSAGE_TYPE_EVENT) {
-      goto end;
+      continue;
     }
 
     /* Borrow the event message's event and its class */

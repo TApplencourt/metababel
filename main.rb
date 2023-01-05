@@ -1,16 +1,15 @@
 require 'yaml'
 require 'optparse'
 require 'erb'
-require './gen_babeltrace_base'
+require_relative 'gen_babeltrace_base'
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z\-]/, '_')
   end
-
 end
 
 def erb_render_and_save(basename, out_folder, b)
-  template = File.read(File.join(SRC_DIR, "template/#{basename}.erb"))
+  template = File.read(File.join(__dir__, "template/#{basename}.erb"))
   # We need to trim line who contain only with space, because we indent our erb <% %> 
   # But we really want to remove those line
   # The trim_mode remove when it's start with
@@ -86,6 +85,11 @@ OptionParser.new do |opts|
   opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
     options[:downstream] = p
   end
+
+  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 pluging created .') do |p|
+    options[:plugin_name] = p
+  end
+
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component].nil?
@@ -93,16 +97,16 @@ raise OptionParser::MissingArgument if options[:component].nil?
 SRC_DIR = ENV['SRC_DIR'] || '.'
 template = ''
 if options[:component] == 'SINK'
-  template = File.read(File.join(SRC_DIR, 'template/sink.c.erb'))
+  template = File.read(File.join(__dir__, 'template/sink.c.erb'))
 elsif options[:component] == 'FILTER'
-  template = File.read(File.join(SRC_DIR, 'template/filter.c.erb'))
+  template = File.read(File.join(__dir__, 'template/filter.c.erb'))
 elsif options[:component] == 'SOURCE'
-  template = File.read(File.join(SRC_DIR, 'template/source.c.erb'))
+  template = File.read(File.join(__dir__, 'template/source.c.erb'))
 end
 
 # Need to be passed as arguments
 component_name = 'xprof'
-plugin_name = 'roger'
+plugin_name = options.fetch(:plugin_name,"roger")
 
 hash_type = 'name_to_dispatcher_t'
 hash_name = 'name_to_dispatcher'
