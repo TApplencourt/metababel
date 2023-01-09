@@ -37,7 +37,7 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
 
 <% downstream_events.each do |e| %>
 static void btx_set_message_<%= e.name_sanitized %>(
-    bt_event *event,
+    bt_event *<%= event_name %>,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
   <%= e.body %>
 }

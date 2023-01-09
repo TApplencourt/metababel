@@ -47,7 +47,7 @@ struct common_data_s {
 };
 <% elsif options[:component] == 'FILTER' %>
 struct common_data_s {
-  <%= hash_type %> *name_to_dispatcher;
+  name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   /* Component's input port (weak) */
   bt_self_component_port_input *in_port;
@@ -60,7 +60,7 @@ struct common_data_s {
 };
 <% elsif options[:component] == 'SINK' %>
 struct common_data_s {
-  <%= hash_type %> *name_to_dispatcher;
+  name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;

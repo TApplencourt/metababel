@@ -22,20 +22,20 @@ btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
 }
 
 void btx_register_callbacks_<%= e.name_sanitized %>(
-    <%= hash_type %> **<%= hash_name %>,
+    name_to_dispatcher_t **name_to_dispatcher,
     <%= e.name_sanitized %>_callback_f *callback) {
   // Look-up our dispatcher
-  <%= hash_type %> *s = NULL;
-  HASH_FIND_STR(*<%= hash_name %>, "<%= e.name %>", s);
+  name_to_dispatcher_t *s = NULL;
+  HASH_FIND_STR(*name_to_dispatcher, "<%= e.name %>", s);
   if (!s) {
     // We didn't find the dispatcher, so we need to:
     // 1. Create it
-    s = (<%= hash_type %> *)malloc(sizeof(<%= hash_type %>));
+    s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
     s->name = "<%= e.name %>";
     s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
     utarray_new(s->callbacks, &ut_ptr_icd);
     // 2. Register it
-    HASH_ADD_KEYPTR(hh, *<%= hash_name %>, s->name, strlen(s->name), s);
+    HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
   }
   // Add the callbacks to the array
   utarray_push_back(s->callbacks, &callback);

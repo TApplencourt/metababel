@@ -2,21 +2,22 @@ require 'yaml'
 require 'optparse'
 require 'erb'
 require_relative 'gen_babeltrace_base'
+
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z\-]/, '_')
   end
 end
 
-def erb_render_and_save(basename, out_folder, b)
+def erb_render_and_save(vars,
+                        basename, out_folder, out_name = nil)
   template = File.read(File.join(__dir__, "template/#{basename}.erb"))
-  # We need to trim line who contain only with space, because we indent our erb <% %> 
-  # But we really want to remove those line
-  # The trim_mode remove when it's start with
-  # And the regex remove the when who are indented
-  # Maybe related to `https://github.com/ruby/erb/issues/24` 
-  str = ERB.new(template, trim_mode: '<>').result(b).gsub(/^ +$\n/, "")
-  File.open(File.join(out_folder, basename), 'w') do |f|
+  # We need to trim line who contain only with space, because we indent our erb block <% %>
+  # The trim_mode remove line only when it's start with the erb block
+  # The regex remove the lines who are not indented
+  # Maybe related to `https://github.com/ruby/erb/issues/24`
+  str = ERB.new(template, trim_mode: '<>').result_with_hash(vars).gsub(/^ +$\n/, '')
+  File.open(File.join(out_folder, out_name || basename), 'w') do |f|
     f.write(str)
   end
 end
@@ -35,42 +36,49 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
+def wrote_dispatchers(folder, t)
   event_name = 'event'
   dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables, "\n"+body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  erb_render_and_save('dispatch.h', folder, binding)
-  erb_render_and_save('dispatch.c', folder, binding)
+  d = { dispatchers: dispatchers,
+        event_name: event_name }
+
+  erb_render_and_save(d, 'dispatch.h', folder)
+  erb_render_and_save(d, 'dispatch.c', folder)
 end
 
-def wrote_creates(folder, component_name, hash_type, hash_name, t)
+def wrote_creates(folder, t)
   event_name = 'event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables, "\n"+body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  self_component = 'self_component'
-  body_declarator_classes = "\n"+Babeltrace2Gen.context(indent: 1) do
+  body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
     t.get_declarator(variable: 'trace_class')
   end
 
-  stream_classes = t.stream_classes
+  d = { body_declarator_classes: body_declarator_classes,
+        downstream_events: downstream_events,
+        stream_classes: t.stream_classes,
+        event_name: event_name }
 
-  erb_render_and_save('create.h', folder, binding)
-  erb_render_and_save('create.c', folder, binding)
+  erb_render_and_save(d, 'create.h', folder)
+  erb_render_and_save(d, 'create.c', folder)
 end
 
-options = {}
+options = { plugin_name: 'metababel',
+            component_name: 'xprof' }
+
 OptionParser.new do |opts|
   opts.banner = 'Usage: example.rb [options]'
 
@@ -86,49 +94,32 @@ OptionParser.new do |opts|
     options[:downstream] = p
   end
 
-  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 pluging created .') do |p|
+  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created .') do |p|
     options[:plugin_name] = p
   end
 
+  opts.on('--component-name PATH', '[Optional] Name of the bt2 componant created .') do |p|
+    options[:component_name] = p
+  end
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component].nil?
 
-SRC_DIR = ENV['SRC_DIR'] || '.'
-template = ''
-if options[:component] == 'SINK'
-  template = File.read(File.join(__dir__, 'template/sink.c.erb'))
-elsif options[:component] == 'FILTER'
-  template = File.read(File.join(__dir__, 'template/filter.c.erb'))
-elsif options[:component] == 'SOURCE'
-  template = File.read(File.join(__dir__, 'template/source.c.erb'))
-end
-
-# Need to be passed as arguments
-component_name = 'xprof'
-plugin_name = options.fetch(:plugin_name,"roger")
-
-hash_type = 'name_to_dispatcher_t'
-hash_name = 'name_to_dispatcher'
-
-folder = "#{options[:component]}.#{component_name}"
+folder = "#{options[:component]}.#{options[:component_name]}"
 Dir.mkdir(folder) unless File.exist?(folder)
 
-File.open(File.join(folder, "#{component_name}.c"), 'w') do |f|
-  str = ERB.new(template, trim_mode: '<>').result(binding)
-  f.write(str)
-end
-
-erb_render_and_save('component.h', folder, binding)
+d = options.filter { |k, _v| %i[plugin_name component_name].include?(k) }
+erb_render_and_save(d, "#{options[:component].downcase}.c", folder, outputname = "#{options[:component_name]}.c")
+erb_render_and_save(d, 'component.h', folder)
 
 if %w[SOURCE FILTER].include?(options[:component])
   y = YAML.load_file(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_creates(folder, component_name, hash_type, hash_name, t)
+  wrote_creates(folder, t)
 end
 
 if %w[FILTER SINK].include?(options[:component])
   y = YAML.load_file(options[:upstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_dispatchers(folder, component_name, hash_type, hash_name, t)
+  wrote_dispatchers(folder, t)
 end

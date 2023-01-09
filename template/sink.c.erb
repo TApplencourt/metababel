@@ -11,7 +11,7 @@
 
 static void lockup_dispatcher(struct common_data_s *common_data,
                               const bt_event_class *event_class,
-                              <%= hash_type %> **s) {
+                              name_to_dispatcher_t **s) {
   const char *class_name = bt_event_class_get_name(event_class);
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
@@ -65,7 +65,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
-    <%= hash_type %> *s = NULL;
+    name_to_dispatcher_t *s = NULL;
     lockup_dispatcher(common_data, event_class, &s);
     if (s)
       (*(s->dispatcher))(s->callbacks, common_data, event);

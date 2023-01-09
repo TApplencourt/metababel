@@ -10,7 +10,7 @@ typedef void
                                    <%= e.args.map{ |s| s.type }.join(", ") %>);
 <%# The Function who register the callbacks to the dispatcher %>
 extern void btx_register_callbacks_<%= e.name_sanitized %>(
-    <%= hash_type %> **<%= hash_name %>,
+    name_to_dispatcher_t **name_to_dispatcher,
     <%= e.name_sanitized %>_callback_f *callback);
 <% end %>
 #ifdef __cplusplus
