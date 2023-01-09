@@ -35,13 +35,6 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   return trace;
 }
 
-<% downstream_events.each do |e| %>
-static void btx_set_message_<%= e.name_sanitized %>(
-    bt_event *<%= event_name %>,
-    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
-  <%= e.body %>
-}
-
 void btx_push_messages_stream_beginning(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
@@ -64,6 +57,13 @@ void btx_push_messages_stream_end(struct common_data_s *common_data) {
     btx_downstream_push_message(common_data, message);
   }
   <% end %>
+}
+
+<% downstream_events.each do |e| %>
+static void btx_set_message_<%= e.name_sanitized %>(
+    bt_event *<%= event_name %>,
+    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+  <%= e.body %>
 }
 
 void btx_push_message_<%= e.name_sanitized %>(
