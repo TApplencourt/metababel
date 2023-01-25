@@ -82,8 +82,8 @@ options = { plugin_name: 'metababel',
 OptionParser.new do |opts|
   opts.banner = 'Usage: example.rb [options]'
 
-  opts.on('-c', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
-    options[:component] = p
+  opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
+    options[:component_type] = p
   end
 
   opts.on('-u', '--upstream PATH', '[Mandatory] Path to the bt2 yaml file.') do |p|
@@ -98,28 +98,28 @@ OptionParser.new do |opts|
     options[:plugin_name] = p
   end
 
-  opts.on('--component-name PATH', '[Optional] Name of the bt2 componant created .') do |p|
+  opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created .') do |p|
     options[:component_name] = p
   end
 end.parse!
 
-raise OptionParser::MissingArgument if options[:component].nil?
+raise OptionParser::MissingArgument if options[:component_type].nil?
 
-folder = "#{options[:component]}.#{options[:component_name]}"
+folder = "#{options[:component_type]}.#{options[:component_name]}"
 Dir.mkdir(folder) unless File.exist?(folder)
 
 d = options.filter { |k, _v| %i[plugin_name component_name].include?(k) }
-erb_render_and_save(d, "#{options[:component].downcase}.c", folder, outputname = "#{options[:component_name]}.c")
+erb_render_and_save(d, "#{options[:component_type].downcase}.c", folder, outputname = "#{options[:component_name]}.c")
 erb_render_and_save(d, 'component.h', folder)
 
-if %w[SOURCE FILTER].include?(options[:component])
+if %w[SOURCE FILTER].include?(options[:component_type])
   raise "Missing downstream model" unless options[:downstream]
   y = YAML.load_file(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
 
-if %w[FILTER SINK].include?(options[:component])
+if %w[FILTER SINK].include?(options[:component_type])
   raise "Missing upstream model" unless options[:upstream]
   y = YAML.load_file(options[:upstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)

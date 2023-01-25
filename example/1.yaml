@@ -23,3 +23,21 @@
             :type: integer_unsigned
             :field_value_range: 32
             :cast_type: uint32_t
+  - :name: zeCommandListAppendMemoryCopy_entry
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: timestamp
+          :field_class:
+            :type: integer_unsigned
+            :field_value_range: 32
+            :cast_type: uint32_t
+  - :name: zeCommandListAppendMemoryCopy_exit
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: timestamp
+          :field_class:
+            :type: integer_unsigned
+            :field_value_range: 32
+            :cast_type: uint32_t
