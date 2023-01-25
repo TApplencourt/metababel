@@ -113,12 +113,14 @@ erb_render_and_save(d, "#{options[:component].downcase}.c", folder, outputname =
 erb_render_and_save(d, 'component.h', folder)
 
 if %w[SOURCE FILTER].include?(options[:component])
+  raise "Missing downstream model" unless options[:downstream]
   y = YAML.load_file(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
 
 if %w[FILTER SINK].include?(options[:component])
+  raise "Missing upstream model" unless options[:upstream]
   y = YAML.load_file(options[:upstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_dispatchers(folder, t)
