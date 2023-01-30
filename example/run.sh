@@ -1,8 +1,8 @@
 #!/bin/bash -x
 
-ruby ../main.rb -d 1.stream_classes.yaml -t SOURCE -p metababel1
+ruby ../main.rb -d 1.stream_classes.yaml -t SOURCE -p metababel1 --params 1.params.yaml 
 make -C SOURCE.xprof/
-babeltrace2 --plugin-path=SOURCE.xprof --component=source.metababel1.xprof  --component=sink.text.details
+babeltrace2 --plugin-path=SOURCE.xprof --component=source.metababel1.xprof --params="display=tests2323" --component=sink.text.details 
 
 ruby ../main.rb -u 1.stream_classes.yaml -t SINK -p metababel2
 make -C SINK.xprof

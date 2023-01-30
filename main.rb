@@ -2,6 +2,7 @@ require 'yaml'
 require 'optparse'
 require 'erb'
 require_relative 'gen_babeltrace_base'
+require_relative 'bt2_values'
 
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
@@ -32,7 +33,7 @@ class Babeltrace2Gen::BTTraceClass
   end
 end
 
-# We preprent an emptu new line from the body as a hack, to correct the indentation
+# We preprent an empty new line from the body as a hack, to correct the indentation
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
@@ -94,12 +95,16 @@ OptionParser.new do |opts|
     options[:downstream] = p
   end
 
-  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created .') do |p|
+  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
     options[:plugin_name] = p
   end
 
-  opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created .') do |p|
+  opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
     options[:component_name] = p
+  end
+
+  opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
+    options[:params] = p
   end
 end.parse!
 
@@ -109,8 +114,22 @@ folder = "#{options[:component_type]}.#{options[:component_name]}"
 Dir.mkdir(folder) unless File.exist?(folder)
 
 d = options.filter { |k, _v| %i[plugin_name component_name].include?(k) }
+
+d[:params_declaration] = ""
+d[:params_definition] = ""
+if options.key?(:params)
+  y = YAML.load_file(options[:params])
+  c = Babeltrace2Gen::BTValueCLass.from_h(y)
+  body = Babeltrace2Gen.context(indent: 1) do
+    c.get("usr_params", "params")
+  end
+  d[:params_declaration] =  c.get_struct_definition("params")
+  d[:params_definition] = body
+end
+
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", folder, outputname = "#{options[:component_name]}.c")
 erb_render_and_save(d, 'component.h', folder)
+erb_render_and_save(d, 'params.c', folder)
 
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise "Missing downstream model" unless options[:downstream]

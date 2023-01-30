@@ -61,6 +61,10 @@ source_initialize(bt_self_component_source *self_component_source,
   /* Allocate a private data structure */
   struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
+  /* Set usr_params */
+  common_data->usr_params = (params_t*) calloc(1, sizeof(params_t));
+  btx_read_params(common_data->usr_params, params);
+
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
       bt_self_component_source_as_self_component(self_component_source);

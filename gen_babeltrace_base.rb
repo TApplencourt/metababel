@@ -1,3 +1,5 @@
+require_relative 'bt2_meta_utils'
+
 module Babeltrace2Gen
   class GeneratedArg < Struct.new(:type, :name)
   end
@@ -12,43 +14,6 @@ module Babeltrace2Gen
     def bt_set_conditionally(guard)
       yield guard ? 'BT_TRUE' : 'BT_FALSE' unless guard.nil?
     end
-  end
-
-  module BTPrinter
-    @@output = ''
-    @@indent = 0
-    INDENT_INCREMENT = '  '.freeze
-
-    def pr(str)
-      @@output << INDENT_INCREMENT * @@indent << str << "\n"
-    end
-    module_function :pr
-
-    def scope
-      pr '{'
-      @@indent += 1
-      yield
-      @@indent -= 1
-      pr '}'
-    end
-
-    def self.context(output: '', indent: 0)
-      @@output = output
-      @@indent = indent
-      yield
-      @@output
-    end
-
-    # Maybe not the best place
-    def name_sanitized
-      raise unless @name
-
-      @name.gsub(/[^0-9A-Za-z\-]/, '_')
-    end
-  end
-
-  def self.context(**args, &block)
-    BTPrinter.context(**args, &block)
   end
 
   module BTLocator
@@ -463,22 +428,24 @@ module Babeltrace2Gen
   class BTFieldClass::Real < BTFieldClass
   end
 
-    @bt_type = 'float'
-    @bt_func = 'bt_field_real_single_precision_%s_value'
 
   class BTFieldClass::Real::SinglePrecision < BTFieldClass::Real
     extend BTFromH
+
+    @bt_type = 'float'
+    @bt_func = 'bt_field_real_single_precision_%s_value'
+
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_real_single_precision_create(#{trace_class});"
     end
   end
 
   class BTFieldClass::Real::DoublePrecision < BTFieldClass::Real
+    extend BTFromH
 
     @bt_type = 'double'
     @bt_func = 'bt_field_real_double_precision_%s_value'
 
-    extend BTFromH
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_real_double_precision_create(#{trace_class});"
     end

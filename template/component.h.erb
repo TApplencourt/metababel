@@ -12,6 +12,12 @@ extern "C" {
 struct common_data_s;
 typedef struct common_data_s common_data_t;
 
+// Params
+struct params_s {
+<%= params_declaration %>
+};
+typedef struct params_s params_t;
+
 // Dispatcher
 <% if ['FILTER', 'SINK'].include?(options[:component_type]) %>
 typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
@@ -38,6 +44,7 @@ struct el {
 <% if options[:component_type] == 'SOURCE' %>
 struct common_data_s {
   void *usr_data;
+  params_t *usr_params;
   bt_trace *downstream_trace;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
@@ -49,6 +56,7 @@ struct common_data_s {
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
+  params_t *usr_params;
   /* Component's input port (weak) */
   bt_self_component_port_input *in_port;
   bt_trace *downstream_trace;
@@ -62,16 +70,20 @@ struct common_data_s {
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
+  params_t *usr_params;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };
 <% end %>
 
+/* Implemented by params.c */
+void btx_read_params(params_t *usr_params, const bt_value *params);
+
 /* Users functions to implement */
 void btx_initialize_usr_data(common_data_t *common_data);
 void btx_finalize_usr_data(common_data_t *common_data);
 <% if options[:component_type] == 'SOURCE'  %>
-void btx_push_usr_messages(struct common_data_s *common_data);
+void btx_push_usr_messages(common_data_t *common_data);
 <% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
 void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher);
 <% end %>

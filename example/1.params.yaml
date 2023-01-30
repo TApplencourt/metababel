@@ -1,0 +1,6 @@
+:type: map
+:entries:
+  - :name: display
+    :type: string
+  - :name: display_size
+    :type: integer_unsigned

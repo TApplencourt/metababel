@@ -86,6 +86,10 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   /* Allocate a private data structure */
   struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
 
+  /* Set usr_params */
+  common_data->usr_params = (params_t*) calloc(1, sizeof(params_t));
+  btx_read_params(common_data->usr_params, params);
+
   /* Register User Callbacks */
   btx_register_usr_callbacks(&common_data->name_to_dispatcher);
   /* Register User Data */
