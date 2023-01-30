@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Losely based by
+/* Loosely based by
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-sink-cmp-cls.html
  */
 
-static void lockup_dispatcher(struct common_data_s *common_data,
+static void lookup_dispatcher(struct common_data_s *common_data,
                               const bt_event_class *event_class,
                               name_to_dispatcher_t **s) {
   const char *class_name = bt_event_class_get_name(event_class);
@@ -66,7 +66,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
     name_to_dispatcher_t *s = NULL;
-    lockup_dispatcher(common_data, event_class, &s);
+    lookup_dispatcher(common_data, event_class, &s);
     if (s)
       (*(s->dispatcher))(s->callbacks, common_data, event);
 
