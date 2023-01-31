@@ -1,8 +1,8 @@
 require 'yaml'
 require 'optparse'
 require 'erb'
-require_relative 'gen_babeltrace_base'
-require_relative 'bt2_values'
+require_relative 'bt2_stream_classes_generator'
+require_relative 'bt2_values_generator'
 
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
