@@ -428,7 +428,6 @@ module Babeltrace2Gen
   class BTFieldClass::Real < BTFieldClass
   end
 
-
   class BTFieldClass::Real::SinglePrecision < BTFieldClass::Real
     extend BTFromH
 
