@@ -15,7 +15,8 @@ typedef struct common_data_s common_data_t;
 // Params
 struct params_s {
 <%= params_declaration %>
-};
+
+}; <%# Need empty line for nice code gen %>
 typedef struct params_s params_t;
 
 // Dispatcher
@@ -44,8 +45,8 @@ struct el {
 <% if options[:component_type] == 'SOURCE' %>
 struct common_data_s {
   void *usr_data;
-  params_t *usr_params;
   bt_trace *downstream_trace;
+  const bt_value *params;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
   /* Handling the downstream message queue */
@@ -56,7 +57,7 @@ struct common_data_s {
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
-  params_t *usr_params;
+  const bt_value *params;
   /* Component's input port (weak) */
   bt_self_component_port_input *in_port;
   bt_trace *downstream_trace;
@@ -70,14 +71,14 @@ struct common_data_s {
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
-  params_t *usr_params;
+  const bt_value *params;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };
 <% end %>
 
 /* Implemented by params.c */
-void btx_read_params(params_t *usr_params, const bt_value *params);
+void btx_read_params(common_data_t *common_data, params_t *usr_params);
 
 /* Users functions to implement */
 void btx_initialize_usr_data(common_data_t *common_data);

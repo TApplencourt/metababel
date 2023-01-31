@@ -60,10 +60,8 @@ source_initialize(bt_self_component_source *self_component_source,
                   const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
   struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
-
-  /* Set usr_params */
-  common_data->usr_params = (params_t*) calloc(1, sizeof(params_t));
-  btx_read_params(common_data->usr_params, params);
+  common_data->params = params;
+  bt_value_get_ref(common_data->params);
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
@@ -131,6 +129,9 @@ source_message_iterator_initialize(
 static void source_finalize(bt_self_component_source *self_component_source) {
   struct common_data_s *common_data = bt_self_component_get_data(
       bt_self_component_source_as_self_component(self_component_source));
+
+  //TODO: Missing {initizialize,finialize}_usr_source
+  bt_value_put_ref(common_data->params);
   /* Free the allocated structure */
   free(common_data->usr_data);
 

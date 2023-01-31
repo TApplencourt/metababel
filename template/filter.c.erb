@@ -147,10 +147,8 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 
   /* Allocate a private data structure */
   struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
-
-  /* Set usr_params */
-  common_data->usr_params = (params_t*) calloc(1, sizeof(params_t));
-  btx_read_params(common_data->usr_params, params);
+  common_data->params = params;
+  bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
   btx_register_usr_callbacks(&common_data->name_to_dispatcher);
@@ -232,6 +230,8 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
       bt_self_component_filter_as_self_component(self_component_filter));
 
   btx_finalize_usr_data(common_data);
+  bt_value_put_ref(common_data->params);
+
   /* Free the allocated structure */
   free(common_data->usr_data);
 
