@@ -15,7 +15,7 @@ dispatch.o: dispatch.c
 	$(CC) dispatch.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c 
 
 my_callbacks.o: my_callbacks.c
-	$(CC) my_callbacks.c -I $(METABABEL_ROOT)/include $(CFLAGS)  -c
+	$(CXX) my_callbacks.c -I $(METABABEL_ROOT)/include $(CFLAGS)  -c
 
 create.o: create.c
 	$(CC) create.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
@@ -24,4 +24,4 @@ params.o: params.c
 	$(CC) params.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
 
 clean:
-	rm -f *.o *.so
+	rm -f *.o *.so component.h create.c create.h dispatch.c dispatch.h params.c xprof.c

@@ -132,8 +132,6 @@ static void source_finalize(bt_self_component_source *self_component_source) {
 
   //TODO: Missing {initizialize,finialize}_usr_source
   bt_value_put_ref(common_data->params);
-  /* Free the allocated structure */
-  free(common_data->usr_data);
 
   struct el *elt, *tmp;
   DL_FOREACH_SAFE(common_data->pool, elt, tmp) {

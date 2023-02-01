@@ -21,4 +21,4 @@ params.o: params.c
 	$(CC) params.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
 
 clean:
-	rm -f *.o *.so
+	rm -f *.o *.so component.h create.c create.h dispatch.c dispatch.h params.c xprof.c

@@ -17,7 +17,7 @@ btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
   // Their type are declared in 'dispatch.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
-    (*p)(common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
+    (*p)(common_data, common_data->usr_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
 
