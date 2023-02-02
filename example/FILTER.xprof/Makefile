@@ -15,7 +15,7 @@ dispatch.o: dispatch.c
 	$(CC) dispatch.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c 
 
 my_callbacks.o: my_callbacks.c
-	$(CXX) my_callbacks.c -I $(METABABEL_ROOT)/include $(CFLAGS)  -c
+	$(CC) my_callbacks.c -I $(METABABEL_ROOT)/include $(CFLAGS)  -c
 
 create.o: create.c
 	$(CC) create.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
