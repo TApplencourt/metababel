@@ -232,9 +232,6 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
   btx_finalize_usr_data(common_data, common_data->usr_data);
   bt_value_put_ref(common_data->params);
 
-  /* Free the allocated structure */
-  free(common_data->usr_data);
-
   struct el *elt, *tmp;
   DL_FOREACH_SAFE(common_data->pool, elt, tmp) {
     DL_DELETE(common_data->pool, elt);

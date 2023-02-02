@@ -3,7 +3,6 @@
 #include "component.h"
 #include "dispatch.h"
 #include "create.h"
-#include <map>
 
 struct usr_data_s {
     int roger_count;
@@ -11,15 +10,22 @@ struct usr_data_s {
 };
 
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
-    struct usr_data_s *data = (struct usr_data_s*) malloc(sizeof(struct usr_data_s));
+    /* User allocates its own data structure */
+    struct usr_data_s *data = (struct usr_data_s *)  malloc(sizeof(struct usr_data_s));
+    /* User makes our API usr_data to point to his/her data structure */
     *usr_data = data;
+    /* Now user can preserve changes on his/her structure among different callbacks calls */
     data->roger_count = 0;
     data->bernard_count = 0;
     
 }
 void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
+    /* User cast the API usr_data that was already initialized with his/her data */
     struct usr_data_s *data = (struct usr_data_s *) usr_data;
+    /* User do some stuff with the saved data */
     printf("roger %d, bernard %d \n", data->roger_count, data->bernard_count);
+    /* Use has to deallocate the memory he/she requested for his/her data structure */
+    free(data);
 }
 
 void roger(struct common_data_s *common_data, void *usr_data, int32_t i, int32_t j, uint32_t k) {

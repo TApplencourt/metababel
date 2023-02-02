@@ -7,18 +7,26 @@
 
 struct usr_data_s {
     int count;
+    params_t *params;
     std::tuple<int,int> a;
 };
 
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
+    /* User allocates its own data structure */
     struct usr_data_s *data = (struct usr_data_s *)  malloc(sizeof(struct usr_data_s));
+    /* User makes our API usr_data to point to his/her data structure */
     *usr_data = data;
+    /* Now user can preserve changes on his/her structure among different callbacks calls */
     data->count = 0;
 }
 
 void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
-    struct usr_data_s * toto = (struct usr_data_s *) usr_data;    
-    std::cout << "COUNTER "<< toto->count << std::endl;
+    /* User cast the API usr_data that was already initialized with his/her data */
+    struct usr_data_s *data = (struct usr_data_s *) usr_data;
+    /* User do some stuff with the saved data */
+    std::cout << "COUNTER "<< data->count << std::endl;
+    /* Use has to deallocate the memory he/she requested for his/her data structure */
+    free(data);
 }
 
 static void roger(struct common_data_s *common_data, void *usr_data, int32_t i, int32_t j, uint32_t k) {
@@ -26,8 +34,9 @@ static void roger(struct common_data_s *common_data, void *usr_data, int32_t i, 
 }
 
 static void bernard(struct common_data_s *common_data, void *usr_data, int32_t i, int32_t j, uint32_t k) {
-    struct usr_data_s * toto = (struct usr_data_s *) common_data->usr_data;
-    toto->count += 1;
+    /* In callbacks, the user just  need to cast our API usr_data to his/her data structure */
+    struct usr_data_s * data = (struct usr_data_s *) usr_data;
+    data->count += 1;
 }
 
 void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {

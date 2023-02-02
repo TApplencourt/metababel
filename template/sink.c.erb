@@ -115,8 +115,8 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
       bt_self_component_sink_as_self_component(self_component_sink));
   btx_finalize_usr_data(common_data, common_data->usr_data);
   bt_value_put_ref(common_data->params);
+
   /* Free the allocated structure */
-  free(common_data->usr_data);
   free(common_data);
 }
 
