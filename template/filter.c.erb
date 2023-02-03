@@ -153,7 +153,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Register User Callbacks */
   btx_register_usr_callbacks(&common_data->name_to_dispatcher);
   /* Register User Data */
-  btx_initialize_usr_data(common_data);
+  btx_initialize_usr_data(common_data, &common_data->usr_data);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
@@ -229,11 +229,8 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
   struct common_data_s *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
 
-  btx_finalize_usr_data(common_data);
+  btx_finalize_usr_data(common_data, common_data->usr_data);
   bt_value_put_ref(common_data->params);
-
-  /* Free the allocated structure */
-  free(common_data->usr_data);
 
   struct el *elt, *tmp;
   DL_FOREACH_SAFE(common_data->pool, elt, tmp) {
