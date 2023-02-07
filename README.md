@@ -1,3 +1,5 @@
+<img width="384" alt="METABABEL" src="https://user-images.githubusercontent.com/6524907/217338770-ab69a6c8-f0fa-4e00-9b8f-bf5d2192d0bd.png">
+
 ## Filter & Sink
 
 Need to link with a object file who export the symbol `btx_usr_register_callbacks(btx_name_to_dispatcher_t** name_to_dispatcher)`. The implementation of `btx_usr_register_callbacks` should conssist of calls to `btx_register_callbacks_#{stream_class_name}_#{event_class_name}(name_to_dispatcher, &callbacks)`.
