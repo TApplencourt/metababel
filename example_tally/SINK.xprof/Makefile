@@ -6,6 +6,7 @@ CFFLAGS_BT2 = $(pkg-config --cflags babeltrace2)
 LDFLAGS_BT2 = $(pkg-config --libs babeltrace2)
 METABABEL_ROOT = ../..
 
+# xprof.so: xprof.o dispatch.o my_callbacks.o params.o my_demangle.o
 xprof.so: xprof.o dispatch.o my_callbacks.o params.o
 	$(CXX) $^ -o xprof.so -shared $(LDFLAGS_BT2)
  
@@ -20,6 +21,9 @@ my_callbacks.o: my_callbacks.cpp
 
 params.o: params.c
 	$(CC) params.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
+
+# my_demangle.o: my_demangle.c
+# 	$(CXX) my_demangle.c -I./ $(CXXFLAGS) -liberty -c
 
 clean:
 	rm -f *.o *.so

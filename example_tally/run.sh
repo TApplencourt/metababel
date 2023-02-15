@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e 
+# set -e 
 
 ruby ../main.rb -u 1.stream_classes.yaml -t SINK -p metababel2
 make -C SINK.xprof
@@ -15,5 +15,6 @@ babeltrace2 \
 #/home/avivasmeza/lttng-traces/iprof-20230206-175657
 
 cd SINK.xprof
-rm -f component.h dispatch.{h,c,o} params.{h,c,o} xprof.{c,o,so} my_callbacks.o 
+rm -f component.h dispatch.{h,c,o} params.{h,c,o} xprof.{c,o,so} my_callbacks.o my_demangle.o
 cd -
+
