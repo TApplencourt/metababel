@@ -1,9 +1,10 @@
 #include "my_demangle.h"
-#include "config.h"
+//TODO: When this is comented, demagle compilation works. Have to review why
+//#include "config.h"
 #include <string.h>
-#define HAVE_DECL_BASENAME 1
 #include <stdlib.h>
 #if defined(HAVE_DEMANGLE_H)
+#define HAVE_DECL_BASENAME 1
 #include <demangle.h>
 #elif defined(HAVE_LIBIBERTY_DEMANGLE_H)
 #include <libiberty/demangle.h>

@@ -11,11 +11,10 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
 
     // TODO: This should be taken from params
     data->display_compact = false;
-    // TODO: Demangle not working yet
-    data->demangle_name = false;
-    data->display_human = false;
+    data->demangle_name = true;
+    data->display_human = true;
     data->display_metadata = false;
-    data->display_name_max_size = 60;
+    data->display_name_max_size = 100;
     data->display_kernel_verbose = false;
 }
 
@@ -149,11 +148,10 @@ static void lttng_device_usr_callback(
     /* In callbacks, the user just  need to cast our API usr_data to his/her data structure */
     struct tally_dispatch *data = (struct tally_dispatch *) usr_data;
 
-    // TODO: demangle not working know because compilation issue i need to fix
     /* TODO: Should fucking cache this function */
-    //const auto name_demangled = (data->demangle_name) ? f_demangle_name(name) : name;
-    //const auto name_with_metadata = (data->display_kernel_verbose && !strcmp(metadata, "")) ? name_demangled + "[" + metadata + "]" : name_demangled;
-    const auto name_with_metadata = "FIX_ME";
+    const auto name_demangled = (data->demangle_name) ? f_demangle_name(name) : name;
+    const auto name_with_metadata = (data->display_kernel_verbose && !strcmp(metadata, "")) ? name_demangled + "[" + metadata + "]" : name_demangled;
+
     TallyCoreTime a{dur, err};
     data->device[hpt_device_function_name_t(hostname, vpid, vtid, did, sdid, name_with_metadata)] += a;
 
