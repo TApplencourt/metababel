@@ -1,26 +1,21 @@
-#!/bin/bash
-set -e 
+#!/bin/bash -x
 
-# export LIBBABELTRACE2_INIT_LOG_LEVEL=DEBUG
-# export BABELTRACE_CLI_LOG_LEVEL=DEBUG
+# Generate interval messages "interval_callbacks.c"
+ruby ./source_callbacks_generator.rb 3.interval_instances.yaml SOURCE.interval/interval_callbacks.c
 
-cd SINK.tally
-rm -f component.h dispatch.{h,c,o} params.{h,c,o} tally.{c,o,so} my_callbacks.o my_demangle.o
-cd -
+# Generate SOURCE.invertal component
+ruby ../main.rb -d 2.interval_definitions.yaml -t SOURCE -p convert --params 1.params.yaml -c interval
+make -C SOURCE.interval
+babeltrace2 --plugin-path=SOURCE.interval --component=source.convert.interval --params="display=tests2323" --component=sink.text.details 
 
-ruby ../main.rb -u interval.yaml -t SINK -p display -c tally
+# Genarate SINK.tally component
+ruby ../main.rb -u 2.interval_definitions.yaml -t SINK -p display -c tally
 make -C SINK.tally
+babeltrace2  --plugin-path=SOURCE.interval:SINK.tally  --component=source.convert.interval --component=sink.display.tally
 
-babeltrace2 \
-	--plugin-path=/soft/debuggers/thapi/0.11.2/lib:./SINK.tally \
-	--component=filter.ompinterval.interval \
-	--component=filter.zeinterval.interval \
-	--component=filter.cudainterval.interval \
-	--component=filter.clinterval.interval \
-	--component=sink.display.tally \
-	/home/avivasmeza/aurelio
+# Cleaning up
+make -C SOURCE.interval clean
+make -C SINK.tally clean 
 
-cd SINK.tally
-rm -f component.h dispatch.{h,c,o} params.{h,c,o} tally.{c,o,so} my_callbacks.o my_demangle.o
-cd -
+
 
