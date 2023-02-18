@@ -1,36 +1,39 @@
+/** Backends messages tabulation and summarization (tally). 
+ * This file contains the infraestructure required to tabulate data 
+ * in messages generated from different backends when reaching 
+ * already established lttng tracepoints.
+*/
+
 #include "component.h"
 #include "dispatch.h"
-
-//=> filename: tally.hpp
-//#include "xprof_utils.hpp"
-//#include "tally_utils.hpp"
-#include  <map>
-#include  <unordered_map>
-
-//=> filename: xprof_utils.hpp
-// #include <map>
-#include <tuple>
-// #include <string>
 #include "babeltrace2/babeltrace.h"
 
-//=> filename: tally_utils.hpp
+#include <map>
+#include <unordered_map>
+#include <tuple>
 #include <set>
 #include <vector>
 #include <cmath>
-// #include <string>
 #include <iostream>
 #include <iomanip>
 #include <regex>
+
 #include "json.hpp"
 #include "my_demangle.h"
 
-//=> filename: xprof_utils.hpp
-enum backend_e{ BACKEND_UNKNOWN = 0,
-                BACKEND_ZE = 1,
-                BACKEND_OPENCL = 2,
-                BACKEND_CUDA = 3,
-                BACKEND_OMP_TARGET_OPERATIONS = 4,
-                BACKEND_OMP = 5 };
+//! Backends identifiers enum.
+
+//! Every backend reaching an lttng tracepoint, that subsequently 
+//! generates a message, specifies one identifier that enables the 
+// identification of the backend from which the message was generatedss.
+enum backend_e{ 
+  BACKEND_UNKNOWN = 0,
+  BACKEND_ZE = 1,
+  BACKEND_OPENCL = 2,
+  BACKEND_CUDA = 3,
+  BACKEND_OMP_TARGET_OPERATIONS = 4,
+  BACKEND_OMP = 5 
+};
 
 constexpr int backend_level[] = { 2, 2, 2, 2, 1, 0 };
 

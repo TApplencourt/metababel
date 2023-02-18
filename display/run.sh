@@ -17,5 +17,7 @@ babeltrace2  --plugin-path=SOURCE.interval:SINK.tally  --component=source.conver
 make -C SOURCE.interval clean
 make -C SINK.tally clean 
 
+rm -f component.h dispatch.{h,c,o} params.{h,c,o} tally.{c,o,so} my_callbacks.o my_demangle.o
+
 
 
