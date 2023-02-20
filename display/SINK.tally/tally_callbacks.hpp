@@ -319,7 +319,7 @@ public:
     duration_ratio = static_cast<double>(duration) / rhs.duration;
   }
 
-  //! Enables comparison of two TallyCoreBase instances by their duration.
+  //! Enables the comparison of two TallyCoreBase instances by their duration.
   //! It is used for sorting purposes.
   bool operator>(const TallyCoreBase &rhs) { return duration > rhs.duration; }
 
@@ -330,6 +330,7 @@ public:
   }
 };
 
+//! Specifalization of TallyCoreBase for execution times.
 class TallyCoreTime : public TallyCoreBase {
 public:
   static constexpr std::array headers{"Time", "Time(%)", "Calls", "Average", "Min", "Max", "Error"};
@@ -348,6 +349,7 @@ public:
   }
 
 private:
+  //! Returns duration as a formated string with units.
   template <typename T>
   std::string format_time(const T duration) {
     if (duration == std::numeric_limits<T>::max() || duration == T{0})
@@ -377,22 +379,28 @@ private:
   }
 };
 
+//! Specialization of TallyCoreBase for data transfer sizes.
+//! This is used for traffic related events, lttng:traffic.
 class TallyCoreByte : public TallyCoreBase {
 public:
   static constexpr std::array headers{"Byte", "Byte(%)", "Calls", "Average", "Min", "Max", "Error"};
 
   using TallyCoreBase::TallyCoreBase;
   virtual const std::vector<std::string> to_string() {
-    return std::vector<std::string>{format_byte(duration),
-                                    to_string_with_precision(100. * duration_ratio, "%"),
-                                    to_string_with_precision(count, "", 0),
-                                    format_byte(average),
-                                    format_byte(min),
-                                    format_byte(max),
-                                    to_string_with_precision(error, "", 0)};
+    return std::vector<std::string>{
+      format_byte(duration),
+      to_string_with_precision(100. * duration_ratio, "%"),
+      to_string_with_precision(count, "", 0),
+      format_byte(average),
+      format_byte(min),
+      format_byte(max),
+      to_string_with_precision(error, "", 0)
+    };
   }
 
 private:
+
+  //! Returns a data transfer size (duration) as a formated string with units.
   template <typename T> std::string format_byte(const T duration) {
     const double PB = duration / 1e+15;
     if (PB >= 1.)
@@ -419,8 +427,12 @@ private:
 };
 
 
-//=> filename: tally.hpp
-/* Sink component's private data */
+//! User data collection structure.
+//! It is used to collect interval messages data, once data is collected. 
+//! It is aggregated and tabulated for printing.
+//! This structure can hold data that the user needs to be present among different 
+//! callbacks calls, for instance commad line params that can modify the printing 
+//! behaviour.
 struct tally_dispatch {
     bool display_compact;
     bool demangle_name;
@@ -429,15 +441,27 @@ struct tally_dispatch {
     int  display_name_max_size;
     bool display_kernel_verbose;
 
+    //! Maps "level" with the names of the backends that appeared when processing host messages (lttng:host). 
+    //! This information is separed by level. Refer to the "backend_level" array at the top of this 
+    //! file to see which backends may appear on each level. 
     std::map<unsigned,std::set<const char*>> host_backend_name;
+
+    //! Maps "level" with the duration data collected from host messages (lttng:host) for every (host,pid,tid,api_call_name) entity.
+    //! EXAMPLE: map{ 0 => umap{ tuple("iris",1287,2780,"ompt_target") => TallyCoreTime } }
     std::map<unsigned,std::unordered_map<hpt_function_name_t, TallyCoreTime>> host;
 
+    //! Maps "level" with the duration data collected from device messages (lttng:device) for every (host,pid,tid,api_call_name) entity.
+    //! EXAMPLE: map{ 2 => umap{ tuple("iris",1287,2780,"zeMemoryCopy") => TallyCoreTime } }
     std::unordered_map<hpt_device_function_name_t, TallyCoreTime> device;
 
+    //! Maps "level" with the names of the backends that appeared when processing traffic messages (lttng:traffic). 
+    //! This information is separed by level. Refer to the "backend_level" array at the top of this 
+    //! file to see which backends may appear on each level. 
     std::map<unsigned,std::set<const char*>> traffic_backend_name;
     std::map<unsigned,std::unordered_map<hpt_function_name_t, TallyCoreByte>> traffic;
 
     std::unordered_map<hp_device_t, std::string> device_name;
+
     std::vector<std::string> metadata;
 };
 
