@@ -31,9 +31,6 @@ my_demangle.o: my_demangle.c my_demangle.h
 # my_demangle.o: my_demangle.c my_demangle.h
 # 	$(CC) my_demangle.c -fPIC  -c
 
-# clean:
-# 	rm -f *.o *.so 
-
 # For test purposes
 clean:
 	rm -f *.o *.so component.h dispatch.{h,c} params.c tally.c

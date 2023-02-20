@@ -1,8 +1,7 @@
-/** Backends messages tabulation and summarization (tally). 
- * This file contains the infraestructure required to tabulate data 
- * in messages generated from different backends when reaching 
- * already established lttng tracepoints.
-*/
+//! Backends' Messages Tabulation and Summarization (tally). 
+
+//! This file contains the infraestructure used to tabulate data 
+//! in messages that were generated from different backends.
 
 #include "component.h"
 #include "dispatch.h"
@@ -24,8 +23,8 @@
 //! Backends identifiers enum.
 
 //! Every backend reaching an lttng tracepoint, that subsequently 
-//! generates a message, specifies one identifier that enables the 
-// identification of the backend from which the message was generatedss.
+//! generates a message, is identified by a backend_id. This 
+//! identifies the backend that generated a given message.
 enum backend_e{ 
   BACKEND_UNKNOWN = 0,
   BACKEND_ZE = 1,
@@ -35,46 +34,105 @@ enum backend_e{
   BACKEND_OMP = 5 
 };
 
-constexpr int backend_level[] = { 2, 2, 2, 2, 1, 0 };
+//! Backends identifiers enum.
 
-constexpr const char* backend_name[] = { "BACKEND_UNKNOWN",
-                "BACKEND_ZE",
-                "BACKEND_OPENCL",
-                "BACKEND_CUDA",
-                "BACKEND_OMP_TARGET_OPERATIONS",
-                "BACKEND_OMP" };
+//! Every backend reaching an lttng tracepoint, that subsequently 
+//! generates a message, is identified by a backend_id. This 
+//! identifies the backend that generated a given message.
+constexpr const char* backend_name[] = { 
+  "BACKEND_UNKNOWN",
+  "BACKEND_ZE",
+  "BACKEND_OPENCL",
+  "BACKEND_CUDA",
+  "BACKEND_OMP_TARGET_OPERATIONS",
+  "BACKEND_OMP" 
+};
 
+//! Backends levels.
+
+//! "backend_level" maps a "backend_id" with its level of abstraction.
+//! For instance, OpenMP in level 0 run on top of LO/OpenCL/CUDA.
+//! This abstraction hierachy is represented by "backend_level".
+constexpr int backend_level[] = { 
+    2, // BACKEND_UNKNOWN
+    2, // BACKEND_ZE
+    2, // BACKEND_OPENCL
+    2, // BACKEND_CUDA
+    1, // BACKEND_OMP_TARGET_OPERATIONS
+    0  // BACKEND_OMP
+};
+
+// TODO: Referenced in THAPI (utils/xprof_utils.hpp), but not used in metababel.
 typedef enum backend_e backend_t;
 
-typedef intptr_t                       process_id_t;
-typedef uintptr_t                      thread_id_t;
-typedef std::string                    hostname_t;
-typedef std::string                    thapi_function_name;
-typedef uintptr_t                      thapi_device_id;
+// Datatypes represeting string classes (or messages) common data. 
+
+typedef intptr_t      process_id_t;
+typedef uintptr_t     thread_id_t;
+typedef std::string   hostname_t;
+typedef std::string   thapi_function_name;
+typedef uintptr_t     thapi_device_id;
 
 // Represent a device and a sub device
+
+// TODO: Referenced in THAPI (opencl/clinterval_callbacks.hpp,utils/xprof_utils.hpp,opencl/clinterval_callbacks.cpp.erb), but not used in metababel, not sure if needed.
 typedef std::tuple<thapi_device_id, thapi_device_id> dsd_t;
+
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<hostname_t, thapi_device_id> h_device_t;
+
+// TODO: Referenced in THAPI (ze/zeinterval_callbacks.hpp,ze/zeinterval_callbacks.cpp.erb,utils/xprof_utils.hpp) but not used in metababel, not sure if needed.
 typedef std::tuple<hostname_t, process_id_t> hp_t;
+
+// TDOD: Referenced in THAPI (cuda/cudainterval_callbacks.cpp.erb,ze/zeinterval_callbacks.hpp,opencl/clinterval_callbacks.hpp,ze/zeinterval_callbacks.cpp.erb,omp/ompinterval_callbacks.hpp,utils/xprof_utils.hpp)
+//! Identifies an entity in a parallel/distributed program that generates a message. 
 typedef std::tuple<hostname_t, process_id_t, thread_id_t> hpt_t;
+
+//! Identifies an specific host, process, thread using the api call "thapi_function_name" in a parallel/distributed program
 typedef std::tuple<hostname_t, process_id_t, thread_id_t, thapi_function_name> hpt_function_name_t;
+
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<thread_id_t, thapi_function_name> t_function_name_t;
+
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<hostname_t, process_id_t, thread_id_t, thapi_device_id, thapi_device_id> hpt_dsd_t;
+
+//! Identifies an specific host, process, thread, device, sudevice, using the api call "thapi_function_name" in a parallel/distributed program.
 typedef std::tuple<hostname_t, process_id_t, thread_id_t, thapi_device_id, thapi_device_id, thapi_function_name> hpt_device_function_name_t;
+
+// TDOD: Referenced in THAPI (opencl/clinterval_callbacks.hpp, opencl/clinterval_callbacks.cpp.erb,ze/zeinterval_callbacks.hpp,xprof/tally.hpp,cuda/cudainterval_callbacks.hpp,cuda/cudainterval_callbacks.cpp.erb,utils/xprof_utils.hpp,xprof/tally.cpp,ze/zeinterval_callbacks.cpp.erb), but not used in metababel, not sure if needed.
+//! Identifies an specific host, process using a device  in a parallel/distributed program.
 typedef std::tuple<hostname_t, process_id_t, thapi_device_id> hp_device_t;
+
+// TODO: Referenced in THAPI (xprof/timeline.hpp,utils/xprof_utils.hpp) but not used in metababel, not sure if needed.
+//! Identifies an specific host, process, device an subdevice in a parallel/distributed program.
 typedef std::tuple<hostname_t, process_id_t, thapi_device_id, thapi_device_id> hp_dsd_t;
 
+// TODO: Referenced in THAPI (opencl/clinterval_callbacks.hpp,utils/xprof_utils.hpp,opencl/clinterval_callbacks.cpp.erb) but not used in metababel, not sure if needed.
+//! Identifies the start time and duration (delta) of an API call in an applications. Used in the creation of intervals in the filter component .  
 typedef std::tuple<long,long> sd_t;
+
+// TDOD: 
 typedef std::tuple<thread_id_t, thapi_function_name, long> tfn_ts_t;
+
+// Referenced in THAPI (opencl/clinterval_callbacks.hpp, cuda/cudainterval_callbacks.hpp, utils/xprof_utils.hpp, cuda/cudainterval_callbacks.cpp.erb, opencl/clinterval_callbacks.cpp.erb)  but not used in metababel, not sure if needed.
 typedef std::tuple<thapi_function_name, long> fn_ts_t;
+
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<thapi_function_name, thapi_device_id, thapi_device_id, long> fn_dsd_ts_t;
+
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<thread_id_t, thapi_function_name, thapi_device_id, thapi_device_id, long> tfn_dsd_ts_t;
 
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<thapi_function_name, std::string, thapi_device_id, thapi_device_id, long> fnm_dsd_ts_t;
+
+// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
 typedef std::tuple<thread_id_t, thapi_function_name, std::string, thapi_device_id, thapi_device_id, long> tfnm_dsd_ts_t;
 
-// https://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set
-// Hash of std tuple
+// NOTE: Required to generate a hash of a tuple, otherwhise, the operaton "data->host[level][entity_id] += interval;"
+// may fail since host[level] returns an unordered_map and this data structure does not know to hash a tuple.
+// REFERENCE: https://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set 
 namespace std{
     namespace
     {
@@ -137,7 +195,8 @@ namespace std{
     };
 }
 
-// => filename: tally_utils.hpp
+//! Returns a demangled name.
+//! @param mangle_name function names
 thapi_function_name f_demangle_name(thapi_function_name mangle_name) {
   std::string result = mangle_name;
   std::string line_num;
@@ -168,15 +227,30 @@ thapi_function_name f_demangle_name(thapi_function_name mangle_name) {
   return mangle_name;
 }
 
+//! Returns a number as a string with the given number of decimals.
+//! @param a_value the value to be casted to string with the given decimal places.
+//! @param units units to be append at the end of the string.
+//! @param n number of decimal places required.
+//! REFERENCE: https://stackoverflow.com/questions/16605967/set-precision-of-stdto-string-when-converting-floating-point-values
 template <typename T>
-std::string to_string_with_precision(const T a_value, const std::string units,
-                                     const int n = 2) {
+std::string to_string_with_precision(const T a_value, const std::string units, const int n = 2) {
   std::ostringstream out;
   out.precision(n);
   out << std::fixed << a_value << units;
   return out.str();
 }
 
+//! TallyCoreBase is a callbacks duration data collection and aggregation helper.
+//! It is of interest to collect data for every (host,pid,tid,api_call_name) entity.
+//! Since the same entity can take place several times, i.e., a thread spawned from 
+//! a process running in a given host can call api_call_name several times, our 
+//! interest is to aggregate these durations in a single one per entity.
+//! In addition to the duration, othe data of interes is collected from different
+//! ocurrences of the same entity such as, what was the minumum and max durations
+//! among the ocurrences, the number of times an api_call_name happed for a given 
+// "htp" (host,pid,tid), and how many occurrences failed.
+//! Once the data of an entity is collected, when considering all its ocurrences,
+//! This helper calls facilitates aggregation of data by overloading += and + operators.
 class TallyCoreBase {
 public:
   TallyCoreBase() {}
@@ -190,16 +264,34 @@ public:
       duration = 0;
   }
 
+  //! Total exeuction time 
+  //! The sum of the durations of traces of an specific entity (host,proces,thread,api_call_name), 
+  // it is ("Time" in statistics)
   uint64_t duration{0};
+  
+  //! Accumulates the amount of errors found for an (host,pid,tid,api_call_name) entity.
   uint64_t error{0};
+
+  //! Minimum duration found among occurrences of the same (host,pid,tid,api_call_name) entity.
   uint64_t min{std::numeric_limits<uint64_t>::max()};
+
+  //! Maximum duration found among occurrences of the same (host,pid,tid,api_call_name) entity.
   uint64_t max{0};
+
+  //! Count the number of times an error is found for a given (host,pid,tid,api_call_name) entity.
   uint64_t count{0};
+
+  //! Percentage of the total execution time.
+  //! duration / app_total_execution_time, this is computed at the end, once we have collected 
+  //! the duratiin information of all the ocurrences of a given (host,pid,tid,api_call_name) entity.
   double duration_ratio{1.};
+
+  //! Average duration.
+  //! It is rougly duration / #of_sucessfull_calls, see "finalize" member function.
   double average{0};
 
-  // Pure virtual function is needed if not we have an
-  // ` symbol lookup error: ./ici/lib/libXProf.so: undefined symbol: _ZTI13TallyCoreBase`
+  // NOTE: Pure virtual function is needed if not we have an
+  //`symbol lookup error: ./ici/lib/libXProf.so: undefined symbol: _ZTI13TallyCoreBase`
   virtual const std::vector<std::string> to_string() = 0;
 
   const auto to_string_size() {
@@ -209,6 +301,7 @@ public:
     return v;
   }
 
+  //! Accumulates duration information.
   TallyCoreBase &operator+=(const TallyCoreBase &rhs) {
     this->duration += rhs.duration;
     this->min = std::min(this->min, rhs.min);
@@ -218,11 +311,16 @@ public:
     return *this;
   }
 
+  //! Updates the average and duration ratio.
+  //! NOTE: This should happend once we have collected the information the duratiin information 
+  //! of all the ocurrences of a given (host,pid,tid,api_call_name) entity.
   void finalize(const TallyCoreBase &rhs) {
     average = ( count && count != error ) ? static_cast<double>(duration) / (count-error) : 0.;
     duration_ratio = static_cast<double>(duration) / rhs.duration;
   }
 
+  //! Enables comparison of two TallyCoreBase instances by their duration.
+  //! It is used for sorting purposes.
   bool operator>(const TallyCoreBase &rhs) { return duration > rhs.duration; }
 
   void update_max_size(std::vector<long> &m) {
@@ -238,13 +336,15 @@ public:
 
   using TallyCoreBase::TallyCoreBase;
   virtual const std::vector<std::string> to_string() {
-    return std::vector<std::string>{format_time(duration),
-                                    std::isnan(duration_ratio) ? "" : to_string_with_precision(100. * duration_ratio, "%"),
-                                    to_string_with_precision(count, "", 0),
-                                    format_time(average),
-                                    format_time(min),
-                                    format_time(max),
-                                    to_string_with_precision(error, "", 0)};
+    return std::vector<std::string>{
+      format_time(duration),
+      std::isnan(duration_ratio) ? "" : to_string_with_precision(100. * duration_ratio, "%"),
+      to_string_with_precision(count, "", 0),
+      format_time(average),
+      format_time(min),
+      format_time(max),
+      to_string_with_precision(error, "", 0)
+    };
   }
 
 private:

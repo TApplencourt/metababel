@@ -20,9 +20,6 @@ create.o: create.c
 params.o: params.c
 	$(CC) params.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
 
-# clean:
-# 	rm -f *.o *.so
-
 # For test purposes
 clean:
-	rm -f *.o *.so component.h create.{h.c} interval_callbacks.c interval.c params.c
+	rm -f *.o *.so component.h create.{h,c} interval_callbacks.c interval.c params.c

@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+set -e
+
 # Generate interval messages "interval_callbacks.c"
 ruby ./source_callbacks_generator.rb 3.interval_instances.yaml SOURCE.interval/interval_callbacks.c
 
