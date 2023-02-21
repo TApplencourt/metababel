@@ -4,9 +4,9 @@ set -e
 
 # SINK.tally params
 display_compact=false
-demangle_name=true
+demangle_name=false
 display_human=true
-display_metadata=true
+display_metadata=false
 display_name_max_size=100
 display_kernel_verbose=false
 

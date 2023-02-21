@@ -5,11 +5,11 @@
         # hostname, vpid, vtid, timestamp, backend ; name, duration, error
       - :values: ['"iris01"',1289,1098,1,0,'"host_function_name_1"',2,0]
         :times: 5
-      - :values: ['"iris01"',1289,1098,1,0,'"host_function_name_2"',2,0]
+      - :values: ['"iris01"',1289,1099,1,0,'"host_function_name_2"',2,0]
         :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"host_function_name_3"',2,0]
+      - :values: ['"iris02"',1289,2000,1,0,'"host_function_name_3"',2,0]
         :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"host_function_name_4"',2,0]
+      - :values: ['"iris02"',1289,2001,1,0,'"host_function_name_4"',2,0]
         :times: 5 
   - :name: lttng:device
     :samples:

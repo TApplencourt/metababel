@@ -575,29 +575,86 @@ auto aggregate_nested(std::unordered_map<std::tuple<T...>, TC> &m) {
   return aggregated;
 }
 
-/* Aggreate a map of <std::tuple<...>, any>  using the index of the tuple as the new key
- * this index is an `std::index_sequence`
- */
+//! Aggregate data by thapi_function_name.
+/*! This is used eventually to print in compact mode, i.e., statistics per thapi_function_name.
+\param m (std::unordered_map).
+\return Returns unordered map with data aggregated by thapi_function_name. 
+EXAMPLE:
+    input   umap{ 
+                  ("iris01",232,789,"getDeviceInfo") : CoreTime,
+                  ("iris02",123,890,"getDeviceInfo") : CoreTime 
+            }
+    output  umap{ "getDeviceInfio" : CoreTime } 
+*/
 template <typename TC, class... T, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
 auto aggregate_by_name(std::unordered_map<std::tuple<T...>, TC> &m) {
   std::unordered_map<thapi_function_name, TC> aggregated{};
+  
   for (auto const &[key, val] : m)
+    // use the thapi_function_name as the key.
+    // thapi_function_name is the last element in the tuple "key".
     aggregated[std::get<sizeof...(T) - 1>(key)] += val;
+  
   return aggregated;
 }
 
-// Add the elements of the tuple (t) in the set elements (s)
+//! Add the elements of the tuple "t" in the set elements "s".
+/*! 
+\param s tuple of sets.
+\param t hpt_function_name_t (tuple)
+\param index sequence
+
+EXAMPLE:
+  input  
+    tuple{ set {}, set{}, set{}, set{} }, tuple{"iris01",232,789,"getDeviceInfo"}, std::index_sequence<0,1,2,3>
+  output (update first param by reference) 
+    tuple{ set {"iris01"}, set{232}, set{789}, set{"getDeviceInfo"} }
+
+  The index sequence used as argument "std::index_sequence<0,1,2,3>" enables the following unfolding:
+
+  (
+    std::get<0>(s).insert(std::get<0>(t)),
+    std::get<1>(s).insert(std::get<1>(t)),
+    std::get<2>(s).insert(std::get<2>(t)),
+    std::get<3>(s).insert(std::get<3>(t))
+  );
+
+  which adds every element of the tuple to its corresponding set, this updating the tuple of sets params
+  provided by reference.
+
+*/
 template <class... T, class... T2, size_t... I>
 void add_to_set(std::tuple<T...> &s, std::tuple<T2...> t, std::index_sequence<I...>) {
   (std::get<I>(s).insert(std::get<I>(t)), ...);
 }
 
-template <class... T, size_t... I>
-void remove_neutral(std::tuple<std::set<T>...> &s, std::index_sequence<I...>) {
-  (std::get<I>(s).erase (T{}), ...);
-}
+// NOTE: It seems this function is not doing anything, so lets see if 
+// it breacks something.
+// template <class... T, size_t... I>
+// void remove_neutral(std::tuple<std::set<T>...> &s, std::index_sequence<I...>) {
+//   (std::get<I>(s).erase (T{}), ...);
+// }
 
-// Loop over the map keys and return a tuple corresponding to the unique elements
+//! Add the elements of the tuple "t" in the set elements "s".
+/*! This is used in the print_compact mode to know how many hosts, pids, tids, have been aggregated.
+\param s tuple of sets.
+\param t hpt_function_name_t (tuple)
+\param index sequence
+\return Returns a tuple of sets with unique hosts names, pids, tids, and api call function names found.
+
+EXAMPLE:
+  input   umap{ 
+                ("iris01",232,789,"getDeviceInfo") : CoreTime,
+                ("iris02",123,890,"getDeviceInfo") : CoreTime,
+                ("iris02",890,890,"getDeviceInfo") : CoreTime 
+          }
+  output  tuple{ set {"iris01","iris02"}, set{232,123,890}, set{789,890}, set{"getDeviceInfo"} } 
+
+TODO:
+  Now, we are counting the number of unique elements in print_compact  using the .size method.
+  Maybe we can do that here if no other function requires the result as is implemented right now.
+
+*/
 template <template <typename...> class Map, typename... K, typename V>
 auto get_uniq_tally(Map<std::tuple<K...>, V> &input) {
   auto tuple_set = std::make_tuple(std::set<K>{}...);
@@ -606,10 +663,36 @@ auto get_uniq_tally(Map<std::tuple<K...>, V> &input) {
   for (auto &m : input)
     add_to_set(tuple_set, m.first, s);
 
-  remove_neutral(tuple_set, s);
+  // NOTE: It seems this function is not doing anything, so lets see if 
+  // it breacks something.
+  // remove_neutral(tuple_set, s);
   return tuple_set;
 }
 
+//! Add the total values at the end of the table (represented as a vector of tuples)".
+/*! This is used in the print_compact mode to know how many hosts, pids, tids, have been aggregated.
+\param m vector of tuples.
+
+EXAMPLE:
+  input   vector{ 
+                pair{"zeModuleCreate"),  CoreTime},
+                pair{"zeModuleDestroy"), CoreTime},
+                pair{"zeMemFree"),       CoreTime} 
+          }
+  output (update first param by reference) 
+
+          vector{ 
+                pair{"zeModuleCreate"),  CoreTime},
+                pair{"zeModuleDestroy"), CoreTime},
+                pair{"zeMemFree"),       CoreTime},
+                pair{"Total"),           CoreTime}  
+          }   
+
+TODO:
+  Now, we are counting the number of unique elements in print_compact  using the .size method.
+  Maybe we can do that here if no other function requires the result as is implemented right now.
+
+*/
 template <typename TC, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
 void add_footer(std::vector<std::pair<thapi_function_name, TC>> &m) {
 
