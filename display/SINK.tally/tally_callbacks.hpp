@@ -454,14 +454,22 @@ struct tally_dispatch {
     //! EXAMPLE: map{ 2 => umap{ tuple("iris",1287,2780,"zeMemoryCopy") => TallyCoreTime } }
     std::unordered_map<hpt_device_function_name_t, TallyCoreTime> device;
 
-    //! Maps "level" with the names of the backends that appeared when processing traffic messages (lttng:traffic). 
+    //! Maps "level" with the names of the backends appearing when processing traffic messages (lttng:traffic). 
     //! This information is separed by level. Refer to the "backend_level" array at the top of this 
     //! file to see which backends may appear on each level. 
     std::map<unsigned,std::set<const char*>> traffic_backend_name;
+
+    //! Maps "level" with the duration data collected from traffic messages (lttng:traffic) for every (host,pid,tid,api_call_name) entity.
+    //! EXAMPLE: map{ 0 => umap{ tuple("iris",1287,2780,"ompt_target") => TallyCoreTime } }
     std::map<unsigned,std::unordered_map<hpt_function_name_t, TallyCoreByte>> traffic;
 
+    //! Maps a "(host,pid,tid,device_id)" with the device name.
+    //! The device name is collected when processing data of "device_name" messaages (lttng:device_name). 
+    //! This assume that a process is attached to a device (with a given name), once the program execution starts, 
+    //! and this will not change during the execution of the program.
     std::unordered_map<hp_device_t, std::string> device_name;
 
+    //! Collects thapi metadata appearing when processing "lttng_ust_thapi:metadata" messages.
     std::vector<std::string> metadata;
 };
 
@@ -470,6 +478,10 @@ struct tally_dispatch {
 //   |_|  |_ | | _> 
 //  
 
+//! Join iterable items as string.
+//! \param iterable an iterable container (set, map, etc) whose iterms support string concantenation.
+//! \param delimiter :, ;, or other user specified delimiter.
+//! \return Returns a string where iterable's "items" are separed by "delimiter"
 template <typename T>
 std::string join_iterator(const T& x, std::string delimiter = ",") {
     return std::accumulate( std::begin(x), std::end(x), std::string{},
@@ -483,25 +495,59 @@ std::string join_iterator(const T& x, std::string delimiter = ",") {
 //   /--\ (_| (_| | (/_ (_| (_|  |_ | (_) | |
 //         _|  _|        _|
 
-/* Extract a sub-tuple
- * https://devblogs.microsoft.com/oldnewthing/20200623-00/?p=103901
- * Look like it may have some problem, but i was not smart enough
- * 1/ to understand the problem
- * 2/ To fix it
- */
+
+//! Remove the last element of a tuple. (helper)
+/*!
+\param tp (std::tuple).
+\return Returns a new tuple without the last element.
+EXAMPLE:
+    input   ("iris01",232,789,"getDeviceInfo"), std::index_sequence<0,1,2>
+    output  ("iris01",232,789)
+
+    It unfolds the expression "std::get<Is>(tp)..." according to Is.
+    So it becomes, std::get<0>(tp), std::get<1>(tp), std::get<2>(tp).
+    Then the final expression becomes 
+    
+    "std::tuple{std::get<0>(tp), std::get<1>(tp), std::get<2>(tp)};"
+
+REFERENCE: 
+https://devblogs.microsoft.com/oldnewthing/20200623-00/?p=103901
+NOTE: Look like it may have some problem, but i was not smart enough
+1/ to understand the problem
+2/ To fix it
+*/
 template <class... Args, std::size_t... Is>
 auto make_tuple_cuted(std::tuple<Args...> tp, std::index_sequence<Is...>) {
   return std::tuple{std::get<Is>(tp)...};
 }
 
-template <class... Args> auto make_tuple_cuted(std::tuple<Args...> tp) {
+//! Remove the last element of a tuple.
+/*!
+\param tp (std::tuple).
+\return Returns a new tuple without the last element.
+EXAMPLE:
+  input   ("iris01",232,789,"getDeviceInfo")
+  output  ("iris01",232,789)
+
+  It will create the following index sequence
+  std::index_sequence<0,1,2>
+
+  Because the "sizeof...(Args) - 1" the index_sequence discard the last index.
+  The created sequence is then pased to a helper that actually returns a new tuple
+  containing the items in indexes 0,1,2.
+HOW:
+REFERENCE: 
+https://devblogs.microsoft.com/oldnewthing/20200623-00/?p=103901
+*/
+template <class... Args> 
+auto make_tuple_cuted(std::tuple<Args...> tp) {
   return make_tuple_cuted(tp, std::make_index_sequence<sizeof...(Args) - 1>{});
 }
+
 /* Aggreate a map of <std::tuple<...>, any>  using the index of the tuple as the new key
  * this index is an `std::index_sequence`
  */
-template <typename TC, class... T,
-          typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
+template <typename TC, class... T, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
 auto aggregate_by_name(std::unordered_map<std::tuple<T...>, TC> &m) {
   std::unordered_map<thapi_function_name, TC> aggregated{};
   for (auto const &[key, val] : m)
