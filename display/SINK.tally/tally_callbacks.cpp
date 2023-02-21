@@ -26,7 +26,7 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
     printf("PARAM demangle_name: %s\n", data->demangle_name ? "true" : "false");
     printf("PARAM display_human: %s\n", data->display_human ? "true" : "false");
     printf("PARAM display_metadata: %s\n", data->display_metadata ? "true" : "false");
-    // printf("PARAM display_name_max_size: %lu\\n", data->display_name_max_size);
+    printf("PARAM display_name_max_size: %d\n", data->display_name_max_size);
     printf("PARAM display_kernel_verbose: %s\n", data->display_kernel_verbose ? "true" : "false");
 
 }
