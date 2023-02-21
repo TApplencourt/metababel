@@ -6,7 +6,7 @@ set -e
 display_compact=false
 demangle_name=true
 display_human=true
-display_metadata=false
+display_metadata=true
 display_name_max_size=100
 display_kernel_verbose=false
 
