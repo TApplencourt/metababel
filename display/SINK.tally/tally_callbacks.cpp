@@ -9,13 +9,26 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
     /* User makes our API usr_data to point to his/her data structure */
     *usr_data = data;
 
-    // TODO: This should be taken from params
-    data->display_compact = false;
-    data->demangle_name = true;
-    data->display_human = true;
-    data->display_metadata = false;
-    data->display_name_max_size = 100;
-    data->display_kernel_verbose = false;
+    params_t *params = (params_t*) malloc(sizeof(params_t));
+    btx_read_params(common_data, params);
+
+    data->display_compact = params->display_compact;
+    data->demangle_name = params->demangle_name;
+    data->display_human = params->display_human;
+    data->display_metadata = params->display_metadata;
+    data->display_name_max_size = params->display_name_max_size;
+    data->display_kernel_verbose = params->display_kernel_verbose;
+
+    free(params);
+
+    printf("PRINTING PARAMS FROM SINK...\n");
+    printf("PARAM display_compact: %s\n", data->display_compact ? "true" : "false");
+    printf("PARAM demangle_name: %s\n", data->demangle_name ? "true" : "false");
+    printf("PARAM display_human: %s\n", data->display_human ? "true" : "false");
+    printf("PARAM display_metadata: %s\n", data->display_metadata ? "true" : "false");
+    // printf("PARAM display_name_max_size: %lu\\n", data->display_name_max_size);
+    printf("PARAM display_kernel_verbose: %s\n", data->display_kernel_verbose ? "true" : "false");
+
 }
 
 void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
@@ -23,11 +36,6 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
     struct tally_dispatch *data = (struct tally_dispatch *) usr_data;
     
     /* User do some stuff with the saved data */
-
-    // Use auto keyword to avoid typing long
-    // type definitions to get the timepoint
-    // at this instant use function now()
-    auto start = high_resolution_clock::now();
 
     const int max_name_size = data->display_name_max_size;
 
@@ -106,21 +114,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
         std::cout << j << std::endl;
     }
 
-    auto stop = high_resolution_clock::now();
-
-    // Subtract stop and start timepoints and
-    // cast it to required unit. Predefined units
-    // are nanoseconds, microseconds, milliseconds,
-    // seconds, minutes, hours. Use duration_cast()
-    // function.
-    auto duration = duration_cast<microseconds>(stop - start);
-
-    // To get the value of duration use the count()
-    // member function on the duration object
-    std::cout << std::endl;
-    std::cout << "=> Execution Time (us):" << duration.count() << std::endl;
-
-    /* Use has to deallocate the memory he/she requested for his/her data structure */
+    /* Desolate user data */
     delete data;
 }
 
@@ -194,7 +188,6 @@ static void lttng_thapi_metadata_usr_callback(
 
     data->metadata.push_back(metadata);
 }
-
 
 void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
     btx_register_callbacks_lttng_host(name_to_dispatcher, &lttng_host_usr_callback);

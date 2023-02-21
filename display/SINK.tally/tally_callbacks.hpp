@@ -512,9 +512,11 @@ EXAMPLE:
 
 REFERENCE: 
 https://devblogs.microsoft.com/oldnewthing/20200623-00/?p=103901
+
 NOTE: Look like it may have some problem, but i was not smart enough
 1/ to understand the problem
 2/ To fix it
+
 */
 template <class... Args, std::size_t... Is>
 auto make_tuple_cuted(std::tuple<Args...> tp, std::index_sequence<Is...>) {
@@ -525,6 +527,7 @@ auto make_tuple_cuted(std::tuple<Args...> tp, std::index_sequence<Is...>) {
 /*!
 \param tp (std::tuple).
 \return Returns a new tuple without the last element.
+
 EXAMPLE:
   input   ("iris01",232,789,"getDeviceInfo")
   output  ("iris01",232,789)
@@ -532,16 +535,44 @@ EXAMPLE:
   It will create the following index sequence
   std::index_sequence<0,1,2>
 
-  Because the "sizeof...(Args) - 1" the index_sequence discard the last index.
+  Because the "sizeof...(Args) - 1", the index_sequence discarded the last index.
   The created sequence is then pased to a helper that actually returns a new tuple
   containing the items in indexes 0,1,2.
-HOW:
+
 REFERENCE: 
 https://devblogs.microsoft.com/oldnewthing/20200623-00/?p=103901
+
 */
 template <class... Args> 
 auto make_tuple_cuted(std::tuple<Args...> tp) {
   return make_tuple_cuted(tp, std::make_index_sequence<sizeof...(Args) - 1>{});
+}
+
+//! Aggregate data by (host,pid,tid) and by (api_call_name)
+/*! This is used eventually to print in extended mode, i.e., statistics per (host,pid,tid).
+\param m (std::unordered_map).
+\return Returns unordered map with data aggregated by (host,pid,tid)
+    in the first level, and aggregated by api_call_name in the second level.
+ 
+EXAMPLE:
+    input   umap{ ("iris01",232,789,"getDeviceInfo") : CoreTime }
+    output  umap{ ("iris01",232,789) : umap{ "getDeviceInfio" : CoreTime } 
+*/
+template <typename TC, class... T, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
+auto aggregate_nested(std::unordered_map<std::tuple<T...>, TC> &m) {
+
+  // New type for a tuple without the last element.
+  // Reference: https://stackoverflow.com/a/42043006/7674852
+  typedef decltype(make_tuple_cuted(std::declval<std::tuple<T...>>())) Minusone;
+
+  // Umap for the aggregated data
+  std::unordered_map<Minusone, std::unordered_map<thapi_function_name, TC>> aggregated;
+
+  for (auto &[key, val] : m) {
+    auto head = make_tuple_cuted(key);
+    aggregated[head][std::get<sizeof...(T) - 1>(key)] += val;
+  }
+  return aggregated;
 }
 
 /* Aggreate a map of <std::tuple<...>, any>  using the index of the tuple as the new key
@@ -552,20 +583,6 @@ auto aggregate_by_name(std::unordered_map<std::tuple<T...>, TC> &m) {
   std::unordered_map<thapi_function_name, TC> aggregated{};
   for (auto const &[key, val] : m)
     aggregated[std::get<sizeof...(T) - 1>(key)] += val;
-  return aggregated;
-}
-
-template <typename TC, class... T,
-          typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
-auto aggregate_nested(std::unordered_map<std::tuple<T...>, TC> &m) {
-  // https://stackoverflow.com/a/42043006/7674852
-  // REALLY?!
-  typedef decltype(make_tuple_cuted(std::declval<std::tuple<T...>>())) Minusone;
-  std::unordered_map<Minusone, std::unordered_map<thapi_function_name, TC>> aggregated;
-  for (auto &[key, val] : m) {
-    auto head = make_tuple_cuted(key);
-    aggregated[head][std::get<sizeof...(T) - 1>(key)] += val;
-  }
   return aggregated;
 }
 
