@@ -670,7 +670,7 @@ auto get_uniq_tally(Map<std::tuple<K...>, V> &input) {
 }
 
 //! Add the total values at the end of the table (represented as a vector of tuples)".
-/*! This is used in the print_compact mode to know how many hosts, pids, tids, have been aggregated.
+/*!
 \param m vector of tuples.
 
 EXAMPLE:
@@ -686,11 +686,7 @@ EXAMPLE:
                 pair{"zeModuleDestroy"), CoreTime},
                 pair{"zeMemFree"),       CoreTime},
                 pair{"Total"),           CoreTime}  
-          }   
-
-TODO:
-  Now, we are counting the number of unique elements in print_compact  using the .size method.
-  Maybe we can do that here if no other function requires the result as is implemented right now.
+          }
 
 */
 template <typename TC, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
@@ -720,6 +716,26 @@ void add_footer(std::vector<std::pair<thapi_function_name, TC>> &m) {
  * sorted by original map values
  */
 
+//! Take an umap and return a vector of pair sorted in descending order. 
+/*! This is used to sort by duration.
+\param m unordered_map{thapi_function_name,TallyCoreBase}
+\return Returns a vector of pairs with sorted entries.
+
+EXAMPLE:
+  input   umap{ 
+                "zeModuleCreate"  , CoreTime{ duration = 20, ... },
+                "zeModuleDestroy" , CoreTime{ duration = 15, ... },
+                "getDeviceInfo"   , CoreTime{ duration = 30, ... } 
+          }
+  output  vector{ 
+                pair{ "zeModuleCreate"  , CoreTime{ duration = 30, ... } },
+                pair{ "zeModuleDestroy" , CoreTime{ duration = 20, ... } },
+                pair{ "getDeviceInfo"   , CoreTime{ duration = 15, ... } }
+                ,
+                 
+          }
+
+*/
 template <template <typename...> class Map, typename K, typename V>
 auto sort_by_value(Map<K, V> &m) {
   std::vector<std::pair<K, V>> v;
