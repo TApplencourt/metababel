@@ -1,57 +1,85 @@
-:type: map
-:entries:
-  - :name: lttng:host
-    :samples:
-        # hostname, vpid, vtid, timestamp, backend ; name, duration, error
-      - :values: ['"iris01"',1289,1098,1,0,'"host_function_name_1"',2,0]
-        :times: 5
-      - :values: ['"iris01"',1289,1099,1,0,'"host_function_name_2"',2,0]
-        :times: 5
-      - :values: ['"iris02"',1289,2000,1,0,'"host_function_name_3"',2,0]
-        :times: 5
-      - :values: ['"iris02"',1289,2001,1,0,'"host_function_name_4"',2,0]
-        :times: 5 
-  - :name: lttng:device
-    :samples:
-        # hostname, vpid, vtid, timestamp, backend ; name, duration, did, sdid, error, metadata
-      - :values: ['"iris01"',1289,1098,1,0,'"device_function_name_1"',2,0,0,0,'"No metadata"']
-        :times: 5
-      - :values: ['"iris01"',1289,1098,1,0,'"device_function_name_2"',2,0,0,0,'"No metadata"']
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"device_function_name_3"',2,0,0,1,'"No metadata"']
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"device_function_name_4"',2,0,0,1,'"No metadata"']
-        :times: 5  
-  - :name: lttng:traffic
-    :samples:
-        # hostname, vpid, vtid, timestamp, backend ; name, size
-      - :values: ['"iris01"',1289,1098,1,0,'"traffic_function_name_1"',1000]
-        :times: 5
-      - :values: ['"iris01"',1289,1098,1,0,'"traffic_function_name_2"',1000]
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"traffic_function_name_3"',2000]
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"traffic_function_name_4"',0]
-        :times: 5
-  - :name: lttng:device_name
-    :samples:
-        # hostname, vpid, vtid, timestamp, backend ; name, did
-      - :values: ['"iris01"',1289,1098,1,0,'"device_name_function_name_1"',0]
-        :times: 5
-      - :values: ['"iris01"',1289,1098,1,0,'"device_name_function_name_2"',0]
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"device_name_function_name_3"',1]
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"device_name_function_name_4"',1]
-        :times: 5
-  - :name: lttng_ust_thapi:metadata 
-    :samples:
-        # hostname, vpid, vtid, timestamp, backend ; metadatass
-      - :values: ['"iris01"',1289,1098,1,0,'"No THAPI Metadata"']
-        :times: 5
-      - :values: ['"iris01"',1289,1098,1,0,'"No THAPI Metadata"']
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"No THAPI Metadata"']
-        :times: 5
-      - :values: ['"iris02"',1289,1098,1,0,'"No THAPI Metadata"']
-        :times: 5   
+- :name: lttng:host
+  # hostname, vpid, vtid, timestamp, backend ; name, duration, error
+  :field_values: [iris01,1289,1098,1,0,host_function_name_1,2,0]
+  :times: 5
+- :name: lttng:device
+  # hostname, vpid, vtid, timestamp, backend ; name, duration, did, sdid, error, metadata
+  :field_values: [iris01,1289,1098,1,0,device_function_name_1,2,0,0,0,No metadata]
+  :times: 5
+- :name: lttng:traffic
+  # hostname, vpid, vtid, timestamp, backend ; name, size
+  :field_values: [iris01,1289,1098,1,0,traffic_function_name_2,1000]
+  :times: 5
+- :name: lttng:device_name
+  # hostname, vpid, vtid, timestamp, backend ; name, did
+  :field_values: [iris01,1289,1098,1,0,device_name_function_name_2,0]
+  :times: 5
+- :name: lttng_ust_thapi:metadata
+  # hostname, vpid, vtid, timestamp, backend ; name, did
+  :field_values: [iris01,1289,1098,1,0,No THAPI Metadata]
+  :times: 5
+
+- :name: lttng:host
+  :field_values: [iris01,1289,1098,1,0,host_function_name_1,2,0]
+  :times: 5
+- :name: lttng:host
+  :field_values: [iris01,1289,1099,1,0,host_function_name_2,2,0]
+  :times: 5
+- :name: lttng:host
+  :field_values: [iris02,1289,2000,1,0,host_function_name_3,2,0]
+  :times: 5
+- :name: lttng:host
+  :field_values: [iris02,1289,2001,1,0,host_function_name_4,2,0]
+  :times: 5
+
+- :name: lttng:device
+  :field_values: [iris01,1289,1098,1,0,device_function_name_1,2,0,0,0,No metadata]
+  :times: 5
+- :name: lttng:device
+  :field_values: [iris01,1289,1098,1,0,device_function_name_2,2,0,0,0,No metadata]
+  :times: 5
+- :name: lttng:device
+  :field_values: [iris02,1289,1098,1,0,device_function_name_3,2,0,0,1,No metadata]
+  :times: 5
+- :name: lttng:device
+  :field_values: [iris02,1289,1098,1,0,device_function_name_4,2,0,0,1,No metadata]
+  :times: 5 
+
+- :name: lttng:traffic
+  :field_values: [iris01,1289,1098,1,0,traffic_function_name_1,1000]
+  :times: 5
+- :name: lttng:traffic
+  :field_values: [iris01,1289,1098,1,0,traffic_function_name_2,1000]
+  :times: 5
+- :name: lttng:traffic
+  :field_values: [iris02,1289,1098,1,0,traffic_function_name_3,2000]
+  :times: 5
+- :name: lttng:traffic
+  :field_values: [iris02,1289,1098,1,0,traffic_function_name_4,0]
+  :times: 5
+
+- :name: lttng:device_name
+  :field_values: [iris01,1289,1098,1,0,device_name_function_name_1,0]
+  :times: 5
+- :name: lttng:device_name
+  :field_values: [iris01,1289,1098,1,0,device_name_function_name_2,0]
+  :times: 5
+- :name: lttng:device_name
+  :field_values: [iris02,1289,1098,1,0,device_name_function_name_3,1]
+  :times: 5
+- :name: lttng:device_name
+  :field_values: [iris02,1289,1098,1,0,device_name_function_name_4,1]
+  :times: 5
+
+- :name: lttng_ust_thapi:metadata
+  :field_values: [iris01,1289,1098,1,0,No THAPI Metadata]
+  :times: 5
+- :name: lttng_ust_thapi:metadata
+  :field_values: [iris01,1289,1098,1,0,No THAPI Metadata]
+  :times: 5
+- :name: lttng_ust_thapi:metadata
+  :field_values: [iris02,1289,1098,1,0,No THAPI Metadata]
+  :times: 5
+- :name: lttng_ust_thapi:metadata
+  :field_values: [iris02,1289,1098,1,0,No THAPI Metadata]
+  :times: 5   

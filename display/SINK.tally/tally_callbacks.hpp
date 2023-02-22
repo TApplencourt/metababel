@@ -771,10 +771,8 @@ void apply_sizelimit(std::vector<std::pair<thapi_function_name, TC>> &m, int max
 //   |  | (_| >< | | | | |_| | |   __) |_ |  | | | (_|   __) | /_ (/_
 //                                                  _|
 // TallyCoreHeader tuple of str
-template <std::size_t SIZE, typename TC,
-          typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
-auto max_string_size(std::vector<std::pair<thapi_function_name, TC>> &m,
-                      const std::pair<std::string, std::array<const char *, SIZE>> header) {
+template <std::size_t SIZE, typename TC, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
+auto max_string_size(std::vector<std::pair<thapi_function_name, TC>> &m, const std::pair<std::string, std::array<const char *, SIZE>> header) {
 
   auto &[header_name, header_tallycore] = header;
   long name_max = header_name.size();
@@ -807,8 +805,7 @@ auto max_string_size(std::vector<std::pair<thapi_function_name, TC>> &m,
 
 // We use 3 function, because my template skill are poor...
 template <std::size_t SIZE>
-std::ostream &operator<<(std::ostream &os,
-                         const std::pair<std::array<const char *, SIZE>, std::vector<long>> &_tup) {
+std::ostream &operator<<(std::ostream &os,const std::pair<std::array<const char *, SIZE>, std::vector<long>> &_tup) {
   auto &[c, column_width] = _tup;
   for (auto i = 0U; i < c.size(); i++) {
     os << std::setw(std::abs(column_width[i]));
@@ -842,16 +839,14 @@ std::ostream &operator<<(std::ostream &os, std::pair<std::string, long> &pair) {
 
 // Print 2 Tuple correspond to the hostname, process, ... device, subdevice.
 template <class... T, class... T2, size_t... I>
-void print_tally(std::ostream &os, const std::tuple<T...> &s, const std::tuple<T2...> &h,
-                 std::index_sequence<I...>) {
+void print_tally(std::ostream &os, const std::tuple<T...> &s, const std::tuple<T2...> &h, std::index_sequence<I...>) {
   ((std::get<I>(s).size() ? os << std::get<I>(s).size() << " " << std::get<I>(h) << " | "
                             : os << ""),
    ...);
 }
 
 template <class... T, class... T2>
-void print_tally(std::ostream &os, const std::string &header, const std::tuple<T...> &s,
-                  const std::tuple<T2...> &h) {
+void print_tally(std::ostream &os, const std::string &header, const std::tuple<T...> &s, const std::tuple<T2...> &h) {
   os << header << " | ";
   constexpr auto seq = std::make_index_sequence<sizeof...(T2)>();
   print_tally(os, s, h, seq);
@@ -860,8 +855,7 @@ void print_tally(std::ostream &os, const std::string &header, const std::tuple<T
 
 // Print 2 Tuple correspond to the hostname, process, ... device, subdevice.
 template <class... T, class... T2, size_t... I>
-void print_named_tuple(std::ostream &os, const std::tuple<T...> &s, const std::tuple<T2...> &h,
-                       std::index_sequence<I...>) {
+void print_named_tuple(std::ostream &os, const std::tuple<T...> &s, const std::tuple<T2...> &h, std::index_sequence<I...>) {
   (((std::get<I>(s) != T{}) ? os << std::get<I>(h) << ": " << std::get<I>(s) << " | "
                             : os << ""),
    ...);
@@ -911,8 +905,7 @@ void print_tally(std::unordered_map<thapi_function_name, TC> &m, int display_nam
 // name, and the value are TallyCore
 template <typename K, typename T, typename TC,
           typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
-void print_compact(std::string title, std::unordered_map<K, TC> m, T &&keys_string,
-                   int display_name_max_size) {
+void print_compact(std::string title, std::unordered_map<K, TC> m, T &&keys_string, int display_name_max_size) {
 
   if (m.empty())
     return;
@@ -929,10 +922,8 @@ void print_compact(std::string title, std::unordered_map<K, TC> m, T &&keys_stri
 
 // original_map is map where the key are tuple who correspond to hostname, process, ..., API call
 // name, and the value are TallyCore
-template <typename K, typename T, typename TC,
-          typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
-void print_extended(std::string title, std::unordered_map<K, TC> m, T &&keys_string,
-                    int display_name_max_size) {
+template <typename K, typename T, typename TC, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
+void print_extended(std::string title, std::unordered_map<K, TC> m, T &&keys_string, int display_name_max_size) {
 
   // Now working of the body of the table
   auto aggregated_nested = aggregate_nested(m);
@@ -964,8 +955,7 @@ void to_json(nlohmann::json &j, const std::vector<std::pair<thapi_function_name,
 
 // original_map is map where the key are tuple who correspond to hostname, process, ..., API call
 // name, and the value are TallyCore
-template <typename K, typename TC,
-          typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
+template <typename K, typename TC, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
 nlohmann::json json_compact(std::unordered_map<K, TC> &m) {
   auto aggregated_by_name = aggregate_by_name(m);
   auto sorted_by_value = sort_by_value(aggregated_by_name);
@@ -974,13 +964,11 @@ nlohmann::json json_compact(std::unordered_map<K, TC> &m) {
 }
 
 template <class... T, class... T2, size_t... I>
-void json_populate(nlohmann::json &j, const std::tuple<T...> &h, const std::tuple<T2...> &s,
-                   std::index_sequence<I...>) {
+void json_populate(nlohmann::json &j, const std::tuple<T...> &h, const std::tuple<T2...> &s, std::index_sequence<I...>) {
   ((j[std::get<I>(h)] = std::get<I>(s)), ...);
 }
 
-template <typename K, typename TC, class... T,
-          typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
+template <typename K, typename TC, class... T, typename = std::enable_if_t<std::is_base_of_v<TallyCoreBase, TC>>>
 nlohmann::json json_extented(std::unordered_map<K, TC> &m, std::tuple<T...> &&h) {
   nlohmann::json j;
   auto aggregated_nested = aggregate_nested(m);
