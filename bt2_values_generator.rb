@@ -36,17 +36,17 @@ module Babeltrace2Gen
       @usr_default_value = usr_default_value
     end
 
-    def get(name, val, usr_default_value)
+    def get(name, val)
       cast_func = @cast_type ? "(#{@cast_type})" : ''
       bt_default_value = self.class.instance_variable_get(:@bt_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
       bt_type_is = self.class.instance_variable_get(:@bt_type_is)
 
-      default_value = usr_default_value || bt_default_value
+      default_value = @usr_default_value || bt_default_value
 
       pr "if (#{val} != NULL) {"
       pr "  if (!#{bt_type_is}(#{val})) {"
-      pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be %s \\n\",\"#{@name}\",\"#{bt_type}\");"
+      pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
       pr "    exit(1);"
       pr "  }"
       pr "  #{name} = #{cast_func}bt_value_#{bt_type}_get(#{val});"
@@ -71,7 +71,7 @@ module Babeltrace2Gen
       @entries.map do |m|
         scope do
           pr "const bt_value *val = bt_value_map_borrow_entry_value_const(#{map}, \"#{m.name}\");"
-          m.get("#{struct}->#{m.name}", 'val', m.usr_default_value)
+          m.get("#{struct}->#{m.name}", 'val')
         end
       end
     end
@@ -92,11 +92,10 @@ module Babeltrace2Gen
 
     def initialize(name,usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !usr_default_value.nil? and ![true, false].include? usr_default_value
-        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} (true or false) but provided '#{usr_default_value}'."
+      if !usr_default_value.nil? and !['BT_TRUE', 'BT_FALSE'].include? usr_default_value
+        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} (BT_TRUE or BT_FALSE) but provided '#{usr_default_value}'."
       end
-      default_value = { true => 'BT_TRUE', false => 'BT_FALSE' }[usr_default_value]
-      super(name,default_value)
+      super(name,usr_default_value)
     end
   end
 

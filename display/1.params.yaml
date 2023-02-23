@@ -2,12 +2,11 @@
 :entries:
   - :name: display_compact
     :type: bool
-    :default_value: true
   - :name: demangle_name
     :type: bool
   - :name: display_human
     :type: bool
-    :default_value: true
+    :default_value: BT_TRUE
   - :name: display_metadata
     :type: bool
   - :name: display_name_max_size
