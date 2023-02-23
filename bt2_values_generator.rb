@@ -51,7 +51,7 @@ module Babeltrace2Gen
       pr "  }"
       pr "  #{name} = #{cast_func}bt_value_#{bt_type}_get(#{val});"
       pr "} else {"
-      pr "  #{name} = #{cast_func}#{ default_value };"
+      pr "  #{name} = #{cast_func}#{default_value};"
       pr "}"
     end
   end
