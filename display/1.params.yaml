@@ -2,13 +2,19 @@
 :entries:
   - :name: display_compact
     :type: bool
+    :default_value: true
   - :name: demangle_name
     :type: bool
   - :name: display_human
     :type: bool
+    :default_value: true
   - :name: display_metadata
     :type: bool
   - :name: display_name_max_size
     :type: integer_unsigned
+    :default_value: 90
   - :name: display_kernel_verbose
     :type: bool
+  - :name: display_message
+    :type: string
+    :default_value: 8999
