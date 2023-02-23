@@ -17,4 +17,4 @@
     :type: bool
   - :name: display_message
     :type: string
-    :default_value: 8999
+    :default_value: This param was set from params.yaml

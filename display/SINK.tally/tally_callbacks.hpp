@@ -440,6 +440,7 @@ struct tally_dispatch {
     bool display_metadata;
     int  display_name_max_size;
     bool display_kernel_verbose;
+    std::string display_message;
 
     //! Maps "level" with the names of the backends that appeared when processing host messages (lttng:host). 
     //! This information is separed by level. Refer to the "backend_level" array at the top of this 

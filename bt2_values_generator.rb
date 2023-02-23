@@ -41,7 +41,8 @@ module Babeltrace2Gen
       bt_default_value = self.class.instance_variable_get(:@bt_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
       bt_type_is = self.class.instance_variable_get(:@bt_type_is)
-      pr "if (#{val}) {"
+
+      pr "if (#{val} != NULL) {"
       pr "  if (!#{bt_type_is}(#{val})) {"
       pr "    printf(\"Bad value for command line argument '%s' the value must be %s \\n\",\"#{@name}\",\"#{bt_type}\");"
       pr "    exit(1);"
@@ -56,6 +57,7 @@ module Babeltrace2Gen
         pr "  #{name} = #{cast_func}#{bt_default_value};"
         pr "}"
       end
+      
     end
   end
 
@@ -96,7 +98,9 @@ module Babeltrace2Gen
     def initialize(name,default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
       if !default_value.nil?
-        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" unless [true, false].include? default_value
+        unless [true, false].include? default_value
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" 
+        end
         default_value = { true => 'BT_TRUE', false => 'BT_FALSE' }[default_value]
       end 
       super(name,default_value)
@@ -113,7 +117,9 @@ module Babeltrace2Gen
       bt_type = self.class.instance_variable_get(:@bt_type)
       if !default_value.nil?
         # Every object that can be converted to string is supported
-        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" unless default_value.respond_to?(:to_s)
+        unless default_value.respond_to?(:to_s)
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" 
+        end 
       end
       super(name,default_value.to_s.inspect)
     end
@@ -128,7 +134,9 @@ module Babeltrace2Gen
     def initialize(name,default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
       if !default_value.nil?
-      raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" unless default_value.kind_of? Integer and default_value.positive?
+        unless default_value.kind_of? Integer and default_value.positive?
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" 
+        end
       end
       super(name,default_value)
     end

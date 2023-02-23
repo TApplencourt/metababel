@@ -18,16 +18,17 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
     data->display_metadata = params->display_metadata;
     data->display_name_max_size = params->display_name_max_size;
     data->display_kernel_verbose = params->display_kernel_verbose;
+    data->display_message = params->display_message;
 
     free(params);
 
-    printf("PRINTING PARAMS FROM SINK...\n");
-    printf("PARAM display_compact: %s\n", data->display_compact ? "true" : "false");
-    printf("PARAM demangle_name: %s\n", data->demangle_name ? "true" : "false");
-    printf("PARAM display_human: %s\n", data->display_human ? "true" : "false");
-    printf("PARAM display_metadata: %s\n", data->display_metadata ? "true" : "false");
-    printf("PARAM display_name_max_size: %d\n", data->display_name_max_size);
-    printf("PARAM display_kernel_verbose: %s\n", data->display_kernel_verbose ? "true" : "false");
+    std::cout << "display_compact: " << data->display_compact << std::endl;
+    std::cout << "demangle_name: " << data->demangle_name << std::endl;
+    std::cout << "display_human: " << data->display_human << std::endl;
+    std::cout << "display_metadata: " << data->display_metadata << std::endl;
+    std::cout << "display_name_max_size: " << data->display_name_max_size << std::endl;
+    std::cout << "display_kernel_verbose: " << data->display_kernel_verbose << std::endl;
+    std::cout << "display_message: " << data->display_message << std::endl;
 
 }
 
