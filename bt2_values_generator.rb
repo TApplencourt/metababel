@@ -22,7 +22,7 @@ module Babeltrace2Gen
   end
 
   class BTValueCLass::Scalar < BTValueCLass
-    attr_accessor :name, :default_value
+    attr_accessor :name, :usr_default_value
 
     include BTPrinter
 
@@ -31,33 +31,28 @@ module Babeltrace2Gen
       new(model[:name],model.fetch(:default_value,nil))
     end
 
-    def initialize(name,default_value)
+    def initialize(name,usr_default_value)
       @name = name
-      @default_value = default_value
+      @usr_default_value = usr_default_value
     end
 
-    def get(name, val)
+    def get(name, val, usr_default_value)
       cast_func = @cast_type ? "(#{@cast_type})" : ''
       bt_default_value = self.class.instance_variable_get(:@bt_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
       bt_type_is = self.class.instance_variable_get(:@bt_type_is)
 
+      default_value = usr_default_value || bt_default_value
+
       pr "if (#{val} != NULL) {"
       pr "  if (!#{bt_type_is}(#{val})) {"
-      pr "    printf(\"Bad value for command line argument '%s' the value must be %s \\n\",\"#{@name}\",\"#{bt_type}\");"
+      pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be %s \\n\",\"#{@name}\",\"#{bt_type}\");"
       pr "    exit(1);"
       pr "  }"
       pr "  #{name} = #{cast_func}bt_value_#{bt_type}_get(#{val});"
-      if @default_value != nil
-        pr "} else {"
-        pr "  #{name} = #{cast_func}#{ default_value };"
-        pr "}"
-      else
-        pr "} else {"
-        pr "  #{name} = #{cast_func}#{bt_default_value};"
-        pr "}"
-      end
-      
+      pr "} else {"
+      pr "  #{name} = #{cast_func}#{ default_value };"
+      pr "}"
     end
   end
 
@@ -76,7 +71,7 @@ module Babeltrace2Gen
       @entries.map do |m|
         scope do
           pr "const bt_value *val = bt_value_map_borrow_entry_value_const(#{map}, \"#{m.name}\");"
-          m.get("#{struct}->#{m.name}", 'val')
+          m.get("#{struct}->#{m.name}", 'val', m.usr_default_value)
         end
       end
     end
@@ -95,14 +90,12 @@ module Babeltrace2Gen
     @bt_return_type = 'bt_bool'
     @bt_default_value = 'BT_FALSE'
 
-    def initialize(name,default_value)
+    def initialize(name,usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !default_value.nil?
-        unless [true, false].include? default_value
-          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" 
-        end
-        default_value = { true => 'BT_TRUE', false => 'BT_FALSE' }[default_value]
-      end 
+      if !usr_default_value.nil? and ![true, false].include? usr_default_value
+        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} (true or false) but provided '#{usr_default_value}'."
+      end
+      default_value = { true => 'BT_TRUE', false => 'BT_FALSE' }[usr_default_value]
       super(name,default_value)
     end
   end
@@ -113,15 +106,13 @@ module Babeltrace2Gen
     @bt_return_type = 'const char*'
     @bt_default_value = 'NULL'
 
-    def initialize(name,default_value)
+    def initialize(name,usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !default_value.nil?
-        # Every object that can be converted to string is supported
-        unless default_value.respond_to?(:to_s)
-          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" 
-        end 
+      # Every object that can be converted to string is being supported.
+      if !usr_default_value.nil? and !usr_default_value.respond_to?(:to_s)
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} but provided '#{usr_default_value}'." 
       end
-      super(name,default_value.to_s.inspect)
+      super(name,usr_default_value.to_s.inspect)
     end
   end
 
@@ -131,14 +122,12 @@ module Babeltrace2Gen
     @bt_return_type = 'uint64_t'
     @bt_default_value = '0'
 
-    def initialize(name,default_value)
+    def initialize(name,usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !default_value.nil?
-        unless default_value.kind_of? Integer and default_value.positive?
-          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type}" 
-        end
+      if !usr_default_value.nil? and (!usr_default_value.kind_of? Integer or !usr_default_value.positive?)
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} but provided '#{usr_default_value}'." 
       end
-      super(name,default_value)
+      super(name,usr_default_value)
     end
   end
 end

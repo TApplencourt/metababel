@@ -6,9 +6,9 @@ set -e
 display_compact=false
 demangle_name=false
 display_human=true
-display_metadata=false
+display_metadata=true
 display_name_max_size=79
-display_kernel_verbose=false
+display_kernel_verbose=true
 display_message="This param was set from command line"
 
 # Generate interval messages "interval_callbacks.c"
