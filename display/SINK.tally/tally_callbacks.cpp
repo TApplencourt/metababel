@@ -18,18 +18,8 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
     data->display_metadata = params->display_metadata;
     data->display_name_max_size = params->display_name_max_size;
     data->display_kernel_verbose = params->display_kernel_verbose;
-    data->display_message = params->display_message;
 
     free(params);
-
-    std::cout << "display_compact: " << data->display_compact << std::endl;
-    std::cout << "demangle_name: " << data->demangle_name << std::endl;
-    std::cout << "display_human: " << data->display_human << std::endl;
-    std::cout << "display_metadata: " << data->display_metadata << std::endl;
-    std::cout << "display_name_max_size: " << data->display_name_max_size << std::endl;
-    std::cout << "display_kernel_verbose: " << data->display_kernel_verbose << std::endl;
-    std::cout << "display_message: " << data->display_message << std::endl;
-
 }
 
 void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {

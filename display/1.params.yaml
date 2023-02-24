@@ -14,6 +14,3 @@
     :default_value: 20
   - :name: display_kernel_verbose
     :type: bool
-  - :name: display_message
-    :type: string
-    :default_value: This param was set from params.yaml
