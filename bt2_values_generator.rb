@@ -22,17 +22,18 @@ module Babeltrace2Gen
   end
 
   class BTValueCLass::Scalar < BTValueCLass
-    attr_accessor :name
+    attr_accessor :name, :usr_default_value
 
     include BTPrinter
 
     # Scalars are leafs, avoid recursion
     def self.from_h(model)
-      new(model[:name])
+      new(model[:name],model.fetch(:default_value,nil))
     end
 
-    def initialize(name)
+    def initialize(name,usr_default_value)
       @name = name
+      @usr_default_value = usr_default_value
     end
 
     def get(name, val)
@@ -41,10 +42,17 @@ module Babeltrace2Gen
       bt_type = self.class.instance_variable_get(:@bt_type)
       bt_type_is = self.class.instance_variable_get(:@bt_type_is)
 
-      pr "if (#{val} && #{bt_type_is}(#{val}))"
+      default_value = @usr_default_value || bt_default_value
+
+      pr "if (#{val} != NULL) {"
+      pr "  if (!#{bt_type_is}(#{val})) {"
+      pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
+      pr "    exit(1);"
+      pr "  }"
       pr "  #{name} = #{cast_func}bt_value_#{bt_type}_get(#{val});"
-      pr 'else'
-      pr "  #{name} = #{cast_func}#{bt_default_value};"
+      pr "} else {"
+      pr "  #{name} = #{cast_func}#{default_value};"
+      pr "}"
     end
   end
 
@@ -81,6 +89,14 @@ module Babeltrace2Gen
     @bt_type_is = 'bt_value_is_bool'
     @bt_return_type = 'bt_bool'
     @bt_default_value = 'BT_FALSE'
+
+    def initialize(name,usr_default_value)
+      bt_type = self.class.instance_variable_get(:@bt_type)
+      if !usr_default_value.nil? and !['BT_TRUE', 'BT_FALSE'].include? usr_default_value
+        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} (BT_TRUE or BT_FALSE) but provided '#{usr_default_value}'."
+      end
+      super(name,usr_default_value)
+    end
   end
 
   class BTValueCLass::String < BTValueCLass::Scalar
@@ -88,6 +104,15 @@ module Babeltrace2Gen
     @bt_type_is = 'bt_value_is_string'
     @bt_return_type = 'const char*'
     @bt_default_value = 'NULL'
+
+    def initialize(name,usr_default_value)
+      bt_type = self.class.instance_variable_get(:@bt_type)
+      # Every object that can be converted to string is being supported.
+      if !usr_default_value.nil? and !usr_default_value.respond_to?(:to_s)
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} but provided '#{usr_default_value}'." 
+      end
+      super(name,usr_default_value.to_s.inspect)
+    end
   end
 
   class BTValueCLass::IntegerUnsigned < BTValueCLass::Scalar
@@ -95,5 +120,13 @@ module Babeltrace2Gen
     @bt_type_is = 'bt_value_is_signed_integer'
     @bt_return_type = 'uint64_t'
     @bt_default_value = '0'
+
+    def initialize(name,usr_default_value)
+      bt_type = self.class.instance_variable_get(:@bt_type)
+      if !usr_default_value.nil? and (!usr_default_value.kind_of? Integer or !usr_default_value.between?(0,2**64-1))
+          raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} and must be in [0,2^64-1], but provided '#{usr_default_value}'." 
+      end
+      super(name,usr_default_value)
+    end
   end
 end

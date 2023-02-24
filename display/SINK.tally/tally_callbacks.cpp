@@ -20,15 +20,6 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
     data->display_kernel_verbose = params->display_kernel_verbose;
 
     free(params);
-
-    printf("PRINTING PARAMS FROM SINK...\n");
-    printf("PARAM display_compact: %s\n", data->display_compact ? "true" : "false");
-    printf("PARAM demangle_name: %s\n", data->demangle_name ? "true" : "false");
-    printf("PARAM display_human: %s\n", data->display_human ? "true" : "false");
-    printf("PARAM display_metadata: %s\n", data->display_metadata ? "true" : "false");
-    printf("PARAM display_name_max_size: %d\n", data->display_name_max_size);
-    printf("PARAM display_kernel_verbose: %s\n", data->display_kernel_verbose ? "true" : "false");
-
 }
 
 void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
