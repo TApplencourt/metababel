@@ -26,13 +26,14 @@ ruby ../main.rb -u 2.interval_definitions.yaml -t SINK -p display --params 1.par
 make -C SINK.tally
 babeltrace2 --plugin-path=SOURCE.interval:SINK.tally  \
             --component=source.convert.interval \
-            --component=sink.display.tally \
-            --params="display_compact=${display_compact}, \
-                      demangle_name=${demangle_name}, \
-                      display_human=${display_human}, \
-                      display_metadata=${display_metadata}, \
-                      display_name_max_size=${display_name_max_size}, \
-                      display_kernel_verbose=${display_kernel_verbose}"      
+            --component=sink.display.tally 
+            # \
+            # --params="display_compact=${display_compact}, \
+            #           demangle_name=${demangle_name}, \
+            #           display_human=${display_human}, \
+            #           display_metadata=${display_metadata}, \
+            #           display_name_max_size=${display_name_max_size}, \
+            #           display_kernel_verbose=${display_kernel_verbose}"      
 
 rm -f component.h dispatch.{h,c,o} params.{h,c,o} tally.{c,o,so} my_callbacks.o my_demangle.o
 

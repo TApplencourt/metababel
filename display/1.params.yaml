@@ -11,7 +11,7 @@
     :type: bool
   - :name: display_name_max_size
     :type: integer_unsigned
-    :default_value: 10
+    :default_value: 20
   - :name: display_kernel_verbose
     :type: bool
   - :name: display_message
