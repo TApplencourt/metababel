@@ -48,6 +48,16 @@ graph TD
     MTP -- No --> PM[Pop Messages]--> DS[/DownStreamMessages\]
 ```
 
+State Machine
+```
+stateDiagram-v2
+    [*] --> pop_queued_messages
+    [*] --> consume_upstream_messages
+    consume_upstream_messages --> [*]
+    pop_queued_messages --> [*]
+    consume_upstream_messages -->  consume_upstream_messages
+    consume_upstream_messages --> pop_queued_messages
+```
 
 # Sink Description
 
