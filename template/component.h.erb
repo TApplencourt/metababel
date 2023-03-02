@@ -65,6 +65,8 @@ struct common_data_s {
   /* Handling the downstream message queue */
   struct el *queue;
   struct el *pool;
+  /* Guarantee btx_usr_finalize in Filter is called just once. */
+  bt_bool finalized;
 };
 <% elsif options[:component_type] == 'SINK' %>
 struct common_data_s {
