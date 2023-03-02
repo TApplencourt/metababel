@@ -48,8 +48,9 @@ graph TD
     MTP -- No --> PM[Pop Messages]--> DS[/DownStreamMessages\]
 ```
 
-State Machine
-```
+## State Machine
+
+```mermaid
 stateDiagram-v2
     [*] --> pop_queued_messages
     [*] --> consume_upstream_messages
