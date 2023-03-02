@@ -56,6 +56,8 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   if (common_data->queue)
     goto pop_queued_messages;
 
+consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
+
   /* Consume a batch of messages from the upstream message iterator */
   uint64_t upstream_message_count;
   bt_message_array_const upstream_messages;
@@ -64,35 +66,26 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
       bt_message_iterator_next(message_iterator_private_data->message_iterator,
                                &upstream_messages, &upstream_message_count);
 
-  // We need to know when there are not more uptreams messeages, that is when 
-  // next_status is BT_MESSAGE_ITERATOR_NEXT_STATUS_END. Once that happend
-  // we are able to execute the finalize function, just once. As the finalize 
-  // can also push new messages in the queue, we need to return OK status and 
-  // continue placing messages from the queue to the output messages array.
-  static bt_bool finalized = BT_FALSE;
-  if (next_status == BT_MESSAGE_ITERATOR_NEXT_STATUS_END && finalized == BT_FALSE)
-  {
-    btx_finalize_usr_data(common_data, common_data->usr_data);
-    // Check if btx_finalize_usr_data put messages in the messages queue.
-    if (common_data->queue){
-      next_status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
-    /*
-      * Fill the messages array, because this method _cannot_ return
-      * `BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK` and put no
-      * messages into its output message array.
-      */
-      finalized = BT_TRUE;
-      goto pop_queued_messages;
-    }    
-  }
 
   /* We cannot have any message left in the downstream queue
    * Hence it's safe to pass any error messages downstream */
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
-    /* End of iteration: put the message iterator's reference */
-    bt_message_iterator_put_ref(
-        message_iterator_private_data->message_iterator);
+    if (!common_data->finalized){
+       btx_finalize_usr_data(common_data, common_data->usr_data);
+       
+       common_data->finalized = BT_TRUE;
+       if (common_data->queue){
+          status= BT_MESSAGE_ITERATOR_NEXT_STATUS_OK;
+          goto pop_queued_messages;
+       }
+       
+      /* End of iteration: put the message iterator's reference */
+      bt_message_iterator_put_ref(
+          message_iterator_private_data->message_iterator);
+      status = BT_MESSAGE_ITERATOR_NEXT_STATUS_END;
+      goto end;
+    }
     status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
     goto end;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
@@ -133,6 +126,16 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
     } else {
       btx_downstream_push_message(common_data, upstream_message);
     }
+  }
+
+  if (!common_data->queue) {
+    /*
+     * We discarded all the upstream messages: get a new batch of
+     * messages, because this method _cannot_ return
+     * `BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK` and put no
+     * messages into its output message array.
+     */
+    goto consume_upstream_messages;
   }
 
 pop_queued_messages:
