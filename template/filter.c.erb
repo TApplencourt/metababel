@@ -13,14 +13,14 @@
  */
 
 /* Message iterator's private data */
-struct message_iterator_s {
+struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   struct common_data_s *common_data;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };
 
-typedef struct message_iterator_s message_iterator_t;
+typedef struct btx_message_iterator_s btx_message_iterator_t;
 
 static void lookup_dispatcher(struct common_data_s *common_data,
                               const bt_event_class *event_class,
@@ -39,7 +39,7 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                              uint64_t *count) {
 
   /* Retrieve our private data from the message iterator's user data */
-  message_iterator_t *message_iterator_private_data =
+  btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   struct common_data_s *common_data =
@@ -216,7 +216,7 @@ filter_message_iterator_initialize(
     bt_self_message_iterator_configuration *configuration,
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
-  message_iterator_t *message_iterator_private_data =
+  btx_message_iterator_t *message_iterator_private_data =
       malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
@@ -258,7 +258,7 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
 static void filter_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
-  message_iterator_t *message_iterator_private_data =
+  btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   /* Free the allocated structure */

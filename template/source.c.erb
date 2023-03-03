@@ -12,7 +12,7 @@
  */
 
 /* Message iterator's private data */
-struct message_iterator_s {
+struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   struct common_data_s *common_data;
 };
@@ -25,7 +25,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                              bt_message_array_const messages, uint64_t capacity,
                              uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
-  struct message_iterator_s *message_iterator_private_data =
+  struct btx_message_iterator_s *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   struct common_data_s *common_data =
@@ -99,7 +99,7 @@ source_message_iterator_initialize(
     bt_self_message_iterator_configuration *configuration,
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
-  struct message_iterator_s *message_iterator_private_data =
+  struct btx_message_iterator_s *message_iterator_private_data =
       malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
@@ -144,7 +144,7 @@ static void source_finalize(bt_self_component_source *self_component_source) {
 static void source_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
-  struct message_iterator_s *message_iterator_private_data =
+  struct btx_message_iterator_s *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   /* Free the allocated structure */
