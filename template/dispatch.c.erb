@@ -7,7 +7,7 @@
 <% dispatchers.each do |e| %>
 static void
 btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
-                                     struct common_data_s *common_data,
+                                     common_data_t *common_data,
                                      const bt_event *<%= event_name %>) {
   <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;

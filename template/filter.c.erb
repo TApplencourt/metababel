@@ -15,14 +15,14 @@
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
-  struct common_data_s *common_data;
+  common_data_t *common_data;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };
 
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 
-static void lookup_dispatcher(struct common_data_s *common_data,
+static void lookup_dispatcher(common_data_t *common_data,
                               const bt_event_class *event_class,
                               name_to_dispatcher_t **s) {
   const char *class_name = bt_event_class_get_name(event_class);
@@ -42,8 +42,7 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
-  struct common_data_s *common_data =
-      message_iterator_private_data->common_data;
+  common_data_t *common_data = message_iterator_private_data->common_data;
 
   /* Initialize the return status to a success */
   bt_message_iterator_class_next_method_status status =
@@ -51,7 +50,7 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
   /* We prioritize sending messages downstream when possible
    * This should always return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK
-   * When it's important that the `status` is defined before this call
+   * `status` should be set before this call
    */
   if (common_data->queue)
     goto pop_queued_messages;
@@ -162,7 +161,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
                   const bt_value *params, void *initialize_method_data) {
 
   /* Allocate a private data structure */
-  struct common_data_s *common_data = calloc(1, sizeof(struct common_data_s));
+  common_data_t *common_data = calloc(1, sizeof(common_data_t));
   common_data->params = params;
   bt_value_get_ref(common_data->params);
 
@@ -222,7 +221,7 @@ filter_message_iterator_initialize(
       malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
-  struct common_data_s *common_data = bt_self_component_get_data(
+  common_data_t *common_data = bt_self_component_get_data(
       bt_self_message_iterator_borrow_component(self_message_iterator));
 
   /* Save a link to the self_message_iterator */
@@ -244,7 +243,7 @@ filter_message_iterator_initialize(
 }
 
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
-  struct common_data_s *common_data = bt_self_component_get_data(
+  common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
 
   struct el *elt, *tmp;
