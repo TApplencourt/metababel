@@ -1,9 +1,7 @@
-#include <stdio.h>
 #include <inttypes.h>
 #include "component.h"
 #include "dispatch.h"
 #include "create.h"
-#include <iostream>
 
 #include "tally_callbacks.hpp"
 

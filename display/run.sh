@@ -6,6 +6,7 @@ set -e
 make -C SOURCE.interval clean
 make -C SINK.tally clean 
 make -C FILTER.tally clean
+make -C SINK.print clean
 
 # SINK.tally params
 display_compact=true
@@ -20,13 +21,6 @@ make -C SOURCE.interval
 #             --component=source.convert.interval \
 #             --component=sink.text.details 
 
-# Genarate FILTER.tally component
-ruby ../main.rb -u 2.interval_definitions.yaml -d 4.tally_definitions.yaml -t FILTER -p aggregate --params 1.params.yaml -c tally
-make -C FILTER.tally
-babeltrace2 --plugin-path=SOURCE.interval:FILTER.tally  \
-            --component=source.convert.interval \
-            --component=filter.aggregate.tally
-
 # Genarate SINK.tally component
 # ruby ../main.rb -u 2.interval_definitions.yaml -t SINK -p display --params 1.params.yaml -c tally
 # make -C SINK.tally
@@ -35,10 +29,24 @@ babeltrace2 --plugin-path=SOURCE.interval:FILTER.tally  \
 #             --component=sink.display.tally  \
 #             --params="display_compact=${display_compact}"  
 
-# rm -f component.h dispatch.{h,c,o} params.{h,c,o} tally.{c,o,so} my_callbacks.o my_demangle.o
+# Genarate FILTER.tally component
+ruby ../main.rb -u 2.interval_definitions.yaml -d 4.tally_definitions.yaml -t FILTER -p aggregate --params 1.params.yaml -c tally
+make -C FILTER.tally
+# babeltrace2 --plugin-path=SOURCE.interval:FILTER.tally  \
+#             --component=source.convert.interval \
+#             --component=filter.aggregate.tally
+
+# Genarate SINK.print component
+ruby ../main.rb -u 5.tally_noninterval_definitions.yaml -t SINK -p display --params 1.params.yaml -c print
+make -C SINK.print
+babeltrace2 --plugin-path=SOURCE.interval:FILTER.tally:SINK.print  \
+            --component=source.convert.interval \
+            --component=filter.aggregate.tally \
+            --component=sink.display.print
 
 # Cleaning up
 make -C SOURCE.interval clean
 make -C SINK.tally clean 
 make -C FILTER.tally clean
+make -C SINK.print clean
 
