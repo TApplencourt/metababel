@@ -51,7 +51,7 @@
                 :type: integer_unsigned
                 :field_value_range: 64
                 :cast_type: uint64_t
-            - :name: error
+            - :name: err
               :field_class:
                 :type: integer_unsigned
                 :field_value_range: 64
@@ -94,7 +94,7 @@
                 :type: integer_unsigned
                 :field_value_range: 64
                 :cast_type: uint64_t
-            - :name: error
+            - :name: err
               :field_class:
                 :type: integer_unsigned
                 :field_value_range: 64
@@ -107,7 +107,7 @@
               :field_class:
                 :type: string
                 :cast_type: const char*
-            - :name: dur
+            - :name: size
               :field_class:
                 :type: integer_unsigned
                 :field_value_range: 64
@@ -127,7 +127,7 @@
                 :type: integer_unsigned
                 :field_value_range: 64
                 :cast_type: uint64_t
-            - :name: error
+            - :name: err
               :field_class:
                 :type: integer_unsigned
                 :field_value_range: 64
