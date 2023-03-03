@@ -130,7 +130,7 @@ static void source_finalize(bt_self_component_source *self_component_source) {
   struct common_data_s *common_data = bt_self_component_get_data(
       bt_self_component_source_as_self_component(self_component_source));
 
-  //TODO: Missing {initizialize,finialize}_usr_source
+  // TODO: Missing {initizialize,finialize}_usr_source
   bt_value_put_ref(common_data->params);
 
   struct el *elt, *tmp;
