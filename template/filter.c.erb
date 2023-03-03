@@ -20,6 +20,8 @@ struct message_iterator_s {
   bt_message_iterator *message_iterator;
 };
 
+typedef struct message_iterator_s message_iterator_t;
+
 static void lookup_dispatcher(struct common_data_s *common_data,
                               const bt_event_class *event_class,
                               name_to_dispatcher_t **s) {
@@ -37,7 +39,7 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                              uint64_t *count) {
 
   /* Retrieve our private data from the message iterator's user data */
-  struct message_iterator_s *message_iterator_private_data =
+  message_iterator_t  *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   struct common_data_s *common_data =
@@ -64,13 +66,26 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
       bt_message_iterator_next(message_iterator_private_data->message_iterator,
                                &upstream_messages, &upstream_message_count);
 
+
   /* We cannot have any message left in the downstream queue
    * Hence it's safe to pass any error messages downstream */
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
-    /* End of iteration: put the message iterator's reference */
-    bt_message_iterator_put_ref(
-        message_iterator_private_data->message_iterator);
+    if (!common_data->finalized){
+       btx_finalize_usr_data(common_data, common_data->usr_data);
+       
+       common_data->finalized = BT_TRUE;
+       if (common_data->queue){
+          status = BT_MESSAGE_ITERATOR_NEXT_STATUS_OK;
+          goto pop_queued_messages;
+       }
+       
+      /* End of iteration: put the message iterator's reference */
+      bt_message_iterator_put_ref(
+          message_iterator_private_data->message_iterator);
+      status = BT_MESSAGE_ITERATOR_NEXT_STATUS_END;
+      goto end;
+    }
     status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
     goto end;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
@@ -150,6 +165,8 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   common_data->params = params;
   bt_value_get_ref(common_data->params);
 
+  common_data->finalized = BT_FALSE;
+
   /* Register User Callbacks */
   btx_register_usr_callbacks(&common_data->name_to_dispatcher);
   /* Register User Data */
@@ -200,7 +217,7 @@ filter_message_iterator_initialize(
     bt_self_message_iterator_configuration *configuration,
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
-  struct message_iterator_s *message_iterator_private_data =
+  message_iterator_t *message_iterator_private_data =
       malloc(sizeof(*message_iterator_private_data));
 
   /* Retrieve the component's private data from its user data */
@@ -229,21 +246,20 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
   struct common_data_s *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
 
-  btx_finalize_usr_data(common_data, common_data->usr_data);
-  bt_value_put_ref(common_data->params);
-
   struct el *elt, *tmp;
   DL_FOREACH_SAFE(common_data->pool, elt, tmp) {
     DL_DELETE(common_data->pool, elt);
     free(elt);
   }
+
+  bt_value_put_ref(common_data->params);
   free(common_data);
 }
 
 static void filter_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
-  struct message_iterator_s *message_iterator_private_data =
+  message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   /* Free the allocated structure */

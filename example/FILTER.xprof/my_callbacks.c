@@ -22,6 +22,10 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
 void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
     /* User cast the API usr_data that was already initialized with his/her data */
     struct usr_data_s *data = (struct usr_data_s *) usr_data;
+    // Now we can push some messages from the finalize
+    for (int l=0; l < 10; l++) {
+        btx_push_message_my_WTF(common_data, l, (double) l + 0.12);
+    }
     /* User do some stuff with the saved data */
     printf("roger %d, bernard %d \n", data->roger_count, data->bernard_count);
     /* Use has to deallocate the memory he/she requested for his/her data structure */
@@ -32,7 +36,7 @@ void roger(struct common_data_s *common_data, void *usr_data, int32_t i, int32_t
     struct usr_data_s *data = (struct usr_data_s *) usr_data;
     data->roger_count += 1;
     for (int l=0; l < 5; l++) {
-        btx_push_message_my_WTF(common_data, i, (double) l + 0.12);
+        btx_push_message_my_WTF(common_data, l, (double) l + 0.12);
     }
 }
 
