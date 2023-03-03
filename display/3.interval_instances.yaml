@@ -1,7 +1,7 @@
 - :name: lttng:host
   # hostname, vpid, vtid, timestamp, backend ; name, duration, error
   :field_values: [iris01,1289,1098,1,0,host_function_name_1,2,0]
-  :times: 5
+  :times: 1
 - :name: lttng:device
   # hostname, vpid, vtid, timestamp, backend ; name, duration, did, sdid, error, metadata
   :field_values: [iris01,1289,1098,1,0,device_function_name_1,2,0,0,0,No metadata]
