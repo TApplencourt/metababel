@@ -80,12 +80,10 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
         status = BT_MESSAGE_ITERATOR_NEXT_STATUS_OK;
         goto pop_queued_messages;
       }
-      /* End of iteration: put the message iterator's reference */
-      bt_message_iterator_put_ref(
-          message_iterator_private_data->message_iterator);
-      status = BT_MESSAGE_ITERATOR_NEXT_STATUS_END;
-      goto end;
     }
+    /* End of iteration: put the message iterator's reference */
+    bt_message_iterator_put_ref(
+       message_iterator_private_data->message_iterator);
     status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
     goto end;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
