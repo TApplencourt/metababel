@@ -4,6 +4,26 @@ require 'erb'
 require_relative 'bt2_stream_classes_generator'
 require_relative 'bt2_values_generator'
 
+class Hash
+  # Copy pasted from rails (https://apidock.com/rails/Hash/deep_merge%21)
+  def deep_merge!(other_hash, &block)
+    merge!(other_hash) do |key, this_val, other_val|
+      if this_val.is_a?(Hash) && other_val.is_a?(Hash)
+        this_val.deep_merge(other_val, &block)
+      elsif block_given?
+        block.call(key, this_val, other_val)
+      else
+        other_val
+      end
+    end
+  end
+
+  def deep_merge(other_hash, &block)
+    dup.deep_merge!(other_hash, &block)
+  end
+
+end
+
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z\-]/, '_')
@@ -87,8 +107,8 @@ OptionParser.new do |opts|
     options[:component_type] = p
   end
 
-  opts.on('-u', '--upstream PATH', '[Mandatory] Path to the bt2 yaml file.') do |p|
-    options[:upstream] = p
+  opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 yaml file.') do |p|
+    options[:upstreams] = p
   end
 
   opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
@@ -139,8 +159,11 @@ if %w[SOURCE FILTER].include?(options[:component_type])
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
-  raise "Missing upstream model" unless options[:upstream]
-  y = YAML.load_file(options[:upstream])
+  raise "Missing upstream models" unless options[:upstreams]
+  y = options[:upstreams].reduce({}) { |y, upstream |
+    # Need to specialize for merging arrays
+    y.deep_merge(YAML.load_file(upstream)) { |key, old, new| old + new }
+  }
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_dispatchers(folder, t)
 end
