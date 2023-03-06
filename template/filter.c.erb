@@ -48,12 +48,26 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   bt_message_iterator_class_next_method_status status =
       BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 
+check_if_consume_upstream_needed:;
+
   /* We prioritize sending messages downstream when possible
    * This should always return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK
    * `status` should be set before this call
    */
+
   if (common_data->queue)
     goto pop_queued_messages;
+
+  /* Need to return `BT_MESSAGE_ITERATOR_NEXT_STATUS_END` when we finalized.
+     We cannot call `bt_message_iterator_next` when the upstream component
+     already released the message_iterator
+  */
+  if (common_data->finalized) {
+    bt_message_iterator_put_ref(
+        message_iterator_private_data->message_iterator);
+    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+    goto end;
+  }
 
 consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
 
@@ -73,19 +87,10 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
    */
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
-    if (!common_data->finalized) {
-      btx_finalize_usr_data(common_data, common_data->usr_data);
-      common_data->finalized = BT_TRUE;
-      if (common_data->queue) {
-        status = BT_MESSAGE_ITERATOR_NEXT_STATUS_OK;
-        goto pop_queued_messages;
-      }
-    }
-    /* End of iteration: put the message iterator's reference */
-    bt_message_iterator_put_ref(
-       message_iterator_private_data->message_iterator);
-    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
-    goto end;
+    /* We are setting the state, so this function will never being call twice */
+    btx_finalize_usr_data(common_data, common_data->usr_data);
+    common_data->finalized = BT_TRUE;
+    goto check_if_consume_upstream_needed;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
     status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
     goto end;
