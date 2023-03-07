@@ -1,0 +1,38 @@
+:stream_classes:
+- :name: ze
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: test_integer_signed_32
+      :field_class:
+        :type: integer_signed
+        :field_value_range: 32
+        :cast_type: int
+    - :name: integer_signed_signed_64
+      :field_class:
+        :type: integer_signed
+        :field_value_range: 64
+  :event_classes:
+  - :name: test0
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: field0_integer_unsigned_32
+          :field_class:
+            :type: integer_unsigned
+            :field_value_range: 32
+            :cast_type: uint32_t
+  - :name: test1:with_colon
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: field1_integer_unsigned_64
+          :field_class:
+            :type: integer_unsigned
+            :field_value_range: 64
+            :cast_type: uint64_t
+        - :name: field2_string
+          :field_class:
+            :type: string
+            :cast_type: const char*
+

@@ -104,6 +104,11 @@ options = { plugin_name: 'metababel',
 OptionParser.new do |opts|
   opts.banner = 'Usage: example.rb [options]'
 
+  opts.on("-h", "--help", "Prints this help") do
+      puts opts
+      exit
+  end
+
   opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
     options[:component_type] = p
   end
@@ -127,11 +132,16 @@ OptionParser.new do |opts|
   opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
     options[:params] = p
   end
+
+  opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
+    options[:folder] = p
+  end
+
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
 
-folder = "#{options[:component_type]}.#{options[:component_name]}"
+folder = options[:folder] || "#{options[:component_type]}.#{options[:component_name]}"
 Dir.mkdir(folder) unless File.exist?(folder)
 
 d = options.filter { |k, _v| %i[plugin_name component_name].include?(k) }
@@ -144,7 +154,7 @@ if options.key?(:params)
   body = Babeltrace2Gen.context(indent: 1) do
     c.get("usr_params", "params")
   end
-  d[:params_declaration] =  c.get_struct_definition("params")
+  d[:params_declaration] = c.get_struct_definition("params")
   d[:params_definition] = body
 end
 
