@@ -17,7 +17,7 @@ print.o: print.c
 dispatch.o: dispatch.c
 	$(CC) dispatch.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c 
 
-print_callbacks.o: print_callbacks.cpp print_callbacks.hpp 
+print_callbacks.o: print_callbacks.cpp 
 	$(CXX) print_callbacks.cpp -I $(METABABEL_ROOT)/include $(CXXFLAGS)  -c
 
 params.o: params.c

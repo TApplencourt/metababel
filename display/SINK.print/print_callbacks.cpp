@@ -1,4 +1,9 @@
-#include "print_callbacks.hpp"
+#include "component.h"
+#include "dispatch.h"
+#include "babeltrace2/babeltrace.h"
+
+#include "tally.hpp"
+#include "utils.hpp"
 
 
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
@@ -103,7 +108,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
         std::cout << j << std::endl;
     }
 
-    /* Desolate user data */
+    /* De-allocate user data */
     delete data;
 }
 
@@ -115,7 +120,7 @@ void aggreg_host_usr_callbacks(
 {
     tally_data_t *data = (tally_data_t *) usr_data;
 
-    TallyCoreTime a{dur, err};
+    TallyCoreTime a{dur, err, min, max, count};
     const int level = backend_level[backend];
     data->host_backend_name[level].insert(backend_name[backend]);
     data->host[level][hpt_function_name_t(hostname, vpid, vtid, name)] += a;
@@ -133,7 +138,7 @@ void aggreg_kernel_usr_callbacks(
     const auto name_demangled = (data->demangle_name) ? f_demangle_name(name) : name;
     const auto name_with_metadata = (data->display_kernel_verbose && !strcmp(metadata, "")) ? name_demangled + "[" + metadata + "]" : name_demangled;
 
-    TallyCoreTime a{dur, err};
+    TallyCoreTime a{dur, err, min, max, count};
     data->device[hpt_device_function_name_t(hostname, vpid, vtid, did, sdid, name_with_metadata)] += a;
 }
 
@@ -145,7 +150,7 @@ void aggreg_traffic_usr_callbacks(
 {
     tally_data_t *data = (tally_data_t *) usr_data;
 
-    TallyCoreByte a{(uint64_t)size, false};
+    TallyCoreByte a{size, err, min, max, count};
     const int level = backend_level[backend];
     data->traffic_backend_name[level].insert(backend_name[backend]);
     data->traffic[level][hpt_function_name_t(hostname, vpid, vtid, name)] += a;

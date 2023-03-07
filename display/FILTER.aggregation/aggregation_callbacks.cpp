@@ -1,8 +1,9 @@
 #include "component.h"
 #include "dispatch.h"
 #include "create.h"
+#include "babeltrace2/babeltrace.h"
 
-#include "aggreg_callbacks.hpp"
+#include "tally.hpp"
 
 
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
@@ -18,7 +19,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
     */
     aggreg_data_t *data = (aggreg_data_t *) usr_data;
     
-    for (auto &[key,tally] : data->host){
+    for (const auto &[key,tally] : data->host){
         btx_push_message_aggreg_host(
             common_data,
             std::get<0>(key).c_str(),
@@ -34,7 +35,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
         );
     }
 
-    for (auto &[key,tally] : data->device){
+    for (const auto &[key,tally] : data->device){
         btx_push_message_aggreg_kernel(
             common_data,
             std::get<0>(key).c_str(),
@@ -53,7 +54,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
         );
     }
 
-    for (auto &[key,tally] : data->traffic){
+    for (const auto &[key,tally] : data->traffic){
         btx_push_message_aggreg_traffic(
             common_data,
             std::get<0>(key).c_str(),
@@ -69,7 +70,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
         );
     }
 
-    /* Desolate user data */
+    /* De-allocate user data */
     delete data;
 }
 
@@ -106,7 +107,7 @@ void lttng_traffic_usr_callback(
 {
     aggreg_data_t *data = (aggreg_data_t *) usr_data;
 
-    TallyCoreByte a{(uint64_t)size, false};
+    TallyCoreByte a{size, false};
     data->traffic[hpt_backend_function_name_t(hostname, vpid, vtid, backend, name)] += a;
 }
 

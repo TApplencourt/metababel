@@ -4,10 +4,6 @@
 //! in messages that were generated from different backends.
 
 #include <inttypes.h>
-#include "component.h"
-#include "dispatch.h"
-#include "babeltrace2/babeltrace.h"
-
 #include <map>
 #include <unordered_map>
 #include <tuple>
@@ -20,7 +16,7 @@
 #include <iostream>
 
 #include "json.hpp"
-#include "my_demangle.h"
+
 
 //! Backends identifiers enum.
 
@@ -64,73 +60,31 @@ constexpr int backend_level[] = {
     0  // BACKEND_OMP
 };
 
-// TODO: Referenced in THAPI (utils/xprof_utils.hpp), but not used in metababel.
-typedef enum backend_e backend_t;
-
 // Datatypes represeting string classes (or messages) common data. 
 
-typedef intptr_t      process_id_t;
-typedef uintptr_t     thread_id_t;
-typedef std::string   hostname_t;
-typedef std::string   thapi_function_name;
-typedef uintptr_t     thapi_device_id;
+typedef intptr_t      	process_id_t;
+typedef uintptr_t     	thread_id_t;
+typedef std::string   	hostname_t;
+typedef std::string   	thapi_function_name;
+typedef uintptr_t     	thapi_device_id;
+typedef uintptr_t       backend_t;
+typedef std::string     device_metadata_t;
 
 // Represent a device and a sub device
-
-// TODO: Referenced in THAPI (opencl/clinterval_callbacks.hpp,utils/xprof_utils.hpp,opencl/clinterval_callbacks.cpp.erb), but not used in metababel, not sure if needed.
-typedef std::tuple<thapi_device_id, thapi_device_id> dsd_t;
-
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<hostname_t, thapi_device_id> h_device_t;
-
-// TODO: Referenced in THAPI (ze/zeinterval_callbacks.hpp,ze/zeinterval_callbacks.cpp.erb,utils/xprof_utils.hpp) but not used in metababel, not sure if needed.
-typedef std::tuple<hostname_t, process_id_t> hp_t;
-
-// TDOD: Referenced in THAPI (cuda/cudainterval_callbacks.cpp.erb,ze/zeinterval_callbacks.hpp,opencl/clinterval_callbacks.hpp,ze/zeinterval_callbacks.cpp.erb,omp/ompinterval_callbacks.hpp,utils/xprof_utils.hpp)
-//! Identifies an entity in a parallel/distributed program that generates a message. 
-typedef std::tuple<hostname_t, process_id_t, thread_id_t> hpt_t;
 
 //! Identifies an specific host, process, thread using the api call "thapi_function_name" in a parallel/distributed program
 typedef std::tuple<hostname_t, process_id_t, thread_id_t, thapi_function_name> hpt_function_name_t;
 
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<thread_id_t, thapi_function_name> t_function_name_t;
-
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<hostname_t, process_id_t, thread_id_t, thapi_device_id, thapi_device_id> hpt_dsd_t;
-
 //! Identifies an specific host, process, thread, device, sudevice, using the api call "thapi_function_name" in a parallel/distributed program.
 typedef std::tuple<hostname_t, process_id_t, thread_id_t, thapi_device_id, thapi_device_id, thapi_function_name> hpt_device_function_name_t;
 
-// TDOD: Referenced in THAPI (opencl/clinterval_callbacks.hpp, opencl/clinterval_callbacks.cpp.erb,ze/zeinterval_callbacks.hpp,xprof/tally.hpp,cuda/cudainterval_callbacks.hpp,cuda/cudainterval_callbacks.cpp.erb,utils/xprof_utils.hpp,xprof/tally.cpp,ze/zeinterval_callbacks.cpp.erb), but not used in metababel, not sure if needed.
-//! Identifies an specific host, process using a device  in a parallel/distributed program.
+//! Identifies an specific host, process using a device in a parallel/distributed program.
 typedef std::tuple<hostname_t, process_id_t, thapi_device_id> hp_device_t;
 
-// TODO: Referenced in THAPI (xprof/timeline.hpp,utils/xprof_utils.hpp) but not used in metababel, not sure if needed.
-//! Identifies an specific host, process, device an subdevice in a parallel/distributed program.
-typedef std::tuple<hostname_t, process_id_t, thapi_device_id, thapi_device_id> hp_dsd_t;
-
-// TODO: Referenced in THAPI (opencl/clinterval_callbacks.hpp,utils/xprof_utils.hpp,opencl/clinterval_callbacks.cpp.erb) but not used in metababel, not sure if needed.
-//! Identifies the start time and duration (delta) of an API call in an applications. Used in the creation of intervals in the filter component .  
-typedef std::tuple<long,long> sd_t;
-
-// TDOD: 
-typedef std::tuple<thread_id_t, thapi_function_name, long> tfn_ts_t;
-
-// Referenced in THAPI (opencl/clinterval_callbacks.hpp, cuda/cudainterval_callbacks.hpp, utils/xprof_utils.hpp, cuda/cudainterval_callbacks.cpp.erb, opencl/clinterval_callbacks.cpp.erb)  but not used in metababel, not sure if needed.
-typedef std::tuple<thapi_function_name, long> fn_ts_t;
-
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<thapi_function_name, thapi_device_id, thapi_device_id, long> fn_dsd_ts_t;
-
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<thread_id_t, thapi_function_name, thapi_device_id, thapi_device_id, long> tfn_dsd_ts_t;
-
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<thapi_function_name, std::string, thapi_device_id, thapi_device_id, long> fnm_dsd_ts_t;
-
-// TODO: Not referenced in any other place of THAPI (babeltrace) neither metababel.
-typedef std::tuple<thread_id_t, thapi_function_name, std::string, thapi_device_id, thapi_device_id, long> tfnm_dsd_ts_t;
+// Data structures used for aggregation.
+typedef std::tuple<hostname_t, process_id_t, thread_id_t, backend_t, thapi_function_name> hpt_backend_function_name_t;
+typedef std::tuple<hostname_t, process_id_t, thread_id_t, backend_t, thapi_function_name, thapi_device_id, thapi_device_id> hpt_backend_function_name_dsd_t;
+typedef std::tuple<hostname_t, process_id_t, thread_id_t, backend_t, thapi_function_name, device_metadata_t, thapi_device_id, thapi_device_id> hpt_backend_function_name_meta_dsd_t;
 
 // NOTE: Required to generate a hash of a tuple, otherwhise, the operaton "data->host[level][entity_id] += interval;"
 // may fail since host[level] returns an unordered_map and this data structure does not know to hash a tuple.
@@ -197,38 +151,6 @@ namespace std{
     };
 }
 
-//! Returns a demangled name.
-//! @param mangle_name function names
-thapi_function_name f_demangle_name(thapi_function_name mangle_name) {
-  std::string result = mangle_name;
-  std::string line_num;
-
-  // C++ don't handle PCRE, hence and lazy/non-greedy and $.
-  const static std::regex base_regex("__omp_offloading_[^_]+_[^_]+_(.*?)_([^_]+)$");
-  std::smatch base_match;
-  if (std::regex_match(mangle_name, base_match, base_regex) && base_match.size() == 3) {
-    result = base_match[1].str();
-    line_num = base_match[2].str();
-  }
-
-  const char *demangle = my_demangle(result.c_str());
-  if (demangle) {
-    thapi_function_name s{demangle};
-    if (!line_num.empty())
-       s += "_" + line_num;
-
-    /* We name the kernels after the type that gets passed in the first
-       template parameter to the sycl_kernel function in order to prevent
-       it from conflicting with any actual function name.
-       The result is the demangling will always be something like, “typeinfo for...”.
-    */
-    if (s.rfind("typeinfo name for ") == 0)
-      return s.substr(18, s.size());
-    return s;
-  }
-  return mangle_name;
-}
-
 //! Returns a number as a string with the given number of decimals.
 //! @param a_value the value to be casted to string with the given decimal places.
 //! @param units units to be append at the end of the string.
@@ -264,6 +186,11 @@ public:
       max = duration;
     } else
       duration = 0;
+  }
+
+  TallyCoreBase(uint64_t _dur, uint64_t _err, uint64_t _min, uint64_t _max, uint64_t _count) 
+  : duration{_dur}, error{_err}, min{_min}, max{_max}, count{_count} {
+
   }
 
   //! Total exeuction time 
@@ -428,13 +355,16 @@ private:
   }
 };
 
+//! User data used for aggregation by backend in FILTER.aggregate 
+struct aggreg_data_s {
+  std::unordered_map<hpt_backend_function_name_t, TallyCoreTime> host;
+  std::unordered_map<hpt_backend_function_name_meta_dsd_t, TallyCoreTime> device;
+  std::unordered_map<hpt_backend_function_name_t, TallyCoreByte> traffic;
+};
 
-//! User data collection structure.
-//! It is used to collect interval messages data, once data is collected. 
-//! It is aggregated and tabulated for printing.
-//! This structure can hold data that the user needs to be present among different 
-//! callbacks calls, for instance commad line params that can modify the printing 
-//! behaviour.
+typedef struct aggreg_data_s aggreg_data_t;
+
+//! User data used for further aggretagion and organization for printing
 struct tally_data_s {
     bool demangle_name;  
     bool display_kernel_verbose;
