@@ -1,8 +1,9 @@
+#!/usr/bin/env ruby
+
 require 'yaml'
 require 'optparse'
 require 'erb'
-require_relative 'bt2_stream_classes_generator'
-require_relative 'bt2_values_generator'
+require 'metababel'
 
 class Hash
   # Copy pasted from rails (https://apidock.com/rails/Hash/deep_merge%21)
@@ -32,7 +33,7 @@ end
 
 def erb_render_and_save(vars,
                         basename, out_folder, out_name = nil)
-  template = File.read(File.join(__dir__, "template/#{basename}.erb"))
+  template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
   # We need to trim line who contain only with space, because we indent our erb block <% %>
   # The trim_mode remove line only when it's start with the erb block
   # The regex remove the lines who are not indented
