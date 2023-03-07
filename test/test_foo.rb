@@ -7,6 +7,8 @@ class TestMetababelBin < Test::Unit::TestCase
 end
 
 class TestMetababelSource < Test::Unit::TestCase
+  self.test_order = :defined
+
   def test_creating_folder
     puts `ruby -I./lib ./bin/metababel -d ./test/1.stream_classes.yaml -t SOURCE -p metababel_tests -c source -o ./test/SOURCE.metababel`
   end
