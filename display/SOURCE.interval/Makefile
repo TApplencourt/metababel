@@ -1,6 +1,6 @@
 CC ?= gcc
 CXX ?= g++
-CFLAGS = -Wall -fPIC
+CFLAGS = -Wall -fPIC -Werror
 CFFLAGS_BT2 = $(pkg-config --cflags babeltrace2)
 LDFLAGS_BT2 = $(pkg-config --libs babeltrace2)
 METABABEL_ROOT = ../..
