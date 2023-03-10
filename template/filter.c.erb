@@ -12,12 +12,21 @@
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-flt-cmp-cls.html
  */
 
+enum btx_filter_state_e {
+  BTX_FILTER_STATE_PROCESSING,
+  BTX_FILTER_STATE_FINALIZING,
+  BTX_FILTER_STATE_FINISHED,
+  BTX_FILTER_STATE_ERROR,
+};
+typedef enum btx_filter_state_e btx_filter_state_t;
+
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   common_data_t *common_data;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
+  btx_filter_state_t state;
 };
 
 typedef struct btx_message_iterator_s btx_message_iterator_t;
@@ -33,22 +42,30 @@ static void lookup_dispatcher(common_data_t *common_data,
  *  Handle Upstream Messages
  */
 
-static bt_message_iterator_class_next_method_status
-filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
-                             bt_message_array_const messages, uint64_t capacity,
-                             uint64_t *count) {
+static inline void btx_move_message_downstream(common_data_t *common_data,
+                                               bt_message_array_const messages,
+                                               uint64_t capacity,
+                                               uint64_t *count) {
+  // Set count to min(capacity, common_data->queue.size())
+  // Count time, pop the head of the queue and put it in messages
+  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
+    struct el *elt = common_data->queue;
+    messages[*count] = elt->message;
+    DL_DELETE(common_data->queue, elt);
+    // Put it back to the bool of chain for reuse
+    DL_APPEND(common_data->pool, elt);
+  }
+}
 
+static inline bt_message_iterator_class_next_method_status
+filter_message_iterator_next_processing(
+    bt_self_message_iterator *self_message_iterator,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   common_data_t *common_data = message_iterator_private_data->common_data;
-
-  /* Initialize the return status to a success */
-  bt_message_iterator_class_next_method_status status =
-      BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
-
-check_if_consume_upstream_needed:
 
   /* We prioritize sending messages downstream when possible
    * This should always return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK
@@ -57,19 +74,6 @@ check_if_consume_upstream_needed:
 
   if (common_data->queue)
     goto pop_queued_messages;
-
-  /* Need to return `BT_MESSAGE_ITERATOR_NEXT_STATUS_END` when we finalized.
-     We cannot call `bt_message_iterator_next` when the upstream component
-     already released the message_iterator
-  */
-  if (common_data->finalized) {
-    bt_message_iterator_put_ref(
-        message_iterator_private_data->message_iterator);
-    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
-    goto end;
-  }
-
-consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
 
   /* Consume a batch of messages from the upstream message iterator */
   uint64_t upstream_message_count;
@@ -81,27 +85,26 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
 
   /* We cannot have any message left in the downstream queue
    * Hence it's safe to pass any error messages downstream.
-   * In the case of `BT_MESSAGE_ITERATOR_NEXT_STATUS_END`,
-   *   we need to handle that `btx_finalize_usr_data`  can pushed message
-   *   in the downstream queue
    */
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
     /* We are setting the state, so this function will never being call twice */
     btx_finalize_usr_data(common_data, common_data->usr_data);
-    common_data->finalized = BT_TRUE;
-    goto check_if_consume_upstream_needed;
+    message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
-    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
-    goto end;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_MEMORY_ERROR:
-    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_MEMORY_ERROR;
-    goto end;
+    message_iterator_private_data->state = BTX_FILTER_STATE_ERROR;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_MEMORY_ERROR;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_ERROR:
-    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
-    goto end;
-  default:
+    message_iterator_private_data->state = BTX_FILTER_STATE_ERROR;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
+  case BT_MESSAGE_ITERATOR_NEXT_STATUS_OK:
     break;
+  default:
+    message_iterator_private_data->state = BTX_FILTER_STATE_ERROR;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
   }
 
   /* For each consumed message */
@@ -133,26 +136,60 @@ consume_upstream_messages:; /* Workaround §6.8.1 Labeled Statements */
 
   if (!common_data->queue) {
     /*
-     * We discarded all the upstream messages: get a new batch of
-     * messages, because this method _cannot_ return
+     * We discarded all the upstream messages
+     * because this method _cannot_ return
      * `BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK` and put no
-     * messages into its output message array.
+     * messages into its output message array we return again.
      */
-    goto consume_upstream_messages;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   }
 
 pop_queued_messages:
-  // Set count to min(capacity, common_data->queue.size())
-  // Count time, pop the head of the queue and put it in messages
-  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
-    struct el *elt = common_data->queue;
-    messages[*count] = elt->message;
-    DL_DELETE(common_data->queue, elt);
-    // Put it back to the bool of chain for reuse
-    DL_APPEND(common_data->pool, elt);
+  btx_move_message_downstream(common_data, messages, capacity, count);
+  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+}
+
+static inline bt_message_iterator_class_next_method_status
+filter_message_iterator_next_finalizing(
+    bt_self_message_iterator *self_message_iterator,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(self_message_iterator);
+
+  common_data_t *common_data = message_iterator_private_data->common_data;
+
+  if (!common_data->queue) {
+    bt_message_iterator_put_ref(
+        message_iterator_private_data->message_iterator);
+    message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
-end:
-  return status;
+
+  btx_move_message_downstream(common_data, messages, capacity, count);
+  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+}
+
+static bt_message_iterator_class_next_method_status
+filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
+                             bt_message_array_const messages, uint64_t capacity,
+                             uint64_t *count) {
+
+  /* Retrieve our private data from the message iterator's user data */
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(self_message_iterator);
+
+  switch (message_iterator_private_data->state) {
+  case BTX_FILTER_STATE_PROCESSING:
+    return filter_message_iterator_next_processing(self_message_iterator,
+                                                   messages, capacity, count);
+  case BTX_FILTER_STATE_FINALIZING:
+    return filter_message_iterator_next_finalizing(self_message_iterator,
+                                                   messages, capacity, count);
+  case BTX_FILTER_STATE_FINISHED:
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+  default:
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
+  }
 }
 
 /*
@@ -167,8 +204,6 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   common_data_t *common_data = calloc(1, sizeof(common_data_t));
   common_data->params = params;
   bt_value_get_ref(common_data->params);
-
-  common_data->finalized = BT_FALSE;
 
   /* Register User Callbacks */
   btx_register_usr_callbacks(&common_data->name_to_dispatcher);
@@ -241,6 +276,8 @@ filter_message_iterator_initialize(
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,
                                     message_iterator_private_data);
+
+  message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
