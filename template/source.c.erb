@@ -32,24 +32,13 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
   common_data_t *common_data = message_iterator_private_data->common_data;
 
-  /* Initialize the return status to a success */
-  bt_message_iterator_class_next_method_status status =
-      BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
-
   /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
    * not put any message into the message array */
   if (!common_data->queue)
-    status = BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
 
-  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
-    struct el *elt = common_data->queue;
-    messages[*count] = elt->message;
-    DL_DELETE(common_data->queue, elt);
-    // Put it back to the bool of chain for reuse
-    DL_APPEND(common_data->pool, elt);
-  }
-
-  return status;
+  btx_downstream_drain_queue(common_data, messages, capacity, count);
+  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 
 /*

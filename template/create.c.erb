@@ -3,8 +3,37 @@
 #include <babeltrace2/babeltrace.h>
 #include <stdlib.h>
 
+void btx_downstream_initialize(common_data_t *common_data,
+                               bt_message_array_const messages,
+                               uint64_t capacity, uint64_t *count) {
+  common_data->messages = messages;
+  common_data->capacity = capacity;
+  common_data->count = count;
+}
+
+void btx_downstream_drain_queue(common_data_t *common_data,
+                                bt_message_array_const messages,
+                                uint64_t capacity, uint64_t *count) {
+  // Set count to min(capacity, common_data->queue.size())
+  // Count time, pop the head of the queue and put it in messages
+  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
+    struct el *elt = common_data->queue;
+    messages[*count] = elt->message;
+    DL_DELETE(common_data->queue, elt);
+    // Put it back to the bool of chain for reuse
+    DL_APPEND(common_data->pool, elt);
+  }
+}
+
 void btx_downstream_push_message(struct common_data_s *common_data,
                                  const bt_message *message) {
+
+  if (common_data->capacity &&
+      (*(common_data->count) < common_data->capacity)) {
+    common_data->messages[*(common_data->count)++] = message;
+    return;
+  }
+
   struct el *elt;
   if (common_data->pool) {
     elt = common_data->pool;

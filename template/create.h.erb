@@ -4,16 +4,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void btx_downstream_push_message(struct common_data_s *common_data,
+void btx_downstream_push_message(common_data_t *common_data,
                                  const bt_message *message);
+
+void btx_downstream_drain_queue(common_data_t *common_data,
+                                bt_message_array_const messages,
+                                uint64_t capacity, uint64_t *count);
 
 bt_trace_class *
 btx_downstream_trace_class_create_rec(bt_self_component *self_component);
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class);
 
-void btx_push_messages_stream_beginning(struct common_data_s *common_data);
-void btx_push_messages_stream_end(struct common_data_s *common_data);
+void btx_push_messages_stream_beginning(common_data_t *common_data);
+void btx_push_messages_stream_end(common_data_t *common_data);
 
 <% downstream_events.each do |e| %>
 void btx_push_message_<%= e.name_sanitized %>(
