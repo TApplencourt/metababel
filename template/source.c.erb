@@ -11,14 +11,6 @@
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-src-cmp-cls.html
  */
 
-/* Message iterator's private data */
-struct btx_message_iterator_s {
-  /* (Weak) link to the component's private data */
-  common_data_t *common_data;
-};
-
-typedef struct btx_message_iterator_s btx_message_iterator_t;
-
 /*
  *  Handle Upstream Messages
  */

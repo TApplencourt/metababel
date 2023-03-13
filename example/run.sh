@@ -10,4 +10,4 @@ babeltrace2  --plugin-path=SOURCE.xprof:SINK.xprof  --component=source.metababel
 
 ruby -I../lib ../bin/metababel -u 1.stream_classes.yaml -d 2.stream_classes.yaml -t FILTER -p metababel3
 make -C FILTER.xprof
-babeltrace2  --plugin-path=SOURCE.xprof:FILTER.xprof  --component=source.metababel1.xprof --component=filter.metababel3.xprof
+babeltrace2  --plugin-path=SOURCE.xprof:FILTER.xprof  --component=source.metababel1.xprof --component=filter.metababel3.xprof | wc -l
