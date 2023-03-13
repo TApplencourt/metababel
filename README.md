@@ -52,12 +52,16 @@ graph TD
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pop_queued_messages
-    [*] --> consume_upstream_messages
-    consume_upstream_messages --> [*]
-    pop_queued_messages --> [*]
-    consume_upstream_messages -->  consume_upstream_messages
-    consume_upstream_messages --> pop_queued_messages
+    [*] --> BTX_FILTER_PROCESSING
+    state BTX_FILTER_PROCESSING {
+        [*] --> BTX_FILTER_PROCESSING_STATE_READING
+        [*] --> BTX_FILTER_PROCESSING_STATE_SENDING
+	BTX_FILTER_PROCESSING_STATE_SENDING --> BTX_FILTER_PROCESSING_STATE_READING
+    	BTX_FILTER_PROCESSING_STATE_READING --> BTX_FILTER_PROCESSING_STATE_SENDING
+	BTX_FILTER_PROCESSING_STATE_READING --> [*]
+    }
+    BTX_FILTER_PROCESSING --> BTX_FILTER_STATE_FINALIZING
+    BTX_FILTER_STATE_FINALIZING --> [*]
 ```
 
 # Sink Description
