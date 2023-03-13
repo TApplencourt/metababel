@@ -23,7 +23,9 @@ typedef enum btx_filter_state_e btx_filter_state_t;
 enum btx_filter_processing_state_e {
   BTX_FILTER_PROCESSING_STATE_READING,
   BTX_FILTER_PROCESSING_STATE_SENDING,
+  BTX_FILTER_PROCESSING_STATE_FINISHED,
 };
+
 typedef enum btx_filter_processing_state_e btx_filter_processing_state_t;
 
 /* Message iterator's private data */
@@ -94,6 +96,8 @@ filter_message_iterator_next_processing_reading(
     /* We are setting the state, so this function will never being call twice */
     btx_finalize_usr_data(common_data, common_data->usr_data);
     message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
+    message_iterator_private_data->processing_state =
+        BTX_FILTER_PROCESSING_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
@@ -162,6 +166,8 @@ filter_message_iterator_next_processing(
   case BTX_FILTER_PROCESSING_STATE_SENDING:
     return filter_message_iterator_next_processing_sending(
         self_message_iterator, messages, capacity, count);
+  case BTX_FILTER_PROCESSING_STATE_FINISHED:
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
   default:
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
   }
@@ -175,6 +181,8 @@ filter_message_iterator_next_finalizing(
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
+  // assert(message_iterator_private_data->processing_state ==
+  // BTX_FILTER_PROCESSING_STATE_FINISHED);
   common_data_t *common_data = message_iterator_private_data->common_data;
 
   if (!common_data->queue) {
