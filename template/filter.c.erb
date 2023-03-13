@@ -120,6 +120,10 @@ filter_message_iterator_next_processing(
     // message array.
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
 
+  // We enqued too many messages, need to drain
+  if (common_data->queue)
+    message_iterator_private_data->state = BTX_FILTER_STATE_DRAINING;
+
   return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 

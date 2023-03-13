@@ -91,8 +91,8 @@ void btx_downstream_initialize(common_data_t *common_data,
                                uint64_t capacity, uint64_t *count);
 <% end %>
 
-    <% if options[:component_type] == 'SOURCE'  %>
-    void btx_push_usr_messages(common_data_t *common_data);
+<% if options[:component_type] == 'SOURCE'  %>
+void btx_push_usr_messages(common_data_t *common_data);
 <% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
 /* Users functions to implement */
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data);
