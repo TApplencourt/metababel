@@ -20,6 +20,12 @@ enum btx_filter_state_e {
 };
 typedef enum btx_filter_state_e btx_filter_state_t;
 
+enum btx_filter_processing_state_e {
+  BTX_FILTER_PROCESSING_STATE_READING,
+  BTX_FILTER_PROCESSING_STATE_SENDING,
+};
+typedef enum btx_filter_processing_state_e btx_filter_processing_state_t;
+
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
@@ -27,6 +33,7 @@ struct btx_message_iterator_s {
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
   btx_filter_state_t state;
+  btx_filter_processing_state_t processing_state;
 };
 
 typedef struct btx_message_iterator_s btx_message_iterator_t;
@@ -58,7 +65,7 @@ static inline void btx_move_message_downstream(common_data_t *common_data,
 }
 
 static inline bt_message_iterator_class_next_method_status
-filter_message_iterator_next_processing(
+filter_message_iterator_next_processing_sending(
     bt_self_message_iterator *self_message_iterator,
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
@@ -67,13 +74,24 @@ filter_message_iterator_next_processing(
 
   common_data_t *common_data = message_iterator_private_data->common_data;
 
-  /* We prioritize sending messages downstream when possible
-   * This should always return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK
-   * `status` should be set before this call
-   */
+  btx_move_message_downstream(common_data, messages, capacity, count);
 
-  if (common_data->queue)
-    goto pop_queued_messages;
+  if (!common_data->queue)
+    message_iterator_private_data->processing_state =
+        BTX_FILTER_PROCESSING_STATE_READING;
+
+  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+}
+
+static inline bt_message_iterator_class_next_method_status
+filter_message_iterator_next_processing_reading(
+    bt_self_message_iterator *self_message_iterator,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+  /* Retrieve our private data from the message iterator's user data */
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(self_message_iterator);
+
+  common_data_t *common_data = message_iterator_private_data->common_data;
 
   /* Consume a batch of messages from the upstream message iterator */
   uint64_t upstream_message_count;
@@ -134,25 +152,41 @@ filter_message_iterator_next_processing(
     }
   }
 
-  if (!common_data->queue) {
-    /*
-     * We discarded all the upstream messages
-     * because this method _cannot_ return
-     * `BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK` and put no
-     * messages into its output message array we return again.
-     */
+  if (common_data->queue) {
+    message_iterator_private_data->processing_state =
+        BTX_FILTER_PROCESSING_STATE_SENDING;
+    /* optimization */
+    return filter_message_iterator_next_processing_sending(
+        self_message_iterator, messages, capacity, count);
+  } else
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
-  }
+}
 
-pop_queued_messages:
-  btx_move_message_downstream(common_data, messages, capacity, count);
-  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+static inline bt_message_iterator_class_next_method_status
+filter_message_iterator_next_processing(
+    bt_self_message_iterator *self_message_iterator,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+  /* Retrieve our private data from the message iterator's user data */
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(self_message_iterator);
+
+  switch (message_iterator_private_data->processing_state) {
+  case BTX_FILTER_PROCESSING_STATE_READING:
+    return filter_message_iterator_next_processing_reading(
+        self_message_iterator, messages, capacity, count);
+  case BTX_FILTER_PROCESSING_STATE_SENDING:
+    return filter_message_iterator_next_processing_sending(
+        self_message_iterator, messages, capacity, count);
+  default:
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
+  }
 }
 
 static inline bt_message_iterator_class_next_method_status
 filter_message_iterator_next_finalizing(
     bt_self_message_iterator *self_message_iterator,
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+  /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
@@ -278,6 +312,8 @@ filter_message_iterator_initialize(
                                     message_iterator_private_data);
 
   message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
+  message_iterator_private_data->processing_state =
+      BTX_FILTER_PROCESSING_STATE_READING;
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
