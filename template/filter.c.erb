@@ -107,7 +107,8 @@ filter_message_iterator_next_processing_reading(
       /* The message have been consumed, we can discard it */
       bt_message_put_ref(upstream_message);
     } else {
-      btx_downstream_push_message(common_data, upstream_message);
+      btx_downstream_push_message(message_iterator_private_data,
+                                  upstream_message);
     }
   }
 

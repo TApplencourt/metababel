@@ -19,11 +19,9 @@ void btx_downstream_move_messages(
   }
 }
 
-void btx_downstream_push_message(struct common_data_s *common_data,
-                                 const bt_message *message) {
-
-  btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+void btx_downstream_push_message(
+    btx_message_iterator_t *message_iterator_private_data,
+    const bt_message *message) {
 
   struct el *elt;
   if (message_iterator_private_data->pool) {
@@ -57,24 +55,30 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
 
 void btx_push_messages_stream_beginning(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+
   <% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
     bt_message *message = bt_message_stream_beginning_create(
         common_data->self_message_iterator, stream);
-    btx_downstream_push_message(common_data, message);
+    btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
 }
 
 void btx_push_messages_stream_end(struct common_data_s *common_data) {
   bt_trace *trace = common_data->downstream_trace;
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+
   <% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
     bt_message *message = bt_message_stream_end_create(
         common_data->self_message_iterator, stream);
-    btx_downstream_push_message(common_data, message);
+    btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
 }
@@ -102,6 +106,8 @@ void btx_push_message_<%= e.name_sanitized %>(
   btx_set_message_<%= e.name_sanitized %>(
       downstream_event, <%= e.args.map{ |s| s.name }.join(", ") %>);
 
-  btx_downstream_push_message(common_data, message);
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+  btx_downstream_push_message(message_iterator_private_data, message);
 }
 <% end %>
