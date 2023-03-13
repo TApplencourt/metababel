@@ -22,14 +22,13 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
-  common_data_t *common_data = message_iterator_private_data->common_data;
-
   /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
    * not put any message into the message array */
   if (!message_iterator_private_data->queue)
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
 
-  btx_downstream_move_messages(common_data, messages, capacity, count);
+  btx_downstream_move_messages(message_iterator_private_data, messages,
+                               capacity, count);
   return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 

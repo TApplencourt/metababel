@@ -3,12 +3,9 @@
 #include <babeltrace2/babeltrace.h>
 #include <stdlib.h>
 
-void btx_downstream_move_messages(common_data_t *common_data,
-                                  bt_message_array_const messages,
-                                  uint64_t capacity, uint64_t *count) {
-
-  btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+void btx_downstream_move_messages(
+    btx_message_iterator_t *message_iterator_private_data,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
 
   // Set count to min(capacity, common_data->queue.size())
   // Count time, pop the head of the queue and put it in messages
