@@ -98,12 +98,14 @@ source_message_iterator_initialize(
                                     message_iterator_private_data);
 
   /* Beging of the stream */
-  btx_push_messages_stream_beginning(common_data);
+  btx_push_messages_stream_beginning(self_message_iterator,
+                                     message_iterator_private_data);
 
   /* User message */
   btx_push_usr_messages(common_data);
   /* End of the stream */
-  btx_push_messages_stream_end(common_data);
+  btx_push_messages_stream_end(self_message_iterator,
+                               message_iterator_private_data);
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }

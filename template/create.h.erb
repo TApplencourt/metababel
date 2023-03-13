@@ -17,8 +17,12 @@ btx_downstream_trace_class_create_rec(bt_self_component *self_component);
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class);
 
-void btx_push_messages_stream_beginning(common_data_t *common_data);
-void btx_push_messages_stream_end(common_data_t *common_data);
+void btx_push_messages_stream_beginning(
+    bt_self_message_iterator *self_message_iterator,
+    btx_message_iterator_t *message_iterator_private_data);
+void btx_push_messages_stream_end(
+    bt_self_message_iterator *self_message_iterator,
+    btx_message_iterator_t *message_iterator_private_data);
 
 <% downstream_events.each do |e| %>
 void btx_push_message_<%= e.name_sanitized %>(

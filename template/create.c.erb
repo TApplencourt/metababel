@@ -53,31 +53,33 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   return trace;
 }
 
-void btx_push_messages_stream_beginning(struct common_data_s *common_data) {
-  bt_trace *trace = common_data->downstream_trace;
-  btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+void btx_push_messages_stream_beginning(
+    bt_self_message_iterator *self_message_iterator,
+    btx_message_iterator_t *message_iterator_private_data) {
 
+  bt_trace *trace =
+      message_iterator_private_data->common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
-    bt_message *message = bt_message_stream_beginning_create(
-        common_data->self_message_iterator, stream);
+    bt_message *message =
+        bt_message_stream_beginning_create(self_message_iterator, stream);
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
 }
 
-void btx_push_messages_stream_end(struct common_data_s *common_data) {
-  bt_trace *trace = common_data->downstream_trace;
-  btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+void btx_push_messages_stream_end(
+    bt_self_message_iterator *self_message_iterator,
+    btx_message_iterator_t *message_iterator_private_data) {
 
+  bt_trace *trace =
+      message_iterator_private_data->common_data->downstream_trace;
   <% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
-    bt_message *message = bt_message_stream_end_create(
-        common_data->self_message_iterator, stream);
+    bt_message *message =
+        bt_message_stream_end_create(self_message_iterator, stream);
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
