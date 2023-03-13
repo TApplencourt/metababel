@@ -6,28 +6,37 @@
 void btx_downstream_move_messages(common_data_t *common_data,
                                   bt_message_array_const messages,
                                   uint64_t capacity, uint64_t *count) {
+
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+
   // Set count to min(capacity, common_data->queue.size())
   // Count time, pop the head of the queue and put it in messages
-  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
-    struct el *elt = common_data->queue;
+  for (*count = 0; *count < capacity && message_iterator_private_data->queue;
+       (*count)++) {
+    struct el *elt = message_iterator_private_data->queue;
     messages[*count] = elt->message;
-    DL_DELETE(common_data->queue, elt);
+    DL_DELETE(message_iterator_private_data->queue, elt);
     // Put it back to the bool of chain for reuse
-    DL_APPEND(common_data->pool, elt);
+    DL_APPEND(message_iterator_private_data->pool, elt);
   }
 }
 
 void btx_downstream_push_message(struct common_data_s *common_data,
                                  const bt_message *message) {
+
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(common_data->self_message_iterator);
+
   struct el *elt;
-  if (common_data->pool) {
-    elt = common_data->pool;
-    DL_DELETE(common_data->pool, elt);
+  if (message_iterator_private_data->pool) {
+    elt = message_iterator_private_data->pool;
+    DL_DELETE(message_iterator_private_data->pool, elt);
   } else {
     elt = (struct el *)malloc(sizeof *elt);
   }
   elt->message = message;
-  DL_APPEND(common_data->queue, elt);
+  DL_APPEND(message_iterator_private_data->queue, elt);
 }
 
 bt_trace_class *

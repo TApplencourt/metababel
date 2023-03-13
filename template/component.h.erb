@@ -48,15 +48,15 @@ struct common_data_s {
   const bt_value *params;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
-  /* Handling the downstream message queue */
-  struct el *queue;
-  struct el *pool;
 };
 
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   common_data_t *common_data;
+  /* Handling the downstream message queue */
+  struct el *queue;
+  struct el *pool;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 
@@ -70,9 +70,6 @@ struct common_data_s {
   bt_trace *downstream_trace;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
-  /* Handling the downstream message queue */
-  struct el *queue;
-  struct el *pool;
 };
 
 enum btx_filter_state_e {
@@ -98,6 +95,9 @@ struct btx_message_iterator_s {
   bt_message_iterator *message_iterator;
   btx_filter_state_t state;
   btx_filter_processing_state_t processing_state;
+  /* Handling the downstream message queue */
+  struct el *queue;
+  struct el *pool;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 

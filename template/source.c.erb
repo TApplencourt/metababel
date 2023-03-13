@@ -26,7 +26,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
   /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
    * not put any message into the message array */
-  if (!common_data->queue)
+  if (!message_iterator_private_data->queue)
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
 
   btx_downstream_move_messages(common_data, messages, capacity, count);
@@ -82,7 +82,7 @@ source_message_iterator_initialize(
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
   btx_message_iterator_t *message_iterator_private_data =
-      malloc(sizeof(*message_iterator_private_data));
+      calloc(1, sizeof(btx_message_iterator_t));
 
   /* Retrieve the component's private data from its user data */
   common_data_t *common_data = bt_self_component_get_data(
@@ -94,16 +94,17 @@ source_message_iterator_initialize(
   /* Keep a link to the component's private data */
   message_iterator_private_data->common_data = common_data;
 
+  /* Set the message iterator's user data to our private data structure */
+  bt_self_message_iterator_set_data(self_message_iterator,
+                                    message_iterator_private_data);
+
   /* Beging of the stream */
   btx_push_messages_stream_beginning(common_data);
+
   /* User message */
   btx_push_usr_messages(common_data);
   /* End of the stream */
   btx_push_messages_stream_end(common_data);
-
-  /* Set the message iterator's user data to our private data structure */
-  bt_self_message_iterator_set_data(self_message_iterator,
-                                    message_iterator_private_data);
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -114,12 +115,6 @@ static void source_finalize(bt_self_component_source *self_component_source) {
 
   // TODO: Missing {initizialize,finialize}_usr_source
   bt_value_put_ref(common_data->params);
-
-  struct el *elt, *tmp;
-  DL_FOREACH_SAFE(common_data->pool, elt, tmp) {
-    DL_DELETE(common_data->pool, elt);
-    free(elt);
-  }
   free(common_data);
 }
 
@@ -128,6 +123,12 @@ static void source_message_iterator_finalize(
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
+
+  struct el *elt, *tmp;
+  DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
+    DL_DELETE(message_iterator_private_data->pool, elt);
+    free(elt);
+  }
 
   /* Free the allocated structure */
   free(message_iterator_private_data);

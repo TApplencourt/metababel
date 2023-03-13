@@ -34,7 +34,7 @@ filter_message_iterator_next_processing_sending(
 
   btx_downstream_move_messages(common_data, messages, capacity, count);
 
-  if (!common_data->queue)
+  if (!message_iterator_private_data->queue)
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_READING;
 
@@ -112,7 +112,7 @@ filter_message_iterator_next_processing_reading(
     }
   }
 
-  if (common_data->queue) {
+  if (message_iterator_private_data->queue) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_SENDING;
     /* optimization */
@@ -156,7 +156,7 @@ filter_message_iterator_next_finalizing(
   // BTX_FILTER_PROCESSING_STATE_FINISHED);
   common_data_t *common_data = message_iterator_private_data->common_data;
 
-  if (!common_data->queue) {
+  if (!message_iterator_private_data->queue) {
     bt_message_iterator_put_ref(
         message_iterator_private_data->message_iterator);
     message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
@@ -254,7 +254,7 @@ filter_message_iterator_initialize(
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
   btx_message_iterator_t *message_iterator_private_data =
-      malloc(sizeof(*message_iterator_private_data));
+      calloc(1, sizeof(btx_message_iterator_t));
 
   /* Retrieve the component's private data from its user data */
   common_data_t *common_data = bt_self_component_get_data(
@@ -286,12 +286,6 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
 
-  struct el *elt, *tmp;
-  DL_FOREACH_SAFE(common_data->pool, elt, tmp) {
-    DL_DELETE(common_data->pool, elt);
-    free(elt);
-  }
-
   bt_value_put_ref(common_data->params);
   free(common_data);
 }
@@ -301,6 +295,12 @@ static void filter_message_iterator_finalize(
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
+
+  struct el *elt, *tmp;
+  DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
+    DL_DELETE(message_iterator_private_data->pool, elt);
+    free(elt);
+  }
 
   /* Free the allocated structure */
   free(message_iterator_private_data);
