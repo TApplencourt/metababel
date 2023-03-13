@@ -49,21 +49,6 @@ static void lookup_dispatcher(common_data_t *common_data,
  *  Handle Upstream Messages
  */
 
-static inline void btx_move_message_downstream(common_data_t *common_data,
-                                               bt_message_array_const messages,
-                                               uint64_t capacity,
-                                               uint64_t *count) {
-  // Set count to min(capacity, common_data->queue.size())
-  // Count time, pop the head of the queue and put it in messages
-  for (*count = 0; *count < capacity && common_data->queue; (*count)++) {
-    struct el *elt = common_data->queue;
-    messages[*count] = elt->message;
-    DL_DELETE(common_data->queue, elt);
-    // Put it back to the bool of chain for reuse
-    DL_APPEND(common_data->pool, elt);
-  }
-}
-
 static inline bt_message_iterator_class_next_method_status
 filter_message_iterator_next_processing_sending(
     bt_self_message_iterator *self_message_iterator,
@@ -74,7 +59,7 @@ filter_message_iterator_next_processing_sending(
 
   common_data_t *common_data = message_iterator_private_data->common_data;
 
-  btx_move_message_downstream(common_data, messages, capacity, count);
+  btx_downstream_move_messages(common_data, messages, capacity, count);
 
   if (!common_data->queue)
     message_iterator_private_data->processing_state =
@@ -199,7 +184,7 @@ filter_message_iterator_next_finalizing(
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
 
-  btx_move_message_downstream(common_data, messages, capacity, count);
+  btx_downstream_move_messages(common_data, messages, capacity, count);
   return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 
