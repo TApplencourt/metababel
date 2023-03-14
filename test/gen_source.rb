@@ -22,7 +22,7 @@ void btx_push_usr_messages(struct common_data_s *common_data) {
 
     <%- data.each do | entry | -%>
     <%- entry.fetch(:times,1).times do -%>
-    btx_push_message_<%= entry[:name].gsub(":","_") %>(common_data,<%=  entry[:field_values].join(",") %>);
+    btx_push_message_<%= entry[:name] %>(common_data,<%=  entry[:field_values].join(",") %>);
     <%- end -%>
     <%- end -%>
 }
@@ -30,10 +30,8 @@ void btx_push_usr_messages(struct common_data_s *common_data) {
 TEXT
 
 def parse_log(input_path)
-  data_list = []
-  File.open(input_path, "r") do |f|
-    f.each_line do |line|
-
+  File.open(input_path, "r") do |file|
+    file.each_line.map do |line|
       # Line format support checks
       match = line.match(REGEXT_PRETTY)
       raise "Unsupported format for '#{line}'." unless match
@@ -41,18 +39,17 @@ def parse_log(input_path)
       i = line.index('{')
       head, _, tail = line.partition(": {")
       
-      data = {}
-      data[:name]=head.gsub(/[^0-9A-Za-z\-]/, '_') # Should reuse metababel mangling
-      data[:field_values] = tail.scan(REGEXT_PRETTY).flatten
-      data_list.append(data)
+      data = {
+        :name => head.gsub(/[^0-9A-Za-z\-]/, '_'), # Should reuse metababel mangling
+        :field_values => tail.scan(REGEXT_PRETTY).flatten
+      }
     end
   end
-  data_list
 end
 
 def parse_yaml(input_path)
   data = YAML.load_file(input_path)
-  data.each do |item| 
+  data.each do |item|
     item[:field_values] = item[:field_values].map(&:inspect)
   end 
 end 

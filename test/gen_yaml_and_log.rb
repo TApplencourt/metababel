@@ -5,10 +5,16 @@ require 'yaml'
 # TODO: Need to know how to set the seed.
 # Kernel.srand(1)
 
-SAMPLES = 2
+# Number of samples to be generated for every event_class.
+SAMPLES = 8
+# Number of common_fields to be geneared.
 CFIELDS = 2
+# Number of payload fields to be generated.
 PFIELDS = 2
+# Size in strings and randon numbers generated.
 LENGTH = 20
+
+# Values generators.
 
 EVENT_CLASS_NAME_GEN = lambda do 
     @counter = @counter + 1
@@ -23,9 +29,6 @@ FIELD_TYPE_TO_VALUE = {
     "integer_unsigned" => INTEGER_VALUE_GEN,
     "bool" => BOOLEAN_VALUE_GEN
 }
-
-# CFIELDS_VALUE_GENS = [ STRING_VALUE_GEN ]
-# PFIELDS_VALUE_GENS = [ INTEGER_VALUE_GEN ]
 
 def gen_integer_field
     @counter = 0
@@ -105,17 +108,19 @@ common_members = STREAM_CLASSES[:stream_classes][0][:event_common_context_field_
 event_classes = STREAM_CLASSES[:stream_classes][0][:event_classes]
 
 data = []
-event_classes.map do | ec |
-    ec_data = {}
-    ec_data[:name] = ec[:name]
-    ec_data[:common] = common_members.map do |member|
-        "#{member[:name]} = #{ FIELD_TYPE_TO_VALUE[member[:field_class][:type]].call.inspect }"
-    end.join(", ")
+SAMPLES.times do
+    data += event_classes.map do | ec |
+        ec_data = {}
+        ec_data[:name] = ec[:name]
+        ec_data[:common] = common_members.map do |member|
+            "#{member[:name]} = #{ FIELD_TYPE_TO_VALUE[member[:field_class][:type]].call.inspect }"
+        end.join(", ")
 
-    ec_data[:payload] = ec[:payload_field_class][:members].map do |member| 
-        "#{member[:name]} = #{ FIELD_TYPE_TO_VALUE[member[:field_class][:type]].call.inspect }" 
-    end.join(", ")
-    data.append(ec_data)
+        ec_data[:payload] = ec[:payload_field_class][:members].map do |member| 
+            "#{member[:name]} = #{ FIELD_TYPE_TO_VALUE[member[:field_class][:type]].call.inspect }" 
+        end.join(", ")
+        ec_data
+    end
 end
 
 METABABEL_LOG_TEMPLATE =  <<-TEXT
