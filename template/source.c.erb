@@ -56,8 +56,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                                    capacity, count);
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
     }
-    message_iterator_private_data->state =
-        BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+    message_iterator_private_data->state = BTX_SOURCE_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   case BTX_SOURCE_STATE_FINISHED:
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
