@@ -67,8 +67,8 @@ DOCS = <<-DOCS
   Usage: example.rb [options]  
   
   Example: 
-    ruby example.rb -t yaml -i  ./3.interval_instances.yaml -o ./interval_callbacks.c
-    ruby example.rb -t log -f EE -i babeltrace.log -o  ./entry_exit_callbacks.c
+    ruby example.rb -t yaml -i stream_classes.yaml -o callbacks.c
+    ruby example.rb -t log -f EE -i babeltrace.log -o  callbacks.c
 DOCS
 
 options = {}
@@ -98,7 +98,6 @@ end.parse!
 raise OptionParser::MissingArgument if options[:input_type].nil?
 raise OptionParser::MissingArgument if options[:input_path].nil?
 raise OptionParser::MissingArgument if options[:output_path].nil?
-
 
 case options[:input_type]
 when "yaml"
