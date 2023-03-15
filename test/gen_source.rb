@@ -17,6 +17,7 @@ SOURCE_TEMPLATE =  <<-TEXT
 
 #include "component.h"
 #include "create.h"
+#include <stdbool.h>
 
 void btx_push_usr_messages(struct common_data_s *common_data) {
 

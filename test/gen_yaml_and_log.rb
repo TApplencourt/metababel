@@ -5,7 +5,7 @@ require 'optparse'
 
 $options = {}
 OptionParser.new do |opts|
-    opts.banner = 'Usage: gen_yaml_and_log.rb [$options] <output_file_path>.{yaml,c}'
+    opts.banner = 'Usage: gen_yaml_and_log.rb [$options] '
 
     # BTX MODEL GENERATION $options
 
@@ -25,12 +25,16 @@ OptionParser.new do |opts|
         $options[:rand_pfields] = p
     end
 
-    opts.on('-k', '--fixed_cfields ARRAY', Array, 'Override --rand_cfields, default: "str,int32,int64,bool".') do |p|
+    opts.on('-k', '--fixed_cfields ARRAY', Array, 'Override --rand_cfields, default: "string,int32,int64,bool".') do |p|
+        valid = p.all? { |arg| ["string","int64","int32","bool"].include?(arg) }
+        raise OptionParser::InvalidArgument unless valid
         $options[:fixed_cfields] = p
     end
 
-    opts.on('-j', '--fixed_fields ARRAY', Array, 'Override --rand_pfields, default: "str,int32,int64,bool".') do |p|
-        $options[:fixed_fields] = p
+    opts.on('-j', '--fixed_pfields ARRAY', Array, 'Override --rand_pfields, default: "string,int32,int64,bool".') do |p|
+        valid = p.all? { |arg| ["string","int64","int32","bool"].include?(arg) }
+        raise OptionParser::InvalidArgument unless valid
+        $options[:fixed_pfields] = p
     end
  
     opts.on('-l', '--length N', Integer, 'Length of strings and integers generated, default: 10') do |p|
@@ -55,8 +59,12 @@ OptionParser.new do |opts|
         $options[:samples] = p
     end
 
-    opts.on('-o', '--output NAME', String, 'Output filename prefix, default: "example".') do |p|
-        $options[:output] = p
+    opts.on('--yaml PATH', String, '[Required] btx_model file path.') do |p|
+        $options[:yaml] = p
+    end
+
+    opts.on('--log PATH', String, '[Required] btx_log file path.') do |p|
+        $options[:log] = p
     end
 
     opts.on_tail("-h", "--help", "Prints this help") do
@@ -64,6 +72,9 @@ OptionParser.new do |opts|
         exit
     end
 end.parse!
+
+raise OptionParser::MissingArgument if $options[:yaml].nil?
+raise OptionParser::MissingArgument if $options[:log].nil?
 
 # TODO: Need to know how to set the seed.
 # Kernel.srand(1)
@@ -192,16 +203,16 @@ stream_classes = {
     ]
 }
 
-File.open("btx_model_#{OUTPUT_NAME}.yml", "w") do |file| 
+File.open($options[:yaml], "w") do |file| 
     file.write(stream_classes.to_yaml)
 end
 
 ##
 # EVENT INSTANCES GENERATION FOR BABELTRACE LOG
 
-string_value_gen = $options.has_key?(:fixed_string_value) ? lambda { $options[:string_gen] } : lambda { SecureRandom.base64(LENGTH) }
-integer_value_gen = $options.has_key?(:fixed_integer_value) ? lambda { $options[:integer_gen] } : lambda { SecureRandom.random_number(LENGTH) }
-boolean_value_gen = $options.has_key?(:fixed_boolean_value) ? lambda { $options[:boolean_gen] } : lambda { [true,false].sample }
+string_value_gen = $options.has_key?(:fixed_string_value) ? lambda { $options[:fixed_string_value] } : lambda { SecureRandom.base64(LENGTH) }
+integer_value_gen = $options.has_key?(:fixed_integer_value) ? lambda { $options[:fixed_integer_value] } : lambda { SecureRandom.random_number(LENGTH) }
+boolean_value_gen = $options.has_key?(:fixed_boolean_value) ? lambda { $options[:fixed_boolean_value] } : lambda { [true,false].sample }
 
 field_type_to_value = {
     "string" => string_value_gen,
@@ -230,12 +241,12 @@ end
 
 METABABEL_LOG_TEMPLATE =  <<-TEXT
 <%- data.each do | entry | -%>
-<%= entry[:name] %>: { <%= entry[:common] %> }, { <%= entry[:payload] %> } 
+<%= entry[:name] %>: { <%= entry[:common] %> }, { <%= entry[:payload] %> }
 <%- end -%>
 TEXT
 
 renderer = ERB.new(METABABEL_LOG_TEMPLATE, nil, '-')
 output = renderer.result(binding)
-File.open("btx_log_#{OUTPUT_NAME}.txt", "w") do |file| 
+File.open($options[:log], "w") do |file| 
     file.write(output)
 end
