@@ -18,18 +18,51 @@ static bt_message_iterator_class_next_method_status
 source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                              bt_message_array_const messages, uint64_t capacity,
                              uint64_t *count) {
+
+  /* The clean thing to do will be to refractor the code, so we can reuse some
+   * part of the filter state-machine... For now unoptimal and simple state
+   * machine will be enough */
+
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
   /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
    * not put any message into the message array */
-  if (!message_iterator_private_data->queue)
+  switch (message_iterator_private_data->state) {
+  case BTX_SOURCE_STATE_INITIALIZING:
+    btx_push_messages_stream_beginning(self_message_iterator,
+                                       message_iterator_private_data);
+    message_iterator_private_data->state = BTX_SOURCE_STATE_PROCESSING;
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
+  case BTX_SOURCE_STATE_PROCESSING:
+    if (message_iterator_private_data->queue) {
+      btx_downstream_move_messages(message_iterator_private_data, messages,
+                                   capacity, count);
+      return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+    }
+    btx_source_status_t status = btx_push_usr_messages(
+        message_iterator_private_data->common_data,
+        message_iterator_private_data->common_data->usr_data);
+    if (status == BTX_SOURCE_END) {
+      btx_push_messages_stream_end(self_message_iterator,
+                                   message_iterator_private_data);
+      message_iterator_private_data->state = BTX_SOURCE_STATE_FINALIZING;
+    }
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
+  case BTX_SOURCE_STATE_FINALIZING:
+    if (message_iterator_private_data->queue) {
+      btx_downstream_move_messages(message_iterator_private_data, messages,
+                                   capacity, count);
+      return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+    }
+    message_iterator_private_data->state = BTX_SOURCE_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
-
-  btx_downstream_move_messages(message_iterator_private_data, messages,
-                               capacity, count);
-  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
+  case BTX_SOURCE_STATE_FINISHED:
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+  default:
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
+  }
 }
 
 /*
@@ -43,6 +76,8 @@ source_initialize(bt_self_component_source *self_component_source,
   common_data_t *common_data = calloc(1, sizeof(common_data_t));
   common_data->params = params;
   bt_value_get_ref(common_data->params);
+  /* Register User Data */
+  btx_initialize_usr_data(common_data, &common_data->usr_data);
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
@@ -83,6 +118,8 @@ source_message_iterator_initialize(
   btx_message_iterator_t *message_iterator_private_data =
       calloc(1, sizeof(btx_message_iterator_t));
 
+  message_iterator_private_data->state = BTX_SOURCE_STATE_INITIALIZING;
+
   /* Retrieve the component's private data from its user data */
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_message_iterator_borrow_component(self_message_iterator));
@@ -96,16 +133,6 @@ source_message_iterator_initialize(
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,
                                     message_iterator_private_data);
-
-  /* Beging of the stream */
-  btx_push_messages_stream_beginning(self_message_iterator,
-                                     message_iterator_private_data);
-
-  /* User message */
-  btx_push_usr_messages(common_data);
-  /* End of the stream */
-  btx_push_messages_stream_end(self_message_iterator,
-                               message_iterator_private_data);
 
   return BT_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }

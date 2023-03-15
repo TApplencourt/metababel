@@ -21,32 +21,18 @@ In the callbacks, and in the `btx_push_usr_messages`, you have access to `btx_pu
 
 # Source Description
 
-At initialization, we push messages to the downstream queue. 
-
-1. `btx_push_messages_stream_beginning`
-2. `btx_push_usr_messages`
-3. `btx_push_messages_stream_end`
+## State Machine
 
 ```mermaid
-graph TD
-    M[MessageIteratorNext]  --> MTP[Down Stream Queue Empty?]
-    MTP -- Yes --> D?[BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END]
-    MTP -- No --> PM[Pop Messages, BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK]--> DS[/DownStreamMessages\]
+stateDiagram-v2
+    [*] --> BTX_SOURCE_STATE_INITIALIZING
+    BTX_SOURCE_STATE_INITIALIZING --> BTX_SOURCE_STATE_PROCESSING
+    BTX_SOURCE_STATE_PROCESSING --> BTX_SOURCE_STATE_FINALIZING
+    BTX_SOURCE_STATE_FINALIZING --> BTX_FILTER_STATE_FINISHED
+    BTX_FILTER_STATE_FINISHED --> [*]
 ```
 
 # Filter Description
-
-```mermaid
-graph TD
-    UM[\UpstreamMessages/] --> M[MessageIteratorNext] 
-    M --> MTP[Down Stream Queue Empty?]
-    MTP -- Yes --> D?[Dispatcher?]
-    D? -- Yes --> D[Dispatcher]
-    D? -- No --> PUS[Push UpstreamStream Message]
-    D --> Callbacks
-    Callbacks --> CPD[Create and Push DownStream Messages]
-    MTP -- No --> PM[Pop Messages]--> DS[/DownStreamMessages\]
-```
 
 ## State Machine
 
@@ -67,17 +53,6 @@ stateDiagram-v2
 
 # Sink Description
 
-```mermaid
-graph TD
-    UM[\UpstreamMessages/] --> M[MessageIteratorNext] 
-    M --> MTP[Down Stream Queue Empty?]
-    MTP -- Yes --> D?[Dispatcher?]
-    D? -- Yes --> D[Dispatcher]
-    D? -- No --> Discarded
-    D --> Callbacks
-```
-
-At finalization we will call the 
-`btx_user_finalization(struct xprof_common_data *common_data)`
+At finalization we will call the `btx_user_finalization(struct xprof_common_data *common_data)`
 
 
