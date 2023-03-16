@@ -55,7 +55,7 @@ filter_message_iterator_next_processing_reading(
   bt_message_array_const upstream_messages;
 
   bt_message_iterator_next_status next_status =
-      bt_message_iterator_next(message_iterator_private_data->message_iterator,
+      bt_message_iterator_next(message_iterator_private_data->head_mi->message_iterator,
                                &upstream_messages, &upstream_message_count);
 
   /* We cannot have any message left in the downstream queue
@@ -156,7 +156,7 @@ filter_message_iterator_next_finalizing(
   // BTX_FILTER_PROCESSING_STATE_FINISHED);
   if (!message_iterator_private_data->queue) {
     bt_message_iterator_put_ref(
-        message_iterator_private_data->message_iterator);
+        message_iterator_private_data->head_mi->message_iterator);
     message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
@@ -265,10 +265,16 @@ filter_message_iterator_initialize(
   /* Keep a link to the component's private data */
   message_iterator_private_data->common_data = common_data;
 
-  /* Create the upstream message iterator */
-  bt_message_iterator_create_from_message_iterator(
-      self_message_iterator, common_data->in_port,
-      &message_iterator_private_data->message_iterator);
+  {
+    el_mi *mi = (el_mi*) malloc(sizeof *mi);
+
+    /* Create the upstream message iterator */
+    bt_message_iterator_create_from_message_iterator(
+        self_message_iterator, common_data->in_port,
+        &mi->message_iterator);
+
+    CDL_APPEND(message_iterator_private_data->head_mi, mi);
+  }
 
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,
