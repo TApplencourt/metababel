@@ -106,9 +106,9 @@ enum btx_filter_processing_state_e {
 typedef enum btx_filter_processing_state_e btx_filter_processing_state_t;
 
 typedef struct el_mi {
-    /* Upstream message iterator (owned by this) */
-    bt_message_iterator *message_iterator;
-    struct el_mi *next, *prev;
+  /* Upstream message iterator (owned by this) */
+  bt_message_iterator *message_iterator;
+  struct el_mi *next, *prev;
 } el_mi;
 
 /* Message iterator's private data */
