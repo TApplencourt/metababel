@@ -234,9 +234,11 @@ filter_initialize(bt_self_component_filter *self_component_filter,
    * connected, it can create our message iterator.
    */
 
-  bt_self_component_filter_add_input_port(self_component_filter, "in", NULL,
-                                          &common_data->in_port);
+  common_data->component = bt_self_component_filter_as_component_filter(self_component_filter);
 
+  uint64_t current = bt_component_filter_get_input_port_count(common_data->component);
+  bt_self_component_filter_add_input_port(self_component_filter, "in"+current, NULL,
+                                          NULL);
 
   bt_self_component_filter_add_output_port(self_component_filter, "out", NULL,
                                            NULL);
@@ -255,7 +257,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 
 /*
  * Initializes the message iterator.
- */
+ */ 
 static bt_message_iterator_class_initialize_method_status
 filter_message_iterator_initialize(
     bt_self_message_iterator *self_message_iterator,
@@ -275,14 +277,14 @@ filter_message_iterator_initialize(
   /* Keep a link to the component's private data */
   message_iterator_private_data->common_data = common_data;
 
+  /* Create the upstream message iterators */
+  for (uint64_t i = 0; i < bt_component_filter_get_input_port_count(common_data->component); i++)
   {
     el_mi *mi = (el_mi*) malloc(sizeof *mi);
-
-    /* Create the upstream message iterator */
     bt_message_iterator_create_from_message_iterator(
-        self_message_iterator, common_data->in_port,
+        self_message_iterator,
+        (bt_self_component_port_input * ) bt_component_filter_borrow_input_port_by_index_const(common_data->component, i),
         &mi->message_iterator);
-
     CDL_APPEND(message_iterator_private_data->head_mi, mi);
   }
 
