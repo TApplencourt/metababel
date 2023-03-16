@@ -1,0 +1,12 @@
+---
+:stream_classes:
+- :name: sc1
+  :event_classes:
+  - :name: event_2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: sf_3
+        :field_class:
+          :type: integer_unsigned
+          :cast_type: int64_t
