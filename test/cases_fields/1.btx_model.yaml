@@ -6,7 +6,7 @@
     :payload_field_class:
       :type: structure
       :members:
-      - :name: sf_6
+      - :name: sf_3
         :field_class:
           :type: string
           :cast_type: const char*
