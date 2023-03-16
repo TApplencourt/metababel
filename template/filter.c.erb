@@ -33,10 +33,10 @@ filter_message_iterator_next_processing_sending(
   btx_downstream_move_messages(message_iterator_private_data, messages,
                                capacity, count);
 
-  if (!message_iterator_private_data->queue)
+  if (!message_iterator_private_data->queue) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_READING;
-
+  }
   return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 
@@ -64,10 +64,16 @@ filter_message_iterator_next_processing_reading(
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
     /* We are setting the state, so this function will never being call twice */
-    btx_finalize_usr_data(common_data, common_data->usr_data);
-    message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
-    message_iterator_private_data->processing_state =
-        BTX_FILTER_PROCESSING_STATE_FINISHED;
+    bt_message_iterator_put_ref(
+        message_iterator_private_data->head_mi->message_iterator);
+
+    CDL_DELETE(message_iterator_private_data->head_mi,
+               message_iterator_private_data->head_mi);
+    if (!message_iterator_private_data->head_mi) {
+      btx_finalize_usr_data(common_data, common_data->usr_data);
+      message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
+      message_iterator_private_data->processing_state = BTX_FILTER_PROCESSING_STATE_FINISHED;
+    }
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
@@ -112,6 +118,9 @@ filter_message_iterator_next_processing_reading(
     }
   }
 
+  /* Round Robin between Upstream MessageIterator */
+  message_iterator_private_data->head_mi=message_iterator_private_data->head_mi->next;
+
   if (message_iterator_private_data->queue) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_SENDING;
@@ -155,8 +164,6 @@ filter_message_iterator_next_finalizing(
   // assert(message_iterator_private_data->processing_state ==
   // BTX_FILTER_PROCESSING_STATE_FINISHED);
   if (!message_iterator_private_data->queue) {
-    bt_message_iterator_put_ref(
-        message_iterator_private_data->head_mi->message_iterator);
     message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
@@ -226,8 +233,11 @@ filter_initialize(bt_self_component_filter *self_component_filter,
    * a filter or a sink component. Once a downstream component is
    * connected, it can create our message iterator.
    */
+
   bt_self_component_filter_add_input_port(self_component_filter, "in", NULL,
                                           &common_data->in_port);
+
+
   bt_self_component_filter_add_output_port(self_component_filter, "out", NULL,
                                            NULL);
 
