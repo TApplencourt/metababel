@@ -6,7 +6,8 @@
 2. No payload field.
 3. No common field, no payload.
 4. Common field, payload field.
-5. Hundred common field, hundred payload fields, random field types.
+5. Hundred common field, hundred payload fields, random field types: should fail at compile, should fail at run.
+- This also should fail at generation, because the invalid YAML?
 
 ## Type string
 
