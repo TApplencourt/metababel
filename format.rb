@@ -23,7 +23,7 @@ def format_erb(str_)
     new_str
   end
 
-  str_, = Open3.capture2('clang-format', stdin_data: str_)
+  str_, = Open3.capture2('clang-format -style="{ColumnLimit: 100}"', stdin_data: str_)
 
   d_sub.each do |k, v|
     str_.gsub!(/#{k}/, v)

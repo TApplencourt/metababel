@@ -18,6 +18,13 @@ static void lookup_dispatcher(common_data_t *common_data,
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
 
+static const char* get_port_name(uint64_t current) {
+  int num_len = snprintf(NULL, 0, "in%ld", current);
+  char* result = (char*) malloc(num_len + 1);
+  sprintf(result, "in%ld", current);
+  return result;
+}
+
 /*
  *  Handle Upstream Messages
  */
@@ -241,7 +248,8 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 
   const uint64_t current =
       bt_component_filter_get_input_port_count(common_data->component);
-  bt_self_component_filter_add_input_port(self_component_filter, "in" + current,
+  
+  bt_self_component_filter_add_input_port(self_component_filter, get_port_name(current),
                                           NULL, NULL);
 
   bt_self_component_filter_add_output_port(self_component_filter, "out", NULL,
@@ -265,7 +273,7 @@ filter_input_port_connected(bt_self_component_filter *self_comp,
                             const bt_port_output *other_port) {
   const uint64_t current = bt_component_filter_get_input_port_count(
       bt_self_component_filter_as_component_filter(self_comp));
-  bt_self_component_filter_add_input_port(self_comp, "in" + current, NULL,
+  bt_self_component_filter_add_input_port(self_comp, get_port_name(current), NULL,
                                           NULL);
   return BT_COMPONENT_CLASS_PORT_CONNECTED_METHOD_STATUS_OK;
 }
