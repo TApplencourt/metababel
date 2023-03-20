@@ -18,6 +18,13 @@ static void lookup_dispatcher(common_data_t *common_data,
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
 
+static const char *get_port_name(uint64_t current) {
+  int num_len = snprintf(NULL, 0, "in%ld", current);
+  char *result = (char *)malloc(num_len + 1);
+  sprintf(result, "in%ld", current);
+  return result;
+}
+
 /*
  *  Handle Upstream Messages
  */
@@ -33,10 +40,10 @@ filter_message_iterator_next_processing_sending(
   btx_downstream_move_messages(message_iterator_private_data, messages,
                                capacity, count);
 
-  if (!message_iterator_private_data->queue)
+  if (!message_iterator_private_data->queue) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_READING;
-
+  }
   return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 
@@ -54,9 +61,9 @@ filter_message_iterator_next_processing_reading(
   uint64_t upstream_message_count;
   bt_message_array_const upstream_messages;
 
-  bt_message_iterator_next_status next_status =
-      bt_message_iterator_next(message_iterator_private_data->message_iterator,
-                               &upstream_messages, &upstream_message_count);
+  bt_message_iterator_next_status next_status = bt_message_iterator_next(
+      message_iterator_private_data->head_mi->message_iterator,
+      &upstream_messages, &upstream_message_count);
 
   /* We cannot have any message left in the downstream queue
    * Hence it's safe to pass any error messages downstream.
@@ -64,10 +71,17 @@ filter_message_iterator_next_processing_reading(
   switch (next_status) {
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
     /* We are setting the state, so this function will never being call twice */
-    btx_finalize_usr_data(common_data, common_data->usr_data);
-    message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
-    message_iterator_private_data->processing_state =
-        BTX_FILTER_PROCESSING_STATE_FINISHED;
+    bt_message_iterator_put_ref(
+        message_iterator_private_data->head_mi->message_iterator);
+
+    CDL_DELETE(message_iterator_private_data->head_mi,
+               message_iterator_private_data->head_mi);
+    if (!message_iterator_private_data->head_mi) {
+      btx_finalize_usr_data(common_data, common_data->usr_data);
+      message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
+      message_iterator_private_data->processing_state =
+          BTX_FILTER_PROCESSING_STATE_FINISHED;
+    }
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
@@ -112,6 +126,10 @@ filter_message_iterator_next_processing_reading(
     }
   }
 
+  /* Round Robin between Upstream MessageIterator */
+  message_iterator_private_data->head_mi =
+      message_iterator_private_data->head_mi->next;
+
   if (message_iterator_private_data->queue) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_SENDING;
@@ -155,8 +173,6 @@ filter_message_iterator_next_finalizing(
   // assert(message_iterator_private_data->processing_state ==
   // BTX_FILTER_PROCESSING_STATE_FINISHED);
   if (!message_iterator_private_data->queue) {
-    bt_message_iterator_put_ref(
-        message_iterator_private_data->message_iterator);
     message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
@@ -226,8 +242,16 @@ filter_initialize(bt_self_component_filter *self_component_filter,
    * a filter or a sink component. Once a downstream component is
    * connected, it can create our message iterator.
    */
-  bt_self_component_filter_add_input_port(self_component_filter, "in", NULL,
-                                          &common_data->in_port);
+
+  common_data->component =
+      bt_self_component_filter_as_component_filter(self_component_filter);
+
+  const uint64_t current =
+      bt_component_filter_get_input_port_count(common_data->component);
+
+  bt_self_component_filter_add_input_port(self_component_filter,
+                                          get_port_name(current), NULL, NULL);
+
   bt_self_component_filter_add_output_port(self_component_filter, "out", NULL,
                                            NULL);
 
@@ -243,6 +267,16 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
+bt_component_class_port_connected_method_status
+filter_input_port_connected(bt_self_component_filter *self_comp,
+                            bt_self_component_port_input *self_port,
+                            const bt_port_output *other_port) {
+  const uint64_t current = bt_component_filter_get_input_port_count(
+      bt_self_component_filter_as_component_filter(self_comp));
+  bt_self_component_filter_add_input_port(self_comp, get_port_name(current),
+                                          NULL, NULL);
+  return BT_COMPONENT_CLASS_PORT_CONNECTED_METHOD_STATUS_OK;
+}
 /*
  * Initializes the message iterator.
  */
@@ -265,10 +299,26 @@ filter_message_iterator_initialize(
   /* Keep a link to the component's private data */
   message_iterator_private_data->common_data = common_data;
 
-  /* Create the upstream message iterator */
-  bt_message_iterator_create_from_message_iterator(
-      self_message_iterator, common_data->in_port,
-      &message_iterator_private_data->message_iterator);
+  /* Create the upstream message iterators */
+  for (uint64_t i = 0;
+       i < bt_component_filter_get_input_port_count(common_data->component);
+       i++) {
+    bt_self_component_port_input *self_port =
+        bt_self_component_filter_borrow_input_port_by_index(
+            (bt_self_component_filter *)common_data->component, i);
+
+    const bt_port *port = bt_self_component_port_as_port(
+        bt_self_component_port_input_as_self_component_port(self_port));
+
+    /* Skip non-connected port */
+    if (!bt_port_is_connected(port))
+      continue;
+
+    el_mi *mi = (el_mi *)malloc(sizeof *mi);
+    bt_message_iterator_create_from_message_iterator(
+        self_message_iterator, self_port, &mi->message_iterator);
+    CDL_APPEND(message_iterator_private_data->head_mi, mi);
+  }
 
   /* Set the message iterator's user data to our private data structure */
   bt_self_message_iterator_set_data(self_message_iterator,
@@ -320,3 +370,5 @@ BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
     <%= component_name %>, filter_message_iterator_initialize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(
     <%= component_name %>, filter_message_iterator_finalize);
+BT_PLUGIN_FILTER_COMPONENT_CLASS_INPUT_PORT_CONNECTED_METHOD(
+    <%= component_name %>, filter_input_port_connected);

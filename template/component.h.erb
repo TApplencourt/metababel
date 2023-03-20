@@ -84,7 +84,7 @@ struct common_data_s {
   void *usr_data;
   const bt_value *params;
   /* Component's input port (weak) */
-  bt_self_component_port_input *in_port;
+  const bt_component_filter *component;
   bt_trace *downstream_trace;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
@@ -105,12 +105,18 @@ enum btx_filter_processing_state_e {
 };
 typedef enum btx_filter_processing_state_e btx_filter_processing_state_t;
 
+typedef struct el_mi {
+  /* Upstream message iterator (owned by this) */
+  bt_message_iterator *message_iterator;
+  struct el_mi *next, *prev;
+} el_mi;
+
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   common_data_t *common_data;
-  /* Upstream message iterator (owned by this) */
-  bt_message_iterator *message_iterator;
+  /*  Upstream messages iterator */
+  el_mi *head_mi;
   btx_filter_state_t state;
   btx_filter_processing_state_t processing_state;
   /* Handling the downstream message queue */
