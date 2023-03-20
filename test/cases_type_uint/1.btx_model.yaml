@@ -10,3 +10,4 @@
         :field_class:
           :type: integer_unsigned
           :cast_type: int64_t
+          :field_value_range: 64
