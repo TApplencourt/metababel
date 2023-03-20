@@ -44,21 +44,39 @@ struct el {
 // Struct stored in the component via `bt_self_component_set_data`
 <% if options[:component_type] == 'SOURCE' %>
 struct common_data_s {
-  bt_trace *downstream_trace;
+  void *usr_data;
   const bt_value *params;
+  bt_trace *downstream_trace;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
 };
+
+enum btx_source_state_e {
+  BTX_SOURCE_STATE_INITIALIZING,
+  BTX_SOURCE_STATE_PROCESSING,
+  BTX_SOURCE_STATE_FINALIZING,
+  BTX_SOURCE_STATE_FINISHED,
+  BTX_SOURCE_STATE_ERROR,
+};
+typedef enum btx_source_state_e btx_source_state_t;
 
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   common_data_t *common_data;
+  btx_source_state_t state;
+
   /* Handling the downstream message queue */
   struct el *queue;
   struct el *pool;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
+
+enum btx_source_status_e {
+  BTX_SOURCE_END,
+  BTX_SOURCE_OK,
+};
+typedef enum btx_source_status_e btx_source_status_t;
 
 <% elsif options[:component_type] == 'FILTER' %>
 struct common_data_s {
@@ -66,7 +84,7 @@ struct common_data_s {
   void *usr_data;
   const bt_value *params;
   /* Component's input port (weak) */
-  bt_self_component_port_input *in_port;
+  const bt_component_filter *component;
   bt_trace *downstream_trace;
   /* Used by create.c */
   bt_self_message_iterator *self_message_iterator;
@@ -87,12 +105,18 @@ enum btx_filter_processing_state_e {
 };
 typedef enum btx_filter_processing_state_e btx_filter_processing_state_t;
 
+typedef struct el_mi {
+  /* Upstream message iterator (owned by this) */
+  bt_message_iterator *message_iterator;
+  struct el_mi *next, *prev;
+} el_mi;
+
 /* Message iterator's private data */
 struct btx_message_iterator_s {
   /* (Weak) link to the component's private data */
   common_data_t *common_data;
-  /* Upstream message iterator (owned by this) */
-  bt_message_iterator *message_iterator;
+  /*  Upstream messages iterator */
+  el_mi *head_mi;
   btx_filter_state_t state;
   btx_filter_processing_state_t processing_state;
   /* Handling the downstream message queue */
@@ -115,7 +139,9 @@ struct common_data_s {
 void btx_read_params(common_data_t *common_data, params_t *usr_params);
 
 <% if options[:component_type] == 'SOURCE'  %>
-void btx_push_usr_messages(common_data_t *common_data);
+void btx_initialize_usr_data(common_data_t *common_data, void **usr_data);
+btx_source_status_t btx_push_usr_messages(common_data_t *common_data,
+                                          void *usr_data);
 <% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
 /* Users functions to implement */
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data);

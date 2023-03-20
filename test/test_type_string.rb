@@ -13,7 +13,7 @@ class TestSourceTypeString1 < Test::Unit::TestCase
             btx_component_type: 'SOURCE',
             btx_component_name: 'source',
             btx_pluggin_name: 'metababel_tests',
-            btx_component_path: './test/SOURCE.metababel'
+            btx_component_path: './test/SOURCE.metababel_test'
         }
     end 
 
@@ -35,7 +35,7 @@ class TestSourceTypeString2 < Test::Unit::TestCase
             btx_component_type: 'SOURCE',
             btx_component_name: 'source',
             btx_pluggin_name: 'metababel_tests',
-            btx_component_path: './test/SOURCE.metababel'
+            btx_component_path: './test/SOURCE.metababel_test'
         }
     end 
 
