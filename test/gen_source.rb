@@ -51,13 +51,6 @@ def parse_log(input_path)
   end
 end
 
-def parse_yaml(input_path)
-  data = YAML.load_file(input_path)
-  data.each do |item|
-    item[:field_values] = item[:field_values].map(&:inspect)
-  end 
-end 
-
 def render_and_save(data, output_path) 
   renderer = ERB.new(SOURCE_TEMPLATE, nil, '-')
   output = renderer.result(binding)
@@ -82,10 +75,6 @@ OptionParser.new do |opts|
       exit
   end
 
-  opts.on('-t', '--type TYPE', "[Mandatory] 'yaml|log'.") do |p|
-    options[:input_type] = p
-  end
-
   opts.on('-i', '--input PATH', '[Mandatory] Path to the bt2 yaml file.') do |p|
     options[:input_path] = p
   end
@@ -96,19 +85,9 @@ OptionParser.new do |opts|
 
 end.parse!
 
-raise OptionParser::MissingArgument if options[:input_type].nil?
 raise OptionParser::MissingArgument if options[:input_path].nil?
 raise OptionParser::MissingArgument if options[:output_path].nil?
 
-case options[:input_type]
-when "yaml"
-  render_and_save(
-    parse_yaml(options[:input_path]), 
-    options[:output_path])
-when "log"
-  render_and_save( 
-    parse_log(options[:input_path]), 
-    options[:output_path])
-else
-  "Error: unknown argument for --type (-t) #{options[:input_type]}"
-end
+render_and_save( 
+  parse_log(options[:input_path]), 
+  options[:output_path])
