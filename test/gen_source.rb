@@ -79,9 +79,9 @@ def render_and_save(data, output_path)
 end
 
 DOCS = <<-DOCS
-  Usage: example.rb [options]#{'  '}
+  Usage: example.rb [options]
 
-  Example:#{' '}
+  Example:
     ruby example.rb -t yaml -i stream_classes.yaml -o callbacks.c
     ruby example.rb -t log -f EE -i babeltrace.log -o  callbacks.c
 DOCS
