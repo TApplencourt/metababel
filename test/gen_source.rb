@@ -37,7 +37,7 @@ def sanitize_value(field_value, field_class)
   return field_value unless field_class
   case field_class[:type]
   when "integer_signed"
-      "UINT64_C(#{field_value})"
+      "INT64_C(#{field_value})"
   when "integer_unsigned"
       "UINT64_C(#{field_value})"
   else
@@ -50,14 +50,7 @@ def get_field_classes(yaml)
   yaml.values.flatten.filter_map { |d| get_field_classes(d) if d.is_a?(Hash) }.flatten
 end
 
-def load_field_clases(yaml_path)
-
-end
-
-def parse_log(**options)
-  yaml_path = options.fetch(:yaml_path,nil)
-  input_path = options[:input_path]
-  # cast_functions = get_cast_functions(yaml_path)
+def parse_log(input_path, yaml_path = nil)
   field_classes = yaml_path ? get_field_classes(YAML.load_file(yaml_path)) : Array.new
 
   File.open(input_path, "r") do |file|
@@ -119,4 +112,4 @@ end.parse!
 raise OptionParser::MissingArgument if options[:input_path].nil?
 raise OptionParser::MissingArgument if options[:output_path].nil?
 
-render_and_save(parse_log(**options),options[:output_path])
+render_and_save(parse_log(options[:input_path],options[:yaml_path]),options[:output_path])
