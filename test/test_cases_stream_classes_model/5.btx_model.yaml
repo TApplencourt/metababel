@@ -1,0 +1,915 @@
+---
+:stream_classes:
+- :name: sc1
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: bf_1
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_2
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_3
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_4
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: sf_5
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_6
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_7
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: bf_8
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: bf_9
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: bf_10
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_11
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_12
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: sf_13
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: sf_14
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_15
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_16
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_17
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_18
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_19
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_20
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_21
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_22
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_23
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_24
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_25
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_26
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_27
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_28
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_29
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_30
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: bf_31
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_32
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_33
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_34
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_35
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_36
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: bf_37
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: sf_38
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_39
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_40
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_41
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: bf_42
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_43
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_44
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_45
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_46
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_47
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_48
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: bf_49
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: bf_50
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_51
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_52
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_53
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_54
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_55
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: bf_56
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_57
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_58
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_59
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_60
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_61
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: sf_62
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_63
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: bf_64
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: bf_65
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_66
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_67
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: sf_68
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: bf_69
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: sf_70
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_71
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_72
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: sf_73
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: sf_74
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_75
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_76
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_77
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_78
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_79
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_80
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_81
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_82
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: sf_83
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: sf_84
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_85
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: bf_86
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: sf_87
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_88
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 32
+        :cast_type: int32_t
+    - :name: if_89
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_90
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: sf_91
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: if_92
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_93
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: bf_94
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: sf_95
+      :field_class:
+        :type: string
+        :cast_type: const char*
+    - :name: bf_96
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_97
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: if_98
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+    - :name: bf_99
+      :field_class:
+        :type: bool
+        :cast_type: bt_bool
+    - :name: if_100
+      :field_class:
+        :type: integer_unsigned
+        :field_value_range: 64
+        :cast_type: int64_t
+  :event_classes:
+  - :name: event_101
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: if_102
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: sf_103
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: sf_104
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_105
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_106
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_107
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: sf_108
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: bf_109
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_110
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_111
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_112
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_113
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: sf_114
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: sf_115
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_116
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_117
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_118
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_119
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_120
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_121
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_122
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_123
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_124
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_125
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_126
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_127
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_128
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_129
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_130
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: bf_131
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_132
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_133
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_134
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_135
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_136
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_137
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_138
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_139
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_140
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_141
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_142
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_143
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_144
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_145
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_146
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_147
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_148
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: bf_149
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_150
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_151
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_152
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_153
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_154
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_155
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_156
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_157
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: sf_158
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_159
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: sf_160
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_161
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_162
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: bf_163
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_164
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_165
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_166
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_167
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: bf_168
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_169
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: sf_170
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: bf_171
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: bf_172
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_173
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: sf_174
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_175
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_176
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: bf_177
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: bf_178
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_179
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_180
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: sf_181
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_182
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_183
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: sf_184
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_185
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: if_186
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: bf_187
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_188
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_189
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_190
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: bf_191
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: if_192
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: sf_193
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_194
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+          :cast_type: int64_t
+      - :name: sf_195
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: bf_196
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_197
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: bf_198
+        :field_class:
+          :type: bool
+          :cast_type: bt_bool
+      - :name: sf_199
+        :field_class:
+          :type: string
+          :cast_type: const char*
+      - :name: if_200
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
+      - :name: if_201
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 32
+          :cast_type: int32_t
