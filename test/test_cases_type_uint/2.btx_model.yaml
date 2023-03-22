@@ -9,4 +9,5 @@
       - :name: sf_3
         :field_class:
           :type: integer_unsigned
+          :field_value_range: 32
 
