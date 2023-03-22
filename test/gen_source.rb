@@ -33,7 +33,33 @@ btx_source_status_t btx_push_usr_messages(common_data_t *common_data, void *usr_
 
 TEXT
 
-def parse_log(input_path)
+def sanitize_value(field_value, field_class)
+  return field_value unless field_class
+  case field_class[:type]
+  when "integer_signed"
+      "UINT64_C(#{field_value})"
+  when "integer_unsigned"
+      "UINT64_C(#{field_value})"
+  else
+      field_value
+  end
+end
+
+def get_field_classes(yaml)
+  return yaml[:field_class] if yaml.key?(:field_class)
+  yaml.values.flatten.filter_map { |d| get_field_classes(d) if d.is_a?(Hash) }.flatten
+end
+
+def load_field_clases(yaml_path)
+
+end
+
+def parse_log(**options)
+  yaml_path = options.fetch(:yaml_path,nil)
+  input_path = options[:input_path]
+  # cast_functions = get_cast_functions(yaml_path)
+  field_classes = yaml_path ? get_field_classes(YAML.load_file(yaml_path)) : Array.new
+
   File.open(input_path, "r") do |file|
     file.each_line.map do |line|
       # Line format support checks
@@ -42,10 +68,11 @@ def parse_log(input_path)
 
       i = line.index('{')
       head, _, tail = line.partition(": {")
-      
+
+      field_values =  tail.scan(REGEXT_PRETTY).flatten
       data = {
         :name => head.gsub(/[^0-9A-Za-z\-]/, '_'), # Should reuse metababel mangling
-        :field_values => tail.scan(REGEXT_PRETTY).flatten
+        :field_values => field_values.zip(field_classes).map { |fvalue,fclass| sanitize_value(fvalue,fclass) }
       }
     end
   end
@@ -75,11 +102,15 @@ OptionParser.new do |opts|
       exit
   end
 
-  opts.on('-i', '--input PATH', '[Mandatory] Path to the bt2 yaml file.') do |p|
+  opts.on('-y', '--yaml PATH', '[Optional] Path to btx_model.yaml.') do |p|
+    options[:yaml_path] = p
+  end
+
+  opts.on('-i', '--log PATH', '[Mandatory] Path to btx_log.txt.') do |p|
     options[:input_path] = p
   end
 
-  opts.on('-o', '--output PATH', '[Optional] Path to the bt2 SOURCE file.') do |p|
+  opts.on('-o', '--output PATH', '[Mandatory] Path to the bt2 SOURCE file.') do |p|
     options[:output_path] = p
   end
 
@@ -88,6 +119,4 @@ end.parse!
 raise OptionParser::MissingArgument if options[:input_path].nil?
 raise OptionParser::MissingArgument if options[:output_path].nil?
 
-render_and_save( 
-  parse_log(options[:input_path]), 
-  options[:output_path])
+render_and_save(parse_log(**options),options[:output_path])

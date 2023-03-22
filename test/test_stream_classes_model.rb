@@ -68,7 +68,6 @@ class TestSourceCommonPayloadFields < Test::Unit::TestCase
     end
 end
 
-# Hundred common field, hundred payload fields, random types for fields.
 class TestSourceHundredFields < Test::Unit::TestCase
     include TestSourceBase
     extend VariableAccessor

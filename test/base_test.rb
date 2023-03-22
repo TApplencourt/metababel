@@ -47,12 +47,14 @@ module TestSourceBase
         subtest_compile_source
         subtest_run_source
     end 
+
+
 end
 
 module VariableAccessor
     attr_reader :btx_variables
 
-    def self.shutdown
+    def shutdown
         FileUtils.remove_dir(@btx_variables[:btx_component_path],true)
     end
 end

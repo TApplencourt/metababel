@@ -9,4 +9,4 @@
       - :name: sf_3
         :field_class:
           :type: integer_unsigned
-          :cast_type: uint64_t
+
