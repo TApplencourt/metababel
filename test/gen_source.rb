@@ -72,7 +72,7 @@ def parse_log(input_path, yaml_path = nil)
 end
 
 def render_and_save(data, output_path) 
-  renderer = ERB.new(SOURCE_TEMPLATE, nil, '-')
+  renderer = ERB.new(SOURCE_TEMPLATE, trim_mode: '-')
   output = renderer.result(binding)
   File.write(output_path, output, mode: "w")
 end
