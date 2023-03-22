@@ -23,9 +23,11 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
 }
 
 btx_source_status_t btx_push_usr_messages(common_data_t *common_data, void *usr_data) {
+    <%- if data -%>
     <%- data.each do | entry | -%>
     <%- entry.fetch(:times,1).times do -%>
     btx_push_message_<%= entry[:name] %>(common_data,<%=  entry[:field_values].join(",") %>);
+    <%- end -%>
     <%- end -%>
     <%- end -%>
     return BTX_SOURCE_END;
@@ -51,22 +53,24 @@ def get_field_classes(yaml)
 end
 
 def parse_log(input_path, yaml_path = nil)
-  field_classes = yaml_path ? get_field_classes(YAML.load_file(yaml_path)) : Array.new
+  if input_path
+    field_classes = yaml_path ? get_field_classes(YAML.load_file(yaml_path)) : Array.new
 
-  File.open(input_path, "r") do |file|
-    file.each_line.map do |line|
-      # Line format support checks
-      match = line.match(REGEXT_PRETTY)
-      raise "Unsupported format for '#{line}'." unless match
+    File.open(input_path, "r") do |file|
+      file.each_line.map do |line|
+        # Line format support checks
+        match = line.match(REGEXT_PRETTY)
+        raise "Unsupported format for '#{line}'." unless match
 
-      i = line.index('{')
-      head, _, tail = line.partition(": {")
+        i = line.index('{')
+        head, _, tail = line.partition(": {")
 
-      field_values =  tail.scan(REGEXT_PRETTY).flatten
-      data = {
-        :name => head.gsub(/[^0-9A-Za-z\-]/, '_'), # Should reuse metababel mangling
-        :field_values => field_values.zip(field_classes).map { |fvalue,fclass| sanitize_value(fvalue,fclass) }
-      }
+        field_values =  tail.scan(REGEXT_PRETTY).flatten
+        data = {
+          :name => head.gsub(/[^0-9A-Za-z\-]/, '_'), # Should reuse metababel mangling
+          :field_values => field_values.zip(field_classes).map { |fvalue,fclass| sanitize_value(fvalue,fclass) }
+        }
+      end
     end
   end
 end
@@ -81,8 +85,13 @@ DOCS = <<-DOCS
   Usage: example.rb [options]  
   
   Example: 
-    ruby example.rb -t yaml -i stream_classes.yaml -o callbacks.c
-    ruby example.rb -t log -f EE -i babeltrace.log -o  callbacks.c
+    1. Creates fields sanitized messages by using stream_classes data types.
+    ruby example.rb -y stream_classes.yaml -i btx_log.txt -o callbacks.c
+    2. Creates fields non-sanitized messages.
+    ruby example.rb -i btx_log.txt -o callbacks.c
+    3. Creates a source file with no messages.
+    ruby example.rb -o callbacks.c
+
 DOCS
 
 options = {}
@@ -109,7 +118,6 @@ OptionParser.new do |opts|
 
 end.parse!
 
-raise OptionParser::MissingArgument if options[:input_path].nil?
 raise OptionParser::MissingArgument if options[:output_path].nil?
 
 render_and_save(parse_log(options[:input_path],options[:yaml_path]),options[:output_path])
