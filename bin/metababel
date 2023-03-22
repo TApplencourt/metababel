@@ -5,6 +5,14 @@ require 'optparse'
 require 'erb'
 require 'metababel'
 
+def validate_model(yaml)
+  raise "Invalide Model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                          d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
+                                            d2.key?(:payload_field_class)
+                                          end
+                                        end
+end
+
 class Hash
   # Copy pasted from rails (https://apidock.com/rails/Hash/deep_merge%21)
   def deep_merge!(other_hash, &block)
@@ -22,12 +30,11 @@ class Hash
   def deep_merge(other_hash, &block)
     dup.deep_merge!(other_hash, &block)
   end
-
 end
 
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class) do
   def name_sanitized
-    name.gsub(/[^0-9A-Za-z\-]/, '_')
+    name.gsub(/[^0-9A-Za-z-]/, '_')
   end
 end
 
@@ -104,9 +111,9 @@ options = { plugin_name: 'metababel',
 OptionParser.new do |opts|
   opts.banner = 'Usage: example.rb [options]'
 
-  opts.on("-h", "--help", "Prints this help") do
-      puts opts
-      exit
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
   end
 
   opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
@@ -136,7 +143,6 @@ OptionParser.new do |opts|
   opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
     options[:folder] = p
   end
-
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
@@ -146,15 +152,15 @@ Dir.mkdir(folder) unless File.exist?(folder)
 
 d = options.filter { |k, _v| %i[plugin_name component_name].include?(k) }
 
-d[:params_declaration] = ""
-d[:params_definition] = ""
+d[:params_declaration] = ''
+d[:params_definition] = ''
 if options.key?(:params)
   y = YAML.load_file(options[:params])
   c = Babeltrace2Gen::BTValueCLass.from_h(y)
   body = Babeltrace2Gen.context(indent: 1) do
-    c.get("usr_params", "params")
+    c.get('usr_params', 'params')
   end
-  d[:params_declaration] = c.get_struct_definition("params")
+  d[:params_declaration] = c.get_struct_definition('params')
   d[:params_definition] = body
 end
 
@@ -163,18 +169,22 @@ erb_render_and_save(d, 'component.h', folder)
 erb_render_and_save(d, 'params.c', folder)
 
 if %w[SOURCE FILTER].include?(options[:component_type])
-  raise "Missing downstream model" unless options[:downstream]
+  raise 'Missing downstream model' unless options[:downstream]
+
   y = YAML.load_file(options[:downstream])
+  validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
-  raise "Missing upstream models" unless options[:upstreams]
-  y = options[:upstreams].reduce({}) { |y, upstream |
+  raise 'Missing upstream models' unless options[:upstreams]
+
+  y = options[:upstreams].reduce({}) do |y, upstream|
     # Need to specialize for merging arrays
-    y.deep_merge(YAML.load_file(upstream)) { |key, old, new| old + new }
-  }
+    y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
+  end
+  validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_dispatchers(folder, t)
 end
