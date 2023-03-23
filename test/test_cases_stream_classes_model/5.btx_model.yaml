@@ -7,7 +7,6 @@
     - :name: bf_1
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_2
       :field_class:
         :type: integer_unsigned
@@ -39,15 +38,12 @@
     - :name: bf_8
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: bf_9
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: bf_10
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_11
       :field_class:
         :type: integer_unsigned
@@ -56,7 +52,6 @@
     - :name: bf_12
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: sf_13
       :field_class:
         :type: string
@@ -140,11 +135,9 @@
     - :name: bf_30
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: bf_31
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_32
       :field_class:
         :type: integer_unsigned
@@ -153,7 +146,6 @@
     - :name: bf_33
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_34
       :field_class:
         :type: integer_unsigned
@@ -172,7 +164,6 @@
     - :name: bf_37
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: sf_38
       :field_class:
         :type: string
@@ -195,7 +186,6 @@
     - :name: bf_42
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_43
       :field_class:
         :type: integer_unsigned
@@ -214,7 +204,6 @@
     - :name: bf_46
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_47
       :field_class:
         :type: integer_unsigned
@@ -228,11 +217,9 @@
     - :name: bf_49
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: bf_50
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_51
       :field_class:
         :type: integer_unsigned
@@ -259,7 +246,6 @@
     - :name: bf_56
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_57
       :field_class:
         :type: integer_unsigned
@@ -295,11 +281,9 @@
     - :name: bf_64
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: bf_65
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_66
       :field_class:
         :type: integer_unsigned
@@ -317,7 +301,6 @@
     - :name: bf_69
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: sf_70
       :field_class:
         :type: string
@@ -358,7 +341,6 @@
     - :name: bf_78
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_79
       :field_class:
         :type: integer_unsigned
@@ -367,7 +349,6 @@
     - :name: bf_80
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_81
       :field_class:
         :type: integer_unsigned
@@ -394,7 +375,6 @@
     - :name: bf_86
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: sf_87
       :field_class:
         :type: string
@@ -426,11 +406,9 @@
     - :name: bf_93
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: bf_94
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: sf_95
       :field_class:
         :type: string
@@ -438,7 +416,6 @@
     - :name: bf_96
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_97
       :field_class:
         :type: integer_unsigned
@@ -452,7 +429,6 @@
     - :name: bf_99
       :field_class:
         :type: bool
-        :cast_type: bt_bool
     - :name: if_100
       :field_class:
         :type: integer_unsigned
@@ -498,7 +474,6 @@
       - :name: bf_109
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_110
         :field_class:
           :type: integer_unsigned
@@ -512,7 +487,6 @@
       - :name: bf_112
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_113
         :field_class:
           :type: integer_unsigned
@@ -549,7 +523,6 @@
       - :name: bf_120
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_121
         :field_class:
           :type: integer_unsigned
@@ -568,7 +541,6 @@
       - :name: bf_124
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_125
         :field_class:
           :type: integer_unsigned
@@ -587,7 +559,6 @@
       - :name: bf_128
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_129
         :field_class:
           :type: integer_unsigned
@@ -596,11 +567,9 @@
       - :name: bf_130
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: bf_131
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_132
         :field_class:
           :type: string
@@ -618,7 +587,6 @@
       - :name: bf_135
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_136
         :field_class:
           :type: integer_unsigned
@@ -627,7 +595,6 @@
       - :name: bf_137
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_138
         :field_class:
           :type: integer_unsigned
@@ -636,7 +603,6 @@
       - :name: bf_139
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_140
         :field_class:
           :type: string
@@ -649,7 +615,6 @@
       - :name: bf_142
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_143
         :field_class:
           :type: integer_unsigned
@@ -663,7 +628,6 @@
       - :name: bf_145
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_146
         :field_class:
           :type: integer_unsigned
@@ -672,7 +636,6 @@
       - :name: bf_147
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_148
         :field_class:
           :type: string
@@ -680,7 +643,6 @@
       - :name: bf_149
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_150
         :field_class:
           :type: integer_unsigned
@@ -704,7 +666,6 @@
       - :name: bf_154
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_155
         :field_class:
           :type: integer_unsigned
@@ -713,7 +674,6 @@
       - :name: bf_156
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_157
         :field_class:
           :type: string
@@ -739,11 +699,9 @@
       - :name: bf_162
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: bf_163
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_164
         :field_class:
           :type: integer_unsigned
@@ -757,7 +715,6 @@
       - :name: bf_166
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_167
         :field_class:
           :type: string
@@ -765,7 +722,6 @@
       - :name: bf_168
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_169
         :field_class:
           :type: integer_unsigned
@@ -778,11 +734,9 @@
       - :name: bf_171
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: bf_172
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_173
         :field_class:
           :type: string
@@ -799,15 +753,12 @@
       - :name: bf_176
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: bf_177
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: bf_178
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_179
         :field_class:
           :type: integer_unsigned
@@ -849,7 +800,6 @@
       - :name: bf_187
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_188
         :field_class:
           :type: integer_unsigned
@@ -868,7 +818,6 @@
       - :name: bf_191
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: if_192
         :field_class:
           :type: integer_unsigned
@@ -890,7 +839,6 @@
       - :name: bf_196
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_197
         :field_class:
           :type: string
@@ -898,7 +846,6 @@
       - :name: bf_198
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: sf_199
         :field_class:
           :type: string
