@@ -37,9 +37,9 @@ end
 class TestSourceNoCommonNoPayloadFields < Test::Unit::TestCase
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
-      @btx_variables = {
+    @btx_variables = {
       btx_model_path: './test/test_cases_stream_classes_model/3.btx_model.yaml',
       btx_target_log_path: './test/test_cases_stream_classes_model/3.btx_log.txt',
       btx_component_type: 'SOURCE',
@@ -58,9 +58,9 @@ class TestSourceCommonPayloadFields < Test::Unit::TestCase
   include TestSourceBase
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
-      @btx_variables = {
+    @btx_variables = {
       btx_model_path: './test/test_cases_stream_classes_model/4.btx_model.yaml',
       btx_target_log_path: './test/test_cases_stream_classes_model/4.btx_log.txt',
       btx_component_type: 'SOURCE',

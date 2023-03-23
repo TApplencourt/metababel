@@ -20,8 +20,6 @@ module TestSourceBase
   end
 
   def subtest_generate_source_callbacks
-    # success = system "ruby ./test/gen_source.rb -i #{btx_variables[:btx_target_log_path]} -o #{btx_variables[:btx_component_path]}/callbacks.c"
-    # assert(success)
     `ruby ./test/gen_source.rb -i #{btx_variables[:btx_target_log_path]} -o #{btx_variables[:btx_component_path]}/callbacks.c`
     assert($?.success?)
   end
