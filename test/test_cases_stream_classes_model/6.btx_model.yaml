@@ -11,26 +11,21 @@
       :field_class:
         :type: integer_unsigned
         :field_value_range: 64
-        :cast_type: uint64_t
     - :name: cf_3
       :field_class:
         :type: integer_unsigned
         :field_value_range: 32
-        :cast_type: uint32_t
     - :name: cf_4
       :field_class:
         :type: integer_signed
         :field_value_range: 64
-        :cast_type: int64_t
     - :name: cf_5
       :field_class:
         :type: integer_signed
         :field_value_range: 32
-        :cast_type: int32_t
     - :name: cf_6
       :field_class:
         :type: string
-        :cast_type: const char*
   :event_classes:
   - :name: event_1
     :payload_field_class:
@@ -43,26 +38,21 @@
         :field_class:
           :type: integer_unsigned
           :field_value_range: 64
-          :cast_type: uint64_t
       - :name: pf_3
         :field_class:
           :type: integer_unsigned
           :field_value_range: 32
-          :cast_type: uint32_t
       - :name: pf_4
         :field_class:
           :type: integer_signed
           :field_value_range: 64
-          :cast_type: int64_t
       - :name: pf_5
         :field_class:
           :type: integer_signed
           :field_value_range: 32
-          :cast_type: int32_t
       - :name: pf_6
         :field_class:
           :type: string
-          :cast_type: const char*
   - :name: event_2
     :payload_field_class:
       :type: structure
@@ -74,23 +64,19 @@
         :field_class:
           :type: integer_unsigned
           :field_value_range: 64
-          :cast_type: uint64_t
       - :name: pf_3
         :field_class:
           :type: integer_unsigned
           :field_value_range: 32
-          :cast_type: uint32_t
       - :name: pf_4
         :field_class:
           :type: integer_signed
           :field_value_range: 64
-          :cast_type: int64_t
       - :name: pf_5
         :field_class:
           :type: integer_signed
           :field_value_range: 32
-          :cast_type: int32_t
       - :name: pf_6
         :field_class:
           :type: string
-          :cast_type: const char*
+          

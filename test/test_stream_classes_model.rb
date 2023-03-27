@@ -123,3 +123,39 @@ class TestSourceDetailsComparisonIntegersNoFieldRange < Test::Unit::TestCase
     }
   end
 end
+
+class TestSourceDetailsComparisonIntegers64DifferentBases < Test::Unit::TestCase
+  include TestSourceBase
+  include TestSourceBaseDetails
+  extend VariableAccessor
+  include VariableClassAccessor
+  
+  def self.startup
+    @btx_variables = {
+      btx_model_path: './test/test_cases_stream_classes_model/8.btx_model.yaml',
+      btx_target_log_path: './test/test_cases_stream_classes_model/8.btx_details.txt',
+      btx_component_type: 'SOURCE',
+      btx_component_name: 'source',
+      btx_pluggin_name: 'metababel_tests',
+      btx_component_path: './test/SOURCE.metababel_test'
+    }
+  end
+end
+
+class TestSourceDetailsComparisonIntegers32DifferentBases < Test::Unit::TestCase
+  include TestSourceBase
+  include TestSourceBaseDetails
+  extend VariableAccessor
+  include VariableClassAccessor
+  
+  def self.startup
+    @btx_variables = {
+      btx_model_path: './test/test_cases_stream_classes_model/9.btx_model.yaml',
+      btx_target_log_path: './test/test_cases_stream_classes_model/9.btx_details.txt',
+      btx_component_type: 'SOURCE',
+      btx_component_name: 'source',
+      btx_pluggin_name: 'metababel_tests',
+      btx_component_path: './test/SOURCE.metababel_test'
+    }
+  end
+end

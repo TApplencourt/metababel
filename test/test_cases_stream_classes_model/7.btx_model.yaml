@@ -31,4 +31,4 @@
       - :name: pf_2
         :field_class:
           :type: string
-          :cast_type: const char*
+          
