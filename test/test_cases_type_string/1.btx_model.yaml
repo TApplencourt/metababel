@@ -9,4 +9,3 @@
       - :name: sf_3
         :field_class:
           :type: string
-          :cast_type: const char*

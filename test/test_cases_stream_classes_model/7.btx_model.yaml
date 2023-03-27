@@ -1,0 +1,34 @@
+---
+:stream_classes:
+- :name: sc1
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: cf_1
+      :field_class:
+        :type: integer_unsigned
+    - :name: cf_2
+      :field_class:
+        :type: integer_signed
+  :event_classes:
+  - :name: event_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: integer_unsigned
+      - :name: pf_2
+        :field_class:
+          :type: integer_signed
+  - :name: event_2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: bool
+      - :name: pf_2
+        :field_class:
+          :type: string
+          

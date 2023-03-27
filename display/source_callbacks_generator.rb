@@ -28,13 +28,18 @@ template =  <<-TEXT
 #include "component.h"
 #include "create.h"
 
-void btx_push_usr_messages(struct common_data_s *common_data) {
+void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
+}
+
+btx_source_status_t btx_push_usr_messages(common_data_t *common_data, void *usr_data) {
 
     <%- data.each do | entry | -%>
     <%- entry.fetch(:times,1).times do -%>
     btx_push_message_<%= entry[:name].gsub(":","_") %>(common_data,<%=  entry[:field_values].map(&:inspect).join(",") %>);
     <%- end -%>
     <%- end -%>
+
+    return BTX_SOURCE_END; 
 }
 
 TEXT

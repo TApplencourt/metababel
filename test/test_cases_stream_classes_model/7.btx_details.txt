@@ -1,0 +1,25 @@
+Trace class:
+  Stream class `sc1` (ID 0):
+    Supports packets: No
+    Supports discarded events: No
+    Supports discarded packets: No
+    Event common context field class: Structure (2 members):
+      cf_1: Unsigned integer (64-bit, Base 10)
+      cf_2: Signed integer (64-bit, Base 10)
+    Event class `event_1` (ID 0):
+      Payload field class: Structure (2 members):
+        pf_1: Unsigned integer (64-bit, Base 10)
+        pf_2: Signed integer (64-bit, Base 10)
+    Event class `event_2` (ID 1):
+      Payload field class: Structure (2 members):
+        pf_1: Boolean
+        pf_2: String
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Stream beginning:
+  Class name: sc1
+  Trace:
+    Stream (ID 0, Class ID 0)
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Stream end

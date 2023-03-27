@@ -7,6 +7,5 @@
     - :name: sf_1
       :field_class:
         :type: string
-        :cast_type: const char*
   :event_classes:
   - :name: event_2
