@@ -28,7 +28,6 @@
       - :name: pf_1
         :field_class:
           :type: bool
-          :cast_type: bt_bool
       - :name: pf_2
         :field_class:
           :type: string
