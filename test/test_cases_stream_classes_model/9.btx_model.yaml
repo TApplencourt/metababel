@@ -1,0 +1,102 @@
+---
+:stream_classes:
+- :name: sc1
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: cf_1
+      :field_class:
+        :type: integer_unsigned
+        :preferred_display_base: 2
+        :field_value_range: 32 
+    - :name: cf_2
+      :field_class:
+        :type: integer_unsigned
+        :preferred_display_base: 8
+        :field_value_range: 32  
+    - :name: cf_3
+      :field_class:
+        :type: integer_unsigned
+        :preferred_display_base: 10
+        :field_value_range: 32  
+    - :name: cf_4
+      :field_class:
+        :type: integer_unsigned
+        :preferred_display_base: 16
+        :field_value_range: 32  
+    - :name: cf_5
+      :field_class:
+        :type: integer_signed
+        :preferred_display_base: 2
+        :field_value_range: 32 
+    - :name: cf_6
+      :field_class:
+        :type: integer_signed
+        :preferred_display_base: 8
+        :field_value_range: 32 
+    - :name: cf_7
+      :field_class:
+        :type: integer_signed
+        :preferred_display_base: 10
+        :field_value_range: 32 
+    - :name: cf_8
+      :field_class:
+        :type: integer_signed
+        :preferred_display_base: 16
+        :field_value_range: 32 
+  :event_classes:
+  - :name: event_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: integer_unsigned
+          :preferred_display_base: 2
+          :field_value_range: 32
+      - :name: pf_2
+        :field_class:
+          :type: integer_unsigned
+          :preferred_display_base: 8
+          :field_value_range: 32
+      - :name: pf_3
+        :field_class:
+          :type: integer_unsigned
+          :preferred_display_base: 10
+          :field_value_range: 32
+      - :name: pf_4
+        :field_class:
+          :type: integer_unsigned
+          :preferred_display_base: 16
+          :field_value_range: 32
+      - :name: pf_5
+        :field_class:
+          :type: integer_signed
+          :preferred_display_base: 2
+          :field_value_range: 32
+      - :name: pf_6
+        :field_class:
+          :type: integer_signed
+          :preferred_display_base: 8
+          :field_value_range: 32
+      - :name: pf_7
+        :field_class:
+          :type: integer_signed
+          :preferred_display_base: 10
+          :field_value_range: 32
+      - :name: pf_8
+        :field_class:
+          :type: integer_signed
+          :preferred_display_base: 16
+          :field_value_range: 32
+  - :name: event_2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: bool
+      - :name: pf_2
+        :field_class:
+          :type: string
+          
