@@ -1,6 +1,7 @@
+require 'optparse'
 require 'yaml'
 require 'erb'
-require_relative 'bt2_stream_classes_generator'
+require 'bt2_stream_classes_generator'
 
 SINK_TEMPLATE = <<~TEXT
   #include "component.h"
@@ -9,17 +10,15 @@ SINK_TEMPLATE = <<~TEXT
 
   struct data_s {
     <%- @eventclasses.each do |m| -%>
-    <%- m.callbacks.each do |c| -%>
-    <%= c.name %>_calls_count = 0;
+    uint64_t <%= m.name %>_calls_count;
     <%- end -%>
-    <%- end -%>
-  }
+  };
 
   typedef struct data_s data_t;
 
   void btx_initialize_usr_data(common_data_t *common_data, void **usr_data)
   {
-    data_t *data = new data_t;
+    data_t *data = malloc(sizeof(data_t *));
     *usr_data = data;
     
     <%- @eventclasses.each do |m| -%>
@@ -32,10 +31,10 @@ SINK_TEMPLATE = <<~TEXT
     data_t *data = (data_t *) usr_data;
 
     <%- @eventclasses.each do |m| -%>
-    printf("<%= m.name %>: %d", data-><%= m.name %>_calls_count);
+    printf("<%= m.name %>: %ld\\n", data-><%= m.name %>_calls_count);
     <%- end -%>
 
-    delete data;
+    free(data);
   }
 
   <%- @eventclasses.each do |m| -%>
@@ -45,11 +44,12 @@ SINK_TEMPLATE = <<~TEXT
   <%- end -%>
 
   void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
-    <%- @eventclasses.each do |c| -%>
-    <%= c.btx_register_usr_callbacks %>
+    <%- @eventclasses.each do |m| -%>
+    <%- m.callbacks.each do |c| -%>
+    btx_register_callbacks_<%= m.name_sanitized %>(name_to_dispatcher, &<%= c.name %>);
+    <%- end -%>
     <%- end -%>
   }
-
 TEXT
 
 class BTEventCallback
@@ -66,7 +66,8 @@ class BTEventCallback
       common_data_t *common_data, void *usr_data,
       #{@parent.args.map { |arg| "#{arg.type} #{arg.name}"}.join(", ") })
     {
-      data->#{@parent.name}_calls_count += 0;
+      data_t *data = (data_t *) usr_data;
+      data->#{@parent.name}_calls_count += 1;
     }
     TEXT
   end
@@ -96,10 +97,6 @@ class BTEvent
     @callbacks_count += 1
     @callbacks.last
   end
-
-  def btx_register_usr_callbacks
-    @callbacks.map { |c| "btx_register_callbacks_#{name_sanitized}(name_to_dispatcher, &#{c.name});" }.join("\n")
-  end
 end
 
 class BTSink
@@ -128,7 +125,48 @@ class BTSink
   end
 end
 
-y = YAML.load_file(ARGV[0])
-sink = BTSink.new(y,2)
+DOCS = <<-DOCS
+  Usage: example.rb [options]
 
-puts sink.render
+  Example:
+    ruby #{$0} -c 2 -y btx_model.yaml -o callbacks.c
+    ruby #{$0} -y btx_model.yaml -o callbacks.c
+DOCS
+
+# Display help if no arguments.
+ARGV << '-h' if ARGV.empty?
+
+options = {}
+
+OptionParser.new do |opts|
+  opts.banner = DOCS
+
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
+  end
+
+  opts.on('-c', '--callbacks N', Integer, '[Optional] Number of callbacks per event.') do |p|
+    options[:callbacks] = p
+  end
+
+  opts.on('-y', '--yaml PATH', '[Mandatory] Path to btx_model.yaml') do |p|
+    options[:yaml_path] = p
+  end
+
+  opts.on('-o', '--output PATH', String, '[Mandatory] Path to the bt2 SOURCE file.') do |p|
+    options[:output_path] = p
+  end
+
+end.parse!
+
+raise OptionParser::MissingArgument if options[:yaml_path].nil?
+raise OptionParser::MissingArgument if options[:output_path].nil?
+
+options[:callbacks] = 1 unless options.key?(:callbacks) 
+
+y = YAML.load_file(options[:yaml_path])
+sink = BTSink.new(y,options[:callbacks])
+
+output = sink.render
+File.write(options[:output_path], output, mode: 'w')
