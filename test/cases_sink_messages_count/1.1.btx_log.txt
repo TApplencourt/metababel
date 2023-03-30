@@ -1,4 +1,0 @@
-event_1: { cf_1 = false } { pf_1 = 10, pf_2 = "event_1", pf_3 = "Hello" }
-event_1: { cf_1 = false } { pf_1 = 10, pf_2 = "event_1", pf_3 = "Hello" }
-event_2: { cf_1 = true } { pf_1 = 20, pf_2 = "event_2", pf_3 = "Hello" }
-event_2: { cf_1 = true } { pf_1 = 20, pf_2 = "event_2", pf_3 = "Hello" }

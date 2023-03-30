@@ -7,6 +7,15 @@
     - :name: cf_1
       :field_class:
         :type: bool
+    - :name: cf_2
+      :field_class:
+        :type: string
+    - :name: cf_3
+      :field_class:
+        :type: integer_unsigned
+    - :name: cf_4
+      :field_class:
+        :type: integer_signed   
   :event_classes:
   - :name: event_1
     :payload_field_class:
@@ -14,25 +23,29 @@
       :members:
       - :name: pf_1
         :field_class:
-          :type: integer_unsigned
-          :field_value_range: 32
+          :type: bool
       - :name: pf_2
         :field_class:
           :type: string
       - :name: pf_3
         :field_class:
-          :type: string
+          :type: integer_unsigned
+      - :name: pf_4
+        :field_class:
+          :type: integer_signed 
   - :name: event_2
     :payload_field_class:
       :type: structure
       :members:
       - :name: pf_1
         :field_class:
-          :type: integer_unsigned
-          :field_value_range: 32
+          :type: bool
       - :name: pf_2
         :field_class:
           :type: string
       - :name: pf_3
         :field_class:
-          :type: string
+          :type: integer_unsigned
+      - :name: pf_4
+        :field_class:
+          :type: integer_signed
