@@ -131,6 +131,25 @@ module SinkTest
   end
 end
 
+module TestSourceBaseDetails
+  # Generate a source with no messages.
+  def subtest_generate_source_callbacks
+    `ruby ./test/gen_source.rb -o #{btx_variables[:btx_component_path]}/callbacks.c`
+    assert($?.success?)
+  end
+
+  # Compare with text.details in place of log.
+  def subtest_run_source
+    output = `babeltrace2 --plugin-path=#{btx_variables[:btx_component_path]} \
+    --component=#{btx_variables[:btx_component_type].downcase}.#{btx_variables[:btx_pluggin_name]}.#{btx_variables[:btx_component_name]} \
+    --component=sink.text.details`
+    assert($?.success?)
+    
+    expected_output = File.open(btx_variables[:btx_target_log_path],"r").read
+    assert_equal(expected_output, output)
+  end
+end 
+
 module VariableAccessor
   attr_reader :btx_source_variables, :btx_sink_variables
 
