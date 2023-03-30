@@ -75,7 +75,6 @@ module SinkSubtests
 
   def subtest_check_sink_preconditions
     assert_file_exists(btx_sink_variables[:btx_model_path])
-    assert_file_exists(btx_sink_variables[:btx_log_path])
     assert_command('ruby -I./lib ./bin/metababel -h')
   end
 

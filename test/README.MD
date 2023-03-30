@@ -50,9 +50,4 @@
 3. Two event classes, only one callback registred for one event class, 100 messages for `event_1`, 100 messages for `event_2`.
 - Expected events with unregistered callbacks to be discarded.
 - Expected events with registered callbacks to call the associated callback.
-
-* cases_sink_type_safety
-
-1. User generate callbacks whose function signature does not match the model.yaml.
-- Expected to fail al compile time.
-
+4. Two event classes, 20 callbacks registered per event, 100 messages for `event_1`, 100 messages for `event_2`.
