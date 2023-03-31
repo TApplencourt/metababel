@@ -45,7 +45,6 @@ static void event_2_0(
   data->event_2_calls_count += 1;
 }
 
-
 void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
   btx_register_callbacks_event_1(name_to_dispatcher, &event_1_0);
   btx_register_callbacks_event_2(name_to_dispatcher, &event_2_0);

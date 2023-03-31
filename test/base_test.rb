@@ -41,15 +41,16 @@ module SourceSubtests
   end
 
   def subtest_compile_source_component
-    assert_command("cc -o #{btx_source_variables[:btx_component_path]}/#{btx_source_variables[:btx_pluggin_name]}_#{btx_source_variables[:btx_component_name]}.so #{btx_source_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Wall -fpic --shared -I ./test/include/")
+    assert_command("cc -o #{btx_source_variables[:btx_component_path]}/#{btx_source_variables[:btx_pluggin_name]}_#{btx_source_variables[:btx_component_name]}.so #{btx_source_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Wall -Werror -fpic --shared -I ./test/include/")
   end
   
   def subtest_run_source_component
     expected_output = File.open(btx_source_variables[:btx_log_path], 'r').read
-    assert_command_stdout(<<~TEXT, expected_output)
+    command = <<~TEXT
       babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
         --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]}
     TEXT
+    assert_command_stdout(command, expected_output)
   end
 end
 
@@ -62,11 +63,12 @@ module SourceSubtestsDetail
   # Compare with text.details in place of log.
   def subtest_run_source_component
     expected_output = File.open(btx_source_variables[:btx_log_path], 'r').read
-    assert_command_stdout(<<~TEXT, expected_output)
+    command = <<~TEXT
       babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
         --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]} \
         --component=sink.text.details
     TEXT
+    assert_command_stdout(command, expected_output)
   end
 end 
 
@@ -89,15 +91,16 @@ module SinkSubtests
   end
 
   def subtest_compile_sink_component
-    assert_command("cc -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Wall -fpic --shared -I ./test/include/")
+    assert_command("cc -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Wall -Werror -fpic --shared -I ./test/include/")
   end
   
   def subtest_run_source_sink_components
-    assert_command(<<~TEXT)
+    command = <<~TEXT
       babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]}:#{btx_sink_variables[:btx_component_path]} \
         --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]} \
         --component=sink.#{btx_sink_variables[:btx_pluggin_name]}.#{btx_sink_variables[:btx_component_name]}
     TEXT
+    assert_command(command)
   end
 end
 

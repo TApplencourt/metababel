@@ -37,15 +37,6 @@ static void event_1_0(
   data->event_1_calls_count += 1;
 }
 
-static void event_2_0(
-  common_data_t *common_data, void *usr_data,
-  bt_bool cf_1, const char* cf_2, uint64_t cf_3, int64_t cf_4, bt_bool pf_1, const char* pf_2, uint64_t pf_3, int64_t pf_4)
-{
-  data_t *data = (data_t *) usr_data;
-  data->event_2_calls_count += 1;
-}
-
-
 void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
   btx_register_callbacks_event_1(name_to_dispatcher, &event_1_0);
 }

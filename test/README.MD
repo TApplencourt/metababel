@@ -50,4 +50,8 @@
 3. Two event classes, only one callback registred for one event class, 100 messages for `event_1`, 100 messages for `event_2`.
 - Expected events with unregistered callbacks to be discarded.
 - Expected events with registered callbacks to call the associated callback.
-4. Two event classes, 20 callbacks registered per event, 100 messages for `event_1`, 100 messages for `event_2`.
+4. User registers the wrong callback.
+
+* cases_sink_stream_classes_model
+
+1. User defined types, cast_type.

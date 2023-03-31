@@ -1,0 +1,59 @@
+---
+:stream_classes:
+- :name: sc1
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: cf_1
+      :field_class:
+        :type: bool
+        :cast_type: usr_bool_t
+    - :name: cf_2
+      :field_class:
+        :type: string
+        :cast_type: usr_string_t
+    - :name: cf_3
+      :field_class:
+        :type: integer_unsigned
+        :cast_type: usr_uint64_t
+    - :name: cf_4
+      :field_class:
+        :type: integer_signed
+        :cast_type: usr_int64_t   
+  :event_classes:
+  - :name: event_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: bool
+          :cast_type: usr_bool_t
+      - :name: pf_2
+        :field_class:
+          :type: string
+          :cast_type: usr_string_t
+      - :name: pf_3
+        :field_class:
+          :type: integer_unsigned
+          :cast_type: usr_uint64_t
+      - :name: pf_4
+        :field_class:
+          :type: integer_signed
+          :cast_type: usr_int64_t 
+  - :name: event_2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: bool
+      - :name: pf_2
+        :field_class:
+          :type: string
+      - :name: pf_3
+        :field_class:
+          :type: integer_unsigned
+      - :name: pf_4
+        :field_class:
+          :type: integer_signed
