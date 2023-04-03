@@ -10,6 +10,7 @@ jobs:
       - run: |
           sudo add-apt-repository ppa:lttng/ppa
           sudo apt-get update
+        if: ${{ ! steps.load-cache.outputs.cache-hit }}
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: gcc ruby babeltrace2 libbabeltrace2-dev
