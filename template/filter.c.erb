@@ -219,7 +219,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
-  btx_register_usr_callbacks((void *)&common_data->name_to_dispatcher_t);
+  btx_register_usr_callbacks((void *)&common_data->name_to_dispatcher);
   /* Register User Data */
   btx_initialize_usr_data((void *)common_data, &common_data->usr_data);
 
