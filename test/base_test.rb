@@ -3,23 +3,24 @@ require 'open3'
 
 module Assertions
   def assert_file_exists(file_path)
-    assert(File.file?(file_path),"File '#{file_path}' does not exists.")
-  end 
+    assert(File.file?(file_path), "File '#{file_path}' does not exists.")
+  end
 
   def assert_command(cmd)
     _, stderr_str, exit_code = Open3.capture3(*cmd)
-    raise Exception.new(stderr_str) unless exit_code == 0
+    raise Exception, stderr_str unless exit_code == 0
   end
 
   def assert_command_stdout(cmd, expected_stdout)
     stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception.new(stderr_str) unless exit_code == 0
+    raise Exception, stderr_str unless exit_code == 0
+
     assert_equal(expected_stdout, stdout_str)
   end
 
   def refute_command(cmd)
     _, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception.new(stderr_str) unless exit_code != 0
+    raise Exception, stderr_str unless exit_code != 0
   end
 end
 
@@ -34,7 +35,7 @@ module SourceSubtests
 
   def subtest_generate_source_component
     assert_command("ruby -I./lib ./bin/metababel -d #{btx_source_variables[:btx_model_path]} -t SOURCE -p #{btx_source_variables[:btx_pluggin_name]} -c #{btx_source_variables[:btx_component_name]} -o #{btx_source_variables[:btx_component_path]}")
-  end 
+  end
 
   def subtest_generate_source_callbacks
     assert_command("ruby ./test/gen_source.rb -i #{btx_source_variables[:btx_log_path]} -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
@@ -43,7 +44,7 @@ module SourceSubtests
   def subtest_compile_source_component
     assert_command("$CC -o #{btx_source_variables[:btx_component_path]}/#{btx_source_variables[:btx_pluggin_name]}_#{btx_source_variables[:btx_component_name]}.so #{btx_source_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
   end
-  
+
   def subtest_run_source_component
     expected_output = File.open(btx_source_variables[:btx_log_path], 'r').read
     command = <<~TEXT
@@ -70,7 +71,7 @@ module SourceSubtestsDetail
     TEXT
     assert_command_stdout(command, expected_output)
   end
-end 
+end
 
 module SinkSubtests
   include Assertions
@@ -82,18 +83,18 @@ module SinkSubtests
 
   def subtest_generate_sink_component
     assert_command("ruby -I./lib ./bin/metababel -u #{btx_sink_variables[:btx_model_path]} -t SINK -p #{btx_sink_variables[:btx_pluggin_name]} -c #{btx_sink_variables[:btx_component_name]} -o #{btx_sink_variables[:btx_component_path]}")
-  end 
+  end
 
   def subtest_generate_sink_callbacks
-    assert_nothing_raised do 
-      FileUtils.cp(btx_sink_variables[:btx_callbacks_path],btx_sink_variables[:btx_component_path])
+    assert_nothing_raised do
+      FileUtils.cp(btx_sink_variables[:btx_callbacks_path], btx_sink_variables[:btx_component_path])
     end
   end
 
   def subtest_compile_sink_component
     assert_command("$CC -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
   end
-  
+
   def subtest_run_source_sink_components
     command = <<~TEXT
       babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]}:#{btx_sink_variables[:btx_component_path]} \

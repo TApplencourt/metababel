@@ -16,5 +16,4 @@ class TestSourceStateMachineAgain < Test::Unit::TestCase
       btx_component_path: './test/SOURCE.metababel_test'
     }
   end
-
 end
