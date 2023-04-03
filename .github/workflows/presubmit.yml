@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests gcc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           sudo add-apt-repository ppa:lttng/ppa
           sudo apt-get update
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests llvm
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: clang ruby babeltrace2 libbabeltrace2-dev
