@@ -2,9 +2,9 @@ name: Presubmit
 on: [push, pull_request]
 
 jobs:
-  run_tests:
+  run_tests_gcc:
     runs-on: ubuntu-latest
-    name: Install Dependency and run tests
+    name: Run tests gcc
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -15,4 +15,15 @@ jobs:
           packages: gcc g++ ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
       - name: Run tests
-        run: rake test
+        run: CC=gcc CXX=g++ rake test
+  run_tests_llvm:
+    runs-on: ubuntu-latest
+    name: Run tests llvm
+    steps:
+      - uses: actions/checkout@v2
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: clang ruby babeltrace2 libbabeltrace2-dev
+          version: 1.0
+      - name: Run tests
+        run: CC=clang CXX=clang++ rake test
