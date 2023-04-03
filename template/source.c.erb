@@ -77,7 +77,7 @@ source_initialize(bt_self_component_source *self_component_source,
   common_data->params = params;
   bt_value_get_ref(common_data->params);
   /* Register User Data */
-  btx_initialize_usr_data(common_data, &common_data->usr_data);
+  btx_initialize_usr_data((void *)common_data, &common_data->usr_data);
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =

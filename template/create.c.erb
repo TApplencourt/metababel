@@ -93,8 +93,11 @@ static void btx_set_message_<%= e.name_sanitized %>(
 }
 
 void btx_push_message_<%= e.name_sanitized %>(
-    struct common_data_s *common_data,
+    void *btx_handle,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+
+  common_data_t *common_data = (common_data_t *)btx_handle;
+
   bt_stream *stream = bt_trace_borrow_stream_by_index(
       common_data->downstream_trace, <%= e.index_stream_class %>);
   bt_stream_class *stream_class = bt_stream_borrow_class(stream);
