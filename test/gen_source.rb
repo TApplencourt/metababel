@@ -47,6 +47,7 @@ end
 
 def get_field_classes(yaml)
   return yaml[:field_class] if yaml.key?(:field_class)
+
   yaml.values.flatten.filter_map { |d| get_field_classes(d) if d.is_a?(Hash) }.flatten
 end
 
@@ -110,10 +111,9 @@ OptionParser.new do |opts|
   opts.on('-o', '--output PATH', '[Mandatory] Path to the bt2 SOURCE file.') do |p|
     options[:output_path] = p
   end
-
 end.parse!
 
 raise OptionParser::MissingArgument if options[:output_path].nil?
 
-data = options.key?(:input_path) ? parse_log(options[:input_path],options[:yaml_path]) : []
-render_and_save(data,options[:output_path])
+data = options.key?(:input_path) ? parse_log(options[:input_path], options[:yaml_path]) : []
+render_and_save(data, options[:output_path])

@@ -4,7 +4,7 @@ class TestSourceNoCommonField < Test::Unit::TestCase
   include SourceTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/1.btx_model.yaml',
@@ -20,7 +20,7 @@ class TestSourceNoPayloadField < Test::Unit::TestCase
   include SourceTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/2.btx_model.yaml',
@@ -59,7 +59,6 @@ class TestSourceNoCommonNoPayloadFields < Test::Unit::TestCase
     subtest_check_source_preconditions
     subtest_generate_source_component
   end
-
 end
 
 class TestSourceCommonPayloadFields < Test::Unit::TestCase
@@ -82,7 +81,7 @@ class TestSourceHundredFields < Test::Unit::TestCase
   include SourceTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/5.btx_model.yaml',
@@ -99,7 +98,7 @@ class TestSourceDetailsComparisonAllTypes < Test::Unit::TestCase
   include SourceSubtestsDetail
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/6.btx_model.yaml',
@@ -116,7 +115,7 @@ class TestSourceDetailsComparisonIntegersNoFieldRange < Test::Unit::TestCase
   include SourceSubtestsDetail
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/7.btx_model.yaml',
@@ -133,7 +132,7 @@ class TestSourceDetailsComparisonIntegers64DifferentBases < Test::Unit::TestCase
   include SourceSubtestsDetail
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/8.btx_model.yaml',
@@ -150,7 +149,7 @@ class TestSourceDetailsComparisonIntegers32DifferentBases < Test::Unit::TestCase
   include SourceSubtestsDetail
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/9.btx_model.yaml',

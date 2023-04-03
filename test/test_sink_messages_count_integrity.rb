@@ -4,7 +4,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
   include SinkTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
@@ -13,7 +13,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
       btx_pluggin_name: 'metababel_source',
       btx_component_path: './test/SOURCE.metababel_test'
     }
-    
+
     @btx_sink_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
       btx_callbacks_path: './test/cases_sink_messages_count_integrity/1.callbacks.c',
@@ -28,7 +28,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventSeventyThreeMessagesInOneEven
   include SinkTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
@@ -37,7 +37,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventSeventyThreeMessagesInOneEven
       btx_pluggin_name: 'metababel_source',
       btx_component_path: './test/SOURCE.metababel_test'
     }
-    
+
     @btx_sink_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
       btx_callbacks_path: './test/cases_sink_messages_count_integrity/2.callbacks.c',
@@ -52,7 +52,7 @@ class TestSinkCaseTwoEventClasesOneCallbackRegisteredHundredMessagesOnBothEvents
   include SinkTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
@@ -61,7 +61,7 @@ class TestSinkCaseTwoEventClasesOneCallbackRegisteredHundredMessagesOnBothEvents
       btx_pluggin_name: 'metababel_source',
       btx_component_path: './test/SOURCE.metababel_test'
     }
-    
+
     @btx_sink_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
       btx_callbacks_path: './test/cases_sink_messages_count_integrity/3.callbacks.c',
@@ -76,7 +76,7 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
   include SinkTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_sink_variables = {
       btx_model_path: './test/cases_sink_messages_count_integrity/4.btx_model.yaml',
@@ -109,5 +109,5 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
     subtest_generate_sink_component
     subtest_generate_sink_callbacks
     subtest_compile_sink_component
-  end  
+  end
 end

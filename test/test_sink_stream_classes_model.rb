@@ -4,7 +4,7 @@ class TestSinkUserDefinedCastType < Test::Unit::TestCase
   include SinkTest
   extend VariableAccessor
   include VariableClassAccessor
-  
+
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
@@ -14,7 +14,7 @@ class TestSinkUserDefinedCastType < Test::Unit::TestCase
       btx_component_path: './test/SOURCE.metababel_test',
       btx_usr_header_path: './test/cases_sink_stream_classes_model/1.user_types.h'
     }
-    
+
     @btx_sink_variables = {
       btx_model_path: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
       btx_callbacks_path: './test/cases_sink_stream_classes_model/1.callbacks.c',
