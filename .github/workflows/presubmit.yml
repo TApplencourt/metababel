@@ -12,7 +12,7 @@ jobs:
           sudo apt-get update
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: gcc g++ ruby ruby-dev babeltrace2 libbabeltrace2-dev
+          packages: gcc g++ ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
       - name: Run tests        
         run: rake test
