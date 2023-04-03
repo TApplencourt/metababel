@@ -12,10 +12,10 @@ jobs:
           sudo apt-get update
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: gcc g++ ruby babeltrace2 libbabeltrace2-dev
+          packages: gcc ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
       - name: Run tests
-        run: CC=gcc CXX=g++ rake test
+        run: CC=gcc CFLAGS="-Wall -Werror" rake test
   run_tests_llvm:
     runs-on: ubuntu-latest
     name: Run tests llvm
@@ -26,4 +26,4 @@ jobs:
           packages: clang ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
       - name: Run tests
-        run: CC=clang CXX=clang++ rake test
+        run: CC=clang CFLAGS="-Wall -Werror" rake test
