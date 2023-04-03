@@ -17,8 +17,4 @@ class TestSourceStateMachineAgain < Test::Unit::TestCase
     }
   end
 
-  def subtest_generate_source_callbacks
-    FileUtils.cp(btx_variables[:btx_callbacks_path],btx_variables[:btx_component_path])
-  end
-
 end

@@ -20,8 +20,14 @@ module TestSourceBase
   end
 
   def subtest_generate_source_callbacks
-    `ruby ./test/gen_source.rb -i #{btx_variables[:btx_target_log_path]} -o #{btx_variables[:btx_component_path]}/callbacks.c`
-    assert($?.success?)
+    if btx_variables.key?(:btx_callbacks_path)
+      assert_nothing_raised do
+        FileUtils.cp(btx_variables[:btx_callbacks_path], btx_variables[:btx_component_path])
+      end
+    else
+      `ruby ./test/gen_source.rb -i #{btx_variables[:btx_target_log_path]} -o #{btx_variables[:btx_component_path]}/callbacks.c`
+      assert($?.success?)
+    end
   end
 
   def subtest_compile_source
@@ -61,11 +67,11 @@ module TestSourceBaseDetails
     --component=#{btx_variables[:btx_component_type].downcase}.#{btx_variables[:btx_pluggin_name]}.#{btx_variables[:btx_component_name]} \
     --component=sink.text.details`
     assert($?.success?)
-    
-    expected_output = File.open(btx_variables[:btx_target_log_path],"r").read
+
+    expected_output = File.open(btx_variables[:btx_target_log_path], 'r').read
     assert_equal(expected_output, output)
   end
-end 
+end
 
 module VariableAccessor
   attr_reader :btx_variables
