@@ -11,9 +11,9 @@
 
 static void lookup_dispatcher(common_data_t *common_data,
                               const bt_event_class *event_class,
-                              btx_handle_t **s) {
+                              name_to_dispatcher_t **s) {
   const char *class_name = bt_event_class_get_name(event_class);
-  HASH_FIND_STR(common_data->btx_handle, class_name, *s);
+  HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
 }
 
 /*
@@ -65,7 +65,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
-    btx_handle_t *s = NULL;
+    name_to_dispatcher_t *s = NULL;
     lookup_dispatcher(common_data, event_class, &s);
     if (s)
       (*(s->dispatcher))(s->callbacks, common_data, event);
@@ -89,7 +89,7 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
-  btx_register_usr_callbacks(&common_data->btx_handle);
+  btx_register_usr_callbacks((void **)&common_data->name_to_dispatcher);
   /* Register User Data */
   btx_initialize_usr_data((void *)common_data, &common_data->usr_data);
 
