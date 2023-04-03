@@ -39,6 +39,11 @@
 2. uint64 `(2^64) - 1`, `field_value_range = 64`
 3. uint32 `(2^32) - 1`, `cast_type` absent, `field_value_range = 32`
 
+* cases_source_state_machine
+
+1. Test `btx_push_usr_messages` return status (BTX_SOURCE_OK, BTX_SOURCE_END) 
+
+
 ## Sink
 
 * cases_sink_messages_count_integrity
