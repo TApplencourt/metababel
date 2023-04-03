@@ -147,11 +147,11 @@ module TestSourceBaseDetails
     --component=#{btx_variables[:btx_component_type].downcase}.#{btx_variables[:btx_pluggin_name]}.#{btx_variables[:btx_component_name]} \
     --component=sink.text.details`
     assert($?.success?)
-    
-    expected_output = File.open(btx_variables[:btx_target_log_path],"r").read
+
+    expected_output = File.open(btx_variables[:btx_target_log_path], 'r').read
     assert_equal(expected_output, output)
   end
-end 
+end
 
 module VariableAccessor
   attr_reader :btx_source_variables, :btx_sink_variables
