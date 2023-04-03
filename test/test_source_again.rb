@@ -1,6 +1,6 @@
 require 'base_test'
 
-class TestSourceTypeAgain < Test::Unit::TestCase
+class TestSourceStateMachineAgain < Test::Unit::TestCase
   include TestSourceBase
   extend VariableAccessor
   include VariableClassAccessor
@@ -18,7 +18,7 @@ class TestSourceTypeAgain < Test::Unit::TestCase
   end
 
   def subtest_generate_source_callbacks
-	FileUtils.cp(btx_variables[:btx_callbacks_path],btx_variables[:btx_component_path])
+    FileUtils.cp(btx_variables[:btx_callbacks_path],btx_variables[:btx_component_path])
   end
 
 end
