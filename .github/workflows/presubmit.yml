@@ -14,5 +14,5 @@ jobs:
         with:
           packages: gcc g++ ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
-      - name: Run tests        
+      - name: Run tests
         run: rake test
