@@ -24,13 +24,13 @@ typedef struct params_s params_t;
 typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
                            const bt_event *message);
 
-struct name_to_dispatcher_s {
+struct btx_handle_s {
   const char *name;
   dispatcher_t *dispatcher;
   UT_array *callbacks;
   UT_hash_handle hh;
 };
-typedef struct name_to_dispatcher_s name_to_dispatcher_t;
+typedef struct btx_handle_s btx_handle_t;
 
 <% end %>
 <% if ['SOURCE', 'FILTER'].include?(options[:component_type]) %>
@@ -80,7 +80,7 @@ typedef enum btx_source_status_e btx_source_status_t;
 
 <% elsif options[:component_type] == 'FILTER' %>
 struct common_data_s {
-  name_to_dispatcher_t *name_to_dispatcher;
+  btx_handle_t *btx_handle;
   void *usr_data;
   const bt_value *params;
   /* Component's input port (weak) */
@@ -127,7 +127,7 @@ typedef struct btx_message_iterator_s btx_message_iterator_t;
 
 <% elsif options[:component_type] == 'SINK' %>
 struct common_data_s {
-  name_to_dispatcher_t *name_to_dispatcher;
+  btx_handle_t *btx_handle;
   void *usr_data;
   const bt_value *params;
   /* Upstream message iterator (owned by this) */

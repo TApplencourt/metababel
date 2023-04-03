@@ -46,7 +46,7 @@ void bernard(struct common_data_s *common_data, void *usr_data, int32_t i, int32
     printf("BERNARD\n");
 }
 
-void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
-  btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(name_to_dispatcher, &roger);
-  btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(name_to_dispatcher, &bernard);
+void btx_register_usr_callbacks(btx_handle_t** btx_handle) {
+  btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(btx_handle, &roger);
+  btx_register_callbacks_lttng_ust_ze_profiling_event_profiling_results(btx_handle, &bernard);
 }

@@ -174,10 +174,10 @@ void lttng_ust_thapi_metadata_usr_callbacks(
     data->metadata.push_back(metadata);
 } 
 
-void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
-    btx_register_callbacks_aggreg_host(name_to_dispatcher,&aggreg_host_usr_callbacks);
-    btx_register_callbacks_aggreg_kernel(name_to_dispatcher,&aggreg_kernel_usr_callbacks);
-    btx_register_callbacks_aggreg_traffic(name_to_dispatcher,&aggreg_traffic_usr_callbacks);
-    btx_register_callbacks_lttng_device_name(name_to_dispatcher,&lttng_device_name_usr_callbacks);
-    btx_register_callbacks_lttng_ust_thapi_metadata(name_to_dispatcher,&lttng_ust_thapi_metadata_usr_callbacks);
+void btx_register_usr_callbacks(btx_handle_t** btx_handle) {
+    btx_register_callbacks_aggreg_host(btx_handle,&aggreg_host_usr_callbacks);
+    btx_register_callbacks_aggreg_kernel(btx_handle,&aggreg_kernel_usr_callbacks);
+    btx_register_callbacks_aggreg_traffic(btx_handle,&aggreg_traffic_usr_callbacks);
+    btx_register_callbacks_lttng_device_name(btx_handle,&lttng_device_name_usr_callbacks);
+    btx_register_callbacks_lttng_ust_thapi_metadata(btx_handle,&lttng_ust_thapi_metadata_usr_callbacks);
 }

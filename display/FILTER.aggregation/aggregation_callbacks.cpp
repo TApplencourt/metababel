@@ -111,8 +111,8 @@ void lttng_traffic_usr_callback(
     data->traffic[hpt_backend_function_name_t(hostname, vpid, vtid, backend, name)] += a;
 }
 
-void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
-    btx_register_callbacks_lttng_host(name_to_dispatcher, &lttng_host_usr_callback);
-    btx_register_callbacks_lttng_device(name_to_dispatcher, &lttng_device_usr_callback);
-    btx_register_callbacks_lttng_traffic(name_to_dispatcher, &lttng_traffic_usr_callback);
+void btx_register_usr_callbacks(btx_handle_t** btx_handle) {
+    btx_register_callbacks_lttng_host(btx_handle, &lttng_host_usr_callback);
+    btx_register_callbacks_lttng_device(btx_handle, &lttng_device_usr_callback);
+    btx_register_callbacks_lttng_traffic(btx_handle, &lttng_traffic_usr_callback);
 }
