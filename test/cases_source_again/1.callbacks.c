@@ -6,6 +6,7 @@ struct usr_data_s {
     uint64_t i;
     int count;
 };
+
 typedef struct usr_data_s usr_data_t;
 
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
