@@ -78,8 +78,8 @@ def wrote_dispatchers(folder, t)
   d = { dispatchers: dispatchers,
         event_name: event_name }
 
-  erb_render_and_save(d, 'dispatch.h', folder)
-  erb_render_and_save(d, 'dispatch.c', folder)
+  erb_render_and_save(d, 'upstream.h', folder)
+  erb_render_and_save(d, 'upstream.c', folder)
 end
 
 def wrote_creates(folder, t)
@@ -101,8 +101,8 @@ def wrote_creates(folder, t)
         stream_classes: t.stream_classes,
         event_name: event_name }
 
-  erb_render_and_save(d, 'create.h', folder)
-  erb_render_and_save(d, 'create.c', folder)
+  erb_render_and_save(d, 'downstream.h', folder)
+  erb_render_and_save(d, 'downstream.c', folder)
 end
 
 options = { plugin_name: 'metababel',

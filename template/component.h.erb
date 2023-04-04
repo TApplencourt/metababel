@@ -47,7 +47,7 @@ struct common_data_s {
   void *usr_data;
   const bt_value *params;
   bt_trace *downstream_trace;
-  /* Used by create.c */
+  /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
 };
 
@@ -86,7 +86,7 @@ struct common_data_s {
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
-  /* Used by create.c */
+  /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
 };
 

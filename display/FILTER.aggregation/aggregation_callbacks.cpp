@@ -1,6 +1,6 @@
 #include "component.h"
-#include "dispatch.h"
-#include "create.h"
+#include "upstream.h"
+#include "downstream.h"
 #include "babeltrace2/babeltrace.h"
 
 #include "tally.hpp"
