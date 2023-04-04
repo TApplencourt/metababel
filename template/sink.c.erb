@@ -89,7 +89,7 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
-  btx_register_usr_callbacks((void *)&common_data->name_to_dispatcher);
+  btx_register_usr_callbacks((void *) common_data);
   /* Register User Data */
   btx_initialize_usr_data((void *)common_data, &common_data->usr_data);
 
