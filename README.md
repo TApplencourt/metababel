@@ -4,9 +4,9 @@
 
 ## Filter & Sink
 
-Link with a object file who export the symbol `btx_usr_register_callbacks(void *)`.
+Link with a object file who export the symbol `btx_register_usr_callbacks(void *)`.
 
-The implementation of `btx_usr_register_callbacks` should conssist of calls to `btx_register_callbacks_#{stream_class_name}_#{event_class_name}(btx_handle, &callbacks)`.
+The implementation of `btx_register_usr_callbacks` should conssist of calls to `btx_register_callbacks_#{stream_class_name}_#{event_class_name}(btx_handle, &callbacks)`.
 
 ## Source:
 
