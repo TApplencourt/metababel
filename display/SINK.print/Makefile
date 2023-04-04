@@ -8,14 +8,14 @@ LDFLAGS_BT2 = $(pkg-config --libs babeltrace2)
 METABABEL_ROOT = ../..
 LDFLAGS_DEMANGLE = -liberty
 
-print.so: print.o dispatch.o print_callbacks.o params.o my_demangle.o
+print.so: print.o upstream.o print_callbacks.o params.o my_demangle.o
 	$(CXX) $^ -o print.so -shared $(LDFLAGS_DEMANGLE) $(LDFLAGS_BT2)
  
 print.o: print.c
 	$(CC) print.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
 
-dispatch.o: dispatch.c
-	$(CC) dispatch.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c 
+upstream.o: upstream.c
+	$(CC) upstream.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c 
 
 print_callbacks.o: print_callbacks.cpp 
 	$(CXX) print_callbacks.cpp -I $(METABABEL_ROOT)/include $(CXXFLAGS)  -c
@@ -33,4 +33,4 @@ my_demangle.o: my_demangle.c my_demangle.h
 
 # For test purposes
 clean:
-	rm -f *.o *.so component.h dispatch.{h,c} params.c print.c
+	rm -f *.o *.so component.h upstream.{h,c} params.c print.c

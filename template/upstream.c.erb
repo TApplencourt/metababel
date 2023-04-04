@@ -1,5 +1,5 @@
 #include "component.h"
-#include "dispatch.h"
+#include "upstream.h"
 #include "utarray.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
@@ -14,7 +14,7 @@ btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
   <% end %>
   <%= e.body %>
   // Call all the callbacks who where registered
-  // Their type are declared in 'dispatch.h'
+  // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
     (*p)(common_data, common_data->usr_data,
