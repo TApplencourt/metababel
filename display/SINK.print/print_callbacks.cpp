@@ -6,14 +6,14 @@
 #include "utils.hpp"
 
 
-void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
+void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
     /* User allocates its own data structure */
     tally_data_t *data = new tally_data_t;
     /* User makes our API usr_data to point to his/her data structure */
     *usr_data = data;
 
     params_t *params = (params_t*) malloc(sizeof(params_t));
-    btx_read_params(common_data, params);
+    btx_read_params(btx_handle, params);
 
     data->demangle_name = params->demangle_name;
     data->display_kernel_verbose = params->display_kernel_verbose;
@@ -25,7 +25,7 @@ void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
     free(params);
 }
 
-void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
+void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
     /* TODO: User need to cast the usr_data, we can avoid casting by wrapping this function
        and make the wrapper to do the casting for us.
     */
@@ -113,7 +113,7 @@ void btx_finalize_usr_data(common_data_t *common_data, void *usr_data) {
 }
 
 void aggreg_host_usr_callbacks(
-    common_data_t *common_data, void *usr_data, const char* hostname, int64_t vpid, 
+    void *btx_handle, void *usr_data, const char* hostname, int64_t vpid, 
     uint64_t vtid, int64_t backend, const char* name, uint64_t dur, uint64_t min, 
     uint64_t max, uint64_t count, uint64_t err
 )
@@ -127,7 +127,7 @@ void aggreg_host_usr_callbacks(
 }
 
 void aggreg_kernel_usr_callbacks(
-    common_data_t *common_data, void *usr_data, const char* hostname, int64_t vpid,
+    void *btx_handle, void *usr_data, const char* hostname, int64_t vpid,
     uint64_t vtid, int64_t backend, const char* name, const char* metadata, 
     uint64_t did, uint64_t sdid, uint64_t dur, uint64_t min, uint64_t max, 
     uint64_t count, uint64_t err
@@ -143,7 +143,7 @@ void aggreg_kernel_usr_callbacks(
 }
 
 void aggreg_traffic_usr_callbacks(
-    common_data_t *common_data, void *usr_data, const char* hostname, int64_t vpid,
+    void *btx_handle, void *usr_data, const char* hostname, int64_t vpid,
     uint64_t vtid, int64_t backend, const char* name, uint64_t size, uint64_t min,
     uint64_t max, uint64_t count, uint64_t err
 )
@@ -157,7 +157,7 @@ void aggreg_traffic_usr_callbacks(
 }
 
 void lttng_device_name_usr_callbacks(
-    common_data_t *common_data, void *usr_data, const char* hostname, int64_t vpid,
+    void *btx_handle, void *usr_data, const char* hostname, int64_t vpid,
     uint64_t vtid, int64_t ts, int64_t backend, const char* name, uint64_t did
 )
 {
@@ -166,7 +166,7 @@ void lttng_device_name_usr_callbacks(
 }
 
 void lttng_ust_thapi_metadata_usr_callbacks(
-    common_data_t *common_data, void *usr_data, const char* hostname, int64_t vpid,
+    void *btx_handle, void *usr_data, const char* hostname, int64_t vpid,
     uint64_t vtid, int64_t ts, int64_t backend, const char* metadata
 )
 {
@@ -174,10 +174,10 @@ void lttng_ust_thapi_metadata_usr_callbacks(
     data->metadata.push_back(metadata);
 } 
 
-void btx_register_usr_callbacks(name_to_dispatcher_t** name_to_dispatcher) {
-    btx_register_callbacks_aggreg_host(name_to_dispatcher,&aggreg_host_usr_callbacks);
-    btx_register_callbacks_aggreg_kernel(name_to_dispatcher,&aggreg_kernel_usr_callbacks);
-    btx_register_callbacks_aggreg_traffic(name_to_dispatcher,&aggreg_traffic_usr_callbacks);
-    btx_register_callbacks_lttng_device_name(name_to_dispatcher,&lttng_device_name_usr_callbacks);
-    btx_register_callbacks_lttng_ust_thapi_metadata(name_to_dispatcher,&lttng_ust_thapi_metadata_usr_callbacks);
+void btx_register_usr_callbacks(void *btx_handle) {
+    btx_register_callbacks_aggreg_host(btx_handle,&aggreg_host_usr_callbacks);
+    btx_register_callbacks_aggreg_kernel(btx_handle,&aggreg_kernel_usr_callbacks);
+    btx_register_callbacks_aggreg_traffic(btx_handle,&aggreg_traffic_usr_callbacks);
+    btx_register_callbacks_lttng_device_name(btx_handle,&lttng_device_name_usr_callbacks);
+    btx_register_callbacks_lttng_ust_thapi_metadata(btx_handle,&lttng_ust_thapi_metadata_usr_callbacks);
 }
