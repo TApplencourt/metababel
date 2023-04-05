@@ -1,5 +1,5 @@
 #include "component.h"
-#include "dispatch.h"
+#include "upstream.h"
 #include "utarray.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
@@ -9,24 +9,26 @@ static void
 btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
                                      common_data_t *common_data,
                                      const bt_event *<%= event_name %>) {
+
   <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
   <% end %>
   <%= e.body %>
   // Call all the callbacks who where registered
-  // Their type are declared in 'dispatch.h'
+  // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
-    (*p)(common_data, common_data->usr_data,
+    (*p)((void *)common_data, common_data->usr_data,
          <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
 
 void btx_register_callbacks_<%= e.name_sanitized %>(
-    name_to_dispatcher_t **name_to_dispatcher,
-    <%= e.name_sanitized %>_callback_f *callback) {
+    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback) {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
+  name_to_dispatcher_t **name_to_dispatcher =
+      &((common_data_t *)btx_handle)->name_to_dispatcher;
   HASH_FIND_STR(*name_to_dispatcher, "<%= e.name %>", s);
   if (!s) {
     // We didn't find the dispatcher, so we need to:

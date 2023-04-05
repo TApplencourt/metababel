@@ -50,7 +50,7 @@ struct common_data_s {
   void *usr_data;
   const bt_value *params;
   bt_trace *downstream_trace;
-  /* Used by create.c */
+  /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
 };
 
@@ -89,7 +89,7 @@ struct common_data_s {
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
-  /* Used by create.c */
+  /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
 };
 
@@ -139,17 +139,16 @@ struct common_data_s {
 <% end %>
 
 /* Implemented by params.c */
-void btx_read_params(common_data_t *common_data, params_t *usr_params);
+void btx_read_params(void *btx_handle, params_t *usr_params);
 
 <% if options[:component_type] == 'SOURCE'  %>
-void btx_initialize_usr_data(common_data_t *common_data, void **usr_data);
-btx_source_status_t btx_push_usr_messages(common_data_t *common_data,
-                                          void *usr_data);
+void btx_initialize_usr_data(void *btx_handle, void **usr_data);
+btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data);
 <% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
 /* Users functions to implement */
-void btx_initialize_usr_data(common_data_t *common_data, void **usr_data);
-void btx_finalize_usr_data(common_data_t *common_data, void *usr_data);
-void btx_register_usr_callbacks(name_to_dispatcher_t **name_to_dispatcher);
+void btx_initialize_usr_data(void *btx_handle, void **usr_data);
+void btx_finalize_usr_data(void *btx_handle, void *usr_data);
+void btx_register_usr_callbacks(void *btx_handle);
 <% end %>
 
 #ifdef __cplusplus
