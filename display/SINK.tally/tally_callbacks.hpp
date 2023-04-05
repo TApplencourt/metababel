@@ -4,7 +4,7 @@
 //! in messages that were generated from different backends.
 
 #include "component.h"
-#include "dispatch.h"
+#include "upstream.h"
 #include "babeltrace2/babeltrace.h"
 
 #include <map>

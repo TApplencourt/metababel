@@ -1,7 +1,7 @@
 #include "component.h"
-#include "dispatch.h"
-#include <assert.h>
+#include "upstream.h"
 #include <stdio.h>
+#include <assert.h>
 
 struct data_s {
   uint64_t event_1_calls_count;

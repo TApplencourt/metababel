@@ -1,5 +1,5 @@
 #include "component.h"
-#include "dispatch.h"
+#include "upstream.h"
 #include <assert.h>
 #include <stdio.h>
 

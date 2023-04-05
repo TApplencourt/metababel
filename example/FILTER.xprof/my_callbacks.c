@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "component.h"
-#include "dispatch.h"
-#include "create.h"
+#include "upstream.h"
+#include "downstream.h"
 
 struct usr_data_s {
     int roger_count;
