@@ -20,7 +20,7 @@ module Assertions
 
   def refute_command(cmd)
     _, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception, stderr_str unless exit_code != 0
+    raise Exception, stderr_str if exit_code == 0
   end
 end
 
