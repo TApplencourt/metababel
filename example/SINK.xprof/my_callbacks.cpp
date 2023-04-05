@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "component.h"
-#include "dispatch.h"
+#include "upstream.h"
 #include <iostream>
 #include <tuple>
 

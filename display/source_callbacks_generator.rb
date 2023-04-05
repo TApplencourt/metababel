@@ -26,7 +26,7 @@ template =  <<-TEXT
 /* Code generaed by source_callbacks_generator.rb */
 
 #include "component.h"
-#include "create.h"
+#include "downstream.h"
 
 void btx_initialize_usr_data(common_data_t *common_data, void **usr_data) {
 }
