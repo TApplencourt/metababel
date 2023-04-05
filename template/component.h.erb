@@ -12,13 +12,6 @@ extern "C" {
 struct common_data_s;
 typedef struct common_data_s common_data_t;
 
-// Params
-struct params_s {
-  <%= params_declaration %>
-
-}; <%# Need empty line for nice code gen %>
-typedef struct params_s params_t;
-
 // Dispatcher
 <% if ['FILTER', 'SINK'].include?(options[:component_type]) %>
 typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
@@ -135,14 +128,11 @@ struct common_data_s {
 };
 <% end %>
 
-/* Implemented by params.c */
-void btx_read_params(void *btx_handle, params_t *usr_params);
-
+/* Users functions to implement */
 <% if options[:component_type] == 'SOURCE'  %>
 void btx_initialize_usr_data(void *btx_handle, void **usr_data);
 btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data);
 <% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
-/* Users functions to implement */
 void btx_initialize_usr_data(void *btx_handle, void **usr_data);
 void btx_finalize_usr_data(void *btx_handle, void *usr_data);
 void btx_register_usr_callbacks(void *btx_handle);
