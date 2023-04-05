@@ -14,7 +14,7 @@ class TestSinkUserDefinedCastType < Test::Unit::TestCase
       btx_component_name: 'source',
       btx_pluggin_name: 'metababel_source',
       btx_component_path: './test/SOURCE.metababel_test',
-      btx_user_data_header_path: './test/cases_sink_stream_classes_model/1.user_data_header.h'
+      btx_usr_data_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h'
     }
 
     @btx_sink_variables = {
@@ -23,7 +23,7 @@ class TestSinkUserDefinedCastType < Test::Unit::TestCase
       btx_component_name: 'sink',
       btx_pluggin_name: 'metababel_sink',
       btx_component_path: './test/SINK.metababel_test',
-      btx_user_data_header_path: './test/cases_sink_stream_classes_model/1.user_data_header.h'
+      btx_usr_data_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h'
     }
   end
 end

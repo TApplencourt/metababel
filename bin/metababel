@@ -144,8 +144,8 @@ OptionParser.new do |opts|
     options[:folder] = p
   end
 
-  opts.on('-i', '--user-data-header NAME', '[Optional] User datatypes definitions.') do |p|
-    options[:user_data_header] = p
+  opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
+    options[:usr_data_header] = p
   end
 end.parse!
 

@@ -108,14 +108,14 @@ end
 module SourceCastTypeSubtests
   # Generate source with user_data_header.
   def subtest_generate_source_component
-    assert_command("ruby -I./lib ./bin/metababel -d #{btx_source_variables[:btx_model_path]} -t SOURCE -p #{btx_source_variables[:btx_pluggin_name]} -c #{btx_source_variables[:btx_component_name]} -o #{btx_source_variables[:btx_component_path]} -i #{File.basename(btx_source_variables[:btx_user_data_header_path])}")
+    assert_command("ruby -I./lib ./bin/metababel -d #{btx_source_variables[:btx_model_path]} -t SOURCE -p #{btx_source_variables[:btx_pluggin_name]} -c #{btx_source_variables[:btx_component_name]} -o #{btx_source_variables[:btx_component_path]} -i #{File.basename(btx_source_variables[:btx_usr_data_header_path])}")
   end
 
   # Generate source and include user_data_header the in the component folder.
   def subtest_generate_source_callbacks
     assert_command("ruby ./test/gen_source.rb -i #{btx_source_variables[:btx_log_path]} -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
     assert_nothing_raised do
-      FileUtils.cp(btx_source_variables[:btx_user_data_header_path], btx_source_variables[:btx_component_path])
+      FileUtils.cp(btx_source_variables[:btx_usr_data_header_path], btx_source_variables[:btx_component_path])
     end  
   end
 end
@@ -123,13 +123,13 @@ end
 module SinkCastTypeSubtests
   # Generate source with user_data_header.
   def subtest_generate_sink_component
-    assert_command("ruby -I./lib ./bin/metababel -u #{btx_sink_variables[:btx_model_path]} -t SINK -p #{btx_sink_variables[:btx_pluggin_name]} -c #{btx_sink_variables[:btx_component_name]} -o #{btx_sink_variables[:btx_component_path]} -i #{File.basename(btx_sink_variables[:btx_user_data_header_path])}")
+    assert_command("ruby -I./lib ./bin/metababel -u #{btx_sink_variables[:btx_model_path]} -t SINK -p #{btx_sink_variables[:btx_pluggin_name]} -c #{btx_sink_variables[:btx_component_name]} -o #{btx_sink_variables[:btx_component_path]} -i #{File.basename(btx_sink_variables[:btx_usr_data_header_path])}")
   end
 
   # Generate source and include user_data_header the in the component folder.
   def subtest_generate_sink_callbacks
     assert_nothing_raised do
-      FileUtils.cp(btx_sink_variables[:btx_user_data_header_path], btx_sink_variables[:btx_component_path])
+      FileUtils.cp(btx_sink_variables[:btx_usr_data_header_path], btx_sink_variables[:btx_component_path])
       FileUtils.cp(btx_sink_variables[:btx_callbacks_path], btx_sink_variables[:btx_component_path])    
     end  
   end

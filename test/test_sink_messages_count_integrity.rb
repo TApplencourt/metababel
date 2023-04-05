@@ -100,7 +100,7 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
 
   # Override to check compile failure.
   def subtest_compile_sink_component
-    refute_command("$CC -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Werror -Wall -fpic --shared -I ./test/include/")
+    refute_command("$CC -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
   end
 
   # Override to not execute the source subtests.
