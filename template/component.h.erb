@@ -3,7 +3,9 @@
 #include "utarray.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
-#include "user_cast_type.h"
+<% if options.key?(:user_data_header) %>
+#include "<%= options[:user_data_header] %>"
+<% end %>
 
 #ifdef __cplusplus
 extern "C" {

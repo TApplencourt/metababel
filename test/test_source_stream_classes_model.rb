@@ -95,7 +95,7 @@ end
 
 class TestSourceDetailsComparisonAllTypes < Test::Unit::TestCase
   include SourceTest
-  include SourceSubtestsDetail
+  include SourceDetailSubtests
   extend VariableAccessor
   include VariableClassAccessor
 
@@ -112,7 +112,7 @@ end
 
 class TestSourceDetailsComparisonIntegersNoFieldRange < Test::Unit::TestCase
   include SourceTest
-  include SourceSubtestsDetail
+  include SourceDetailSubtests
   extend VariableAccessor
   include VariableClassAccessor
 
@@ -129,7 +129,7 @@ end
 
 class TestSourceDetailsComparisonIntegers64DifferentBases < Test::Unit::TestCase
   include SourceTest
-  include SourceSubtestsDetail
+  include SourceDetailSubtests
   extend VariableAccessor
   include VariableClassAccessor
 
@@ -146,7 +146,7 @@ end
 
 class TestSourceDetailsComparisonIntegers32DifferentBases < Test::Unit::TestCase
   include SourceTest
-  include SourceSubtestsDetail
+  include SourceDetailSubtests
   extend VariableAccessor
   include VariableClassAccessor
 
