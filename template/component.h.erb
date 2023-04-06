@@ -3,6 +3,9 @@
 #include "utarray.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
+<% if options.key?(:usr_data_header) %>
+#include "<%= options[:usr_data_header] %>"
+<% end %>
 
 #ifdef __cplusplus
 extern "C" {

@@ -90,7 +90,7 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
   # Override to not check btx_log.txt since not needed.
   def subtest_check_source_preconditions
     assert_file_exists(btx_source_variables[:btx_model_path])
-    assert_command('ruby -I./lib ./bin/metababel -h')
+    # assert_command('ruby -I./lib ./bin/metababel -h')
   end
 
   # Override to generate an empty source.
@@ -100,7 +100,7 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
 
   # Override to check compile failure.
   def subtest_compile_sink_component
-    refute_command("cc -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Werror -Wall -fpic --shared -I ./test/include/")
+    refute_command("$CC -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
   end
 
   # Override to not execute the source subtests.

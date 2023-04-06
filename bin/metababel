@@ -143,6 +143,10 @@ OptionParser.new do |opts|
   opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
     options[:folder] = p
   end
+
+  opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
+    options[:usr_data_header] = p
+  end
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?

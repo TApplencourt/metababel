@@ -7,7 +7,7 @@ module Assertions
   end
 
   def assert_command(cmd)
-    _, stderr_str, exit_code = Open3.capture3(*cmd)
+    _, stderr_str, exit_code = Open3.capture3(cmd)
     raise Exception, stderr_str unless exit_code == 0
   end
 
@@ -20,7 +20,7 @@ module Assertions
 
   def refute_command(cmd)
     _, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception, stderr_str unless exit_code != 0
+    raise Exception, stderr_str if exit_code == 0
   end
 end
 
@@ -50,24 +50,6 @@ module SourceSubtests
     command = <<~TEXT
       babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
         --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]}
-    TEXT
-    assert_command_stdout(command, expected_output)
-  end
-end
-
-module SourceSubtestsDetail
-  # Generate a source with no messages.
-  def subtest_generate_source_callbacks
-    assert_command("ruby ./test/gen_source.rb -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
-  end
-
-  # Compare with text.details in place of log.
-  def subtest_run_source_component
-    expected_output = File.open(btx_source_variables[:btx_log_path], 'r').read
-    command = <<~TEXT
-      babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
-        --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]} \
-        --component=sink.text.details
     TEXT
     assert_command_stdout(command, expected_output)
   end
@@ -105,6 +87,54 @@ module SinkSubtests
   end
 end
 
+module SourceDetailSubtests
+  # Generate a source with no messages.
+  def subtest_generate_source_callbacks
+    assert_command("ruby ./test/gen_source.rb -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
+  end
+
+  # Compare with text.details in place of log.
+  def subtest_run_source_component
+    expected_output = File.open(btx_source_variables[:btx_log_path], 'r').read
+    command = <<~TEXT
+      babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
+        --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]} \
+        --component=sink.text.details
+    TEXT
+    assert_command_stdout(command, expected_output)
+  end
+end
+
+module SourceCastTypeSubtests
+  # Generate source with user_data_header.
+  def subtest_generate_source_component
+    assert_command("ruby -I./lib ./bin/metababel -d #{btx_source_variables[:btx_model_path]} -t SOURCE -p #{btx_source_variables[:btx_pluggin_name]} -c #{btx_source_variables[:btx_component_name]} -o #{btx_source_variables[:btx_component_path]} -i #{File.basename(btx_source_variables[:btx_usr_data_header_path])}")
+  end
+
+  # Generate source and include user_data_header the in the component folder.
+  def subtest_generate_source_callbacks
+    assert_command("ruby ./test/gen_source.rb -i #{btx_source_variables[:btx_log_path]} -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
+    assert_nothing_raised do
+      FileUtils.cp(btx_source_variables[:btx_usr_data_header_path], btx_source_variables[:btx_component_path])
+    end  
+  end
+end
+
+module SinkCastTypeSubtests
+  # Generate source with user_data_header.
+  def subtest_generate_sink_component
+    assert_command("ruby -I./lib ./bin/metababel -u #{btx_sink_variables[:btx_model_path]} -t SINK -p #{btx_sink_variables[:btx_pluggin_name]} -c #{btx_sink_variables[:btx_component_name]} -o #{btx_sink_variables[:btx_component_path]} -i #{File.basename(btx_sink_variables[:btx_usr_data_header_path])}")
+  end
+
+  # Generate source and include user_data_header the in the component folder.
+  def subtest_generate_sink_callbacks
+    assert_nothing_raised do
+      FileUtils.cp(btx_sink_variables[:btx_usr_data_header_path], btx_sink_variables[:btx_component_path])
+      FileUtils.cp(btx_sink_variables[:btx_callbacks_path], btx_sink_variables[:btx_component_path])    
+    end  
+  end
+end
+
 module SourceTest
   include SourceSubtests
 
@@ -132,25 +162,6 @@ module SinkTest
     subtest_generate_sink_callbacks
     subtest_compile_sink_component
     subtest_run_source_sink_components
-  end
-end
-
-module TestSourceBaseDetails
-  # Generate a source with no messages.
-  def subtest_generate_source_callbacks
-    `ruby ./test/gen_source.rb -o #{btx_variables[:btx_component_path]}/callbacks.c`
-    assert($?.success?)
-  end
-
-  # Compare with text.details in place of log.
-  def subtest_run_source
-    output = `babeltrace2 --plugin-path=#{btx_variables[:btx_component_path]} \
-    --component=#{btx_variables[:btx_component_type].downcase}.#{btx_variables[:btx_pluggin_name]}.#{btx_variables[:btx_component_name]} \
-    --component=sink.text.details`
-    assert($?.success?)
-
-    expected_output = File.open(btx_variables[:btx_target_log_path], 'r').read
-    assert_equal(expected_output, output)
   end
 end
 
