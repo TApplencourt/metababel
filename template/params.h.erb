@@ -14,9 +14,6 @@ typedef struct params_s params_t;
 /* Implemented by params.c */
 void btx_read_params(void *btx_handle, params_t *usr_params);
 
-void btx_initialize_usr_data(void *btx_handle, void **usr_data);
-btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data);
-
 #ifdef __cplusplus
 }
 #endif

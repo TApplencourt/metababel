@@ -1,5 +1,4 @@
-#include "component.h"
-#include "upstream.h"
+#include <metababel/metababel.h>
 #include <assert.h>
 #include <stdio.h>
 
