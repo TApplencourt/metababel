@@ -83,31 +83,8 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
       btx_callbacks_path: './test/cases_sink_messages_count_integrity/4.callbacks.c',
       btx_component_name: 'sink',
       btx_pluggin_name: 'metababel_sink',
-      btx_component_path: './test/SINK.metababel_test'
+      btx_component_path: './test/SINK.metababel_test',
+      btx_compile_assertion_fct: :refute_command
     }
-  end
-
-  # Override to not check btx_log.txt since not needed.
-  def subtest_check_source_preconditions
-    assert_file_exists(btx_source_variables[:btx_model_path])
-    # assert_command('ruby -I./lib ./bin/metababel -h')
-  end
-
-  # Override to generate an empty source.
-  def subtest_generate_source_callbacks
-    assert_command("ruby ./test/gen_source.rb -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
-  end
-
-  # Override to check compile failure.
-  def subtest_compile_sink_component
-    refute_command("$CC -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
-  end
-
-  # Override to not execute the source subtests.
-  def test_sink
-    subtest_check_sink_preconditions
-    subtest_generate_sink_component
-    subtest_generate_sink_callbacks
-    subtest_compile_sink_component
   end
 end

@@ -2,8 +2,6 @@ require 'base_test'
 
 class TestSinkUserDefinedCastType < Test::Unit::TestCase
   include SinkTest
-  include SourceCastTypeSubtests
-  include SinkCastTypeSubtests
   extend VariableAccessor
   include VariableClassAccessor
 

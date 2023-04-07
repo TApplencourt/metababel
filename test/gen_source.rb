@@ -79,12 +79,10 @@ def render_and_save(data, output_path)
 end
 
 DOCS = <<-DOCS
-  Usage: example.rb [options]
+  Usage: #{$0}.rb [options]
 
   Example:
     ruby #{$0} -y stream_classes.yaml -i btx_log.txt -o callbacks.c
-    ruby #{$0} -i btx_log.txt -o callbacks.c
-    ruby #{$0} -o callbacks.c
 DOCS
 
 # Display help if no arguments.
@@ -100,7 +98,7 @@ OptionParser.new do |opts|
     exit
   end
 
-  opts.on('-y', '--yaml PATH', '[Optional] Path to btx_model.yaml.') do |p|
+  opts.on('-y', '--yaml PATH', '[Mandatory] Path to btx_model.yaml.') do |p|
     options[:yaml_path] = p
   end
 
