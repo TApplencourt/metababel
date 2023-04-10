@@ -42,7 +42,7 @@ module SourceSubtests
   end
 
   def subtest_compile_source_component
-    assert_command("${CC:-cc} -o #{btx_source_variables[:btx_component_path]}/#{btx_source_variables[:btx_pluggin_name]}_#{btx_source_variables[:btx_component_name]}.so #{btx_source_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
+    assert_command("${CC:-cc} -o #{btx_source_variables[:btx_component_path]}/#{btx_source_variables[:btx_pluggin_name]}_#{btx_source_variables[:btx_component_name]}.so #{btx_source_variables[:btx_component_path]}/*.c #{btx_source_variables[:btx_component_path]}/metababel/*.c -I ./test/include/  -I#{btx_source_variables[:btx_component_path]}/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared")
   end
 
   def subtest_run_source_component
@@ -72,9 +72,8 @@ module SinkSubtests
       FileUtils.cp(btx_sink_variables[:btx_callbacks_path], btx_sink_variables[:btx_component_path])
     end
   end
-
   def subtest_compile_sink_component
-    assert_command("${CC:-cc} -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared -I ./test/include/")
+    assert_command("${CC:-cc} -o #{btx_sink_variables[:btx_component_path]}/#{btx_sink_variables[:btx_pluggin_name]}_#{btx_sink_variables[:btx_component_name]}.so #{btx_sink_variables[:btx_component_path]}/*.c #{btx_sink_variables[:btx_component_path]}/metababel/*.c -I ./test/include/  -I#{btx_sink_variables[:btx_component_path]}/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -fpic --shared")
   end
 
   def subtest_run_source_sink_components
