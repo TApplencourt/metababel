@@ -50,15 +50,10 @@ class TestSourceNoCommonNoPayloadFields < Test::Unit::TestCase
   end
 
   # Override to test expected failing.
-  def subtest_generate_source_component
+  def test_source
     refute_command("ruby -I./lib ./bin/metababel -d #{btx_source_variables[:btx_model_path]} -t SOURCE -p #{btx_source_variables[:btx_pluggin_name]} -c #{btx_source_variables[:btx_component_name]} -o #{btx_source_variables[:btx_component_path]}")
   end
 
-  # Override to prevent the execution of the whole subtests.
-  def test_source
-    subtest_check_source_preconditions
-    subtest_generate_source_component
-  end
 end
 
 class TestSourceCommonPayloadFields < Test::Unit::TestCase
@@ -102,7 +97,8 @@ class TestSourceDetailsComparisonAllTypes < Test::Unit::TestCase
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/6.btx_model.yaml',
-      btx_log_path: './test/cases_source_stream_classes_model/6.btx_details.txt',
+      btx_log_path: './test/cases_source_stream_classes_model/0.btx_log.txt',
+      btx_log_details_path: './test/cases_source_stream_classes_model/6.btx_details.txt',
       btx_component_name: 'source',
       btx_pluggin_name: 'metababel_tests',
       btx_component_path: './test/SOURCE.metababel_test'
@@ -119,7 +115,8 @@ class TestSourceDetailsComparisonIntegersNoFieldRange < Test::Unit::TestCase
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/7.btx_model.yaml',
-      btx_log_path: './test/cases_source_stream_classes_model/7.btx_details.txt',
+      btx_log_path: './test/cases_source_stream_classes_model/0.btx_log.txt',
+      btx_log_details_path: './test/cases_source_stream_classes_model/7.btx_details.txt',
       btx_component_name: 'source',
       btx_pluggin_name: 'metababel_tests',
       btx_component_path: './test/SOURCE.metababel_test'
@@ -136,7 +133,8 @@ class TestSourceDetailsComparisonIntegers64DifferentBases < Test::Unit::TestCase
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/8.btx_model.yaml',
-      btx_log_path: './test/cases_source_stream_classes_model/8.btx_details.txt',
+      btx_log_path: './test/cases_source_stream_classes_model/0.btx_log.txt',
+      btx_log_details_path: './test/cases_source_stream_classes_model/8.btx_details.txt',
       btx_component_name: 'source',
       btx_pluggin_name: 'metababel_tests',
       btx_component_path: './test/SOURCE.metababel_test'
@@ -153,7 +151,8 @@ class TestSourceDetailsComparisonIntegers32DifferentBases < Test::Unit::TestCase
   def self.startup
     @btx_source_variables = {
       btx_model_path: './test/cases_source_stream_classes_model/9.btx_model.yaml',
-      btx_log_path: './test/cases_source_stream_classes_model/9.btx_details.txt',
+      btx_log_path: './test/cases_source_stream_classes_model/0.btx_log.txt',
+      btx_log_details_path: './test/cases_source_stream_classes_model/9.btx_details.txt',
       btx_component_name: 'source',
       btx_pluggin_name: 'metababel_tests',
       btx_component_path: './test/SOURCE.metababel_test'

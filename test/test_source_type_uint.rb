@@ -30,12 +30,6 @@ class TestSourceTypeUInt64MaxValue < Test::Unit::TestCase
       btx_component_path: './test/SOURCE.metababel_test'
     }
   end
-
-  # Need to include btx_model.yaml in the generation to apply
-  # the UINT64 or INT64 macro accordingly for long integers.
-  def subtest_generate_source_callbacks
-    assert_command("ruby ./test/gen_source.rb -i #{btx_source_variables[:btx_log_path]} -y #{btx_source_variables[:btx_model_path]} -o #{btx_source_variables[:btx_component_path]}/callbacks.c")
-  end
 end
 
 class TestSourceTypeUInt32MaxValueNoCastType < Test::Unit::TestCase
