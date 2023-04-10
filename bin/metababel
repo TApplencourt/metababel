@@ -7,7 +7,7 @@ require 'metababel'
 require 'fileutils'
 
 def validate_model(yaml)
-  raise "Invalide Model #{yaml}" unless yaml[:stream_classes].all? do |d|
+  raise "Invalid Model #{yaml}" unless yaml[:stream_classes].all? do |d|
                                           d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
                                             d2.key?(:payload_field_class)
                                           end
