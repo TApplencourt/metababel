@@ -1,5 +1,7 @@
-#include "component.h"
 #include <babeltrace2/babeltrace.h>
+#include <metababel/btx_component.h>
+#include <metababel/btx_params.h>
+// stdio needed because `params_definition` contain fprintf
 #include <stdio.h>
 
 void btx_read_params(void *btx_handle, params_t *usr_params) {
