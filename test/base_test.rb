@@ -30,16 +30,63 @@ def validate_file(d)
     }
 end
 
-def generate_component(d, component_type)
-    cmd = "ruby -I./lib ./bin/metababel -p #{d[:btx_pluggin_name]} -c #{d[:btx_component_name]} -o #{d[:btx_component_path]}"
-    cmd += " -i #{File.basename(d[:btx_usr_data_header_path])}" if d.key?(:btx_usr_data_header_path)
-    case component_type
-    when :SOURCE
-      cmd += " -d #{d[:btx_model_path]} -t SOURCE"
-    when :SINK
-      cmd += " -u #{d[:btx_model_path]} -t SINK"
-    end
+# def generate_component(d, component_type)
+#     cmd = "ruby -I./lib ./bin/metababel -p #{d[:btx_pluggin_name]} -c #{d[:btx_component_name]} -o #{d[:btx_component_path]}"
+#     cmd += " -i #{File.basename(d[:btx_usr_data_header_path])}" if d.key?(:btx_usr_data_header_path)
+#     case component_type
+#     when :SOURCE
+#       cmd += " -d #{d[:btx_model_path]} -t SOURCE"
+#     when :SINK
+#       cmd += " -u #{d[:btx_model_path]} -t SINK"
+#     end
+# end
+
+def get_component_generation_command(component_data)
+  arguments = {
+    btx_component_path: '-o %s ',
+    btx_component_type: '-t %s ',
+    btx_component_name: '-c %s ',
+    btx_component_pluggin_name: '-p %s ',
+    btx_component_downtream_model: '-d %s ',
+    btx_component_upstream_model: '-u %s ',
+    btx_component_user_header_file: '-i %s ',
+  }
+
+  command = 'ruby -I./lib ./bin/metababel '
+
+  component_data.keys.grep(/_component_/) do |key|
+    raise Exception("Unsupported component option '#{key}'") unless arguments.key?(key)
+    command += arguments[key] % [ component_data[key] ]
+  end
+
+  command
 end
+
+def get_component_compilation_command(component)
+  "${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so #{component[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Wall -Werror -fpic --shared -I ./test/include/"
+end
+
+def get_graph_execution_command(*components)
+  components_paths = components.map { |c| c[:btx_component_path]  }
+  components_graph = components.map { |c| "--component=#{c[:btx_component_type].downcase}.#{c[:btx_component_pluggin_name]}.#{c[:btx_component_name]}" }
+  command = "babeltrace2 --plugin-path=#{components_paths.join(':')} #{components_graph.join(' ')}"
+end
+
+def copy_usr_files(component)
+  component.keys.grep(/_file_/) do |key|
+    assert_nothing_raised do
+      FileUtils.cp(component[key], component[:btx_component_path])
+    end
+  end
+end
+
+def run_usr_commands(component)
+  component.keys.grep(/_command_/) do |key|
+    command = component[key] % component
+    puts "run_usr_commands", command
+    assert_command(command)
+  end
+end 
 
 def generate_usr_files(d)
   # Callbacks
@@ -127,9 +174,21 @@ module SourceTest
 
   def test_source
     # Precondition
-    pre_run(btx_source_variables, :SOURCE)
+    command_1 = get_component_generation_command(btx_source_variables)
+    puts command_1
+    assert_command(command_1)
+    # # Copy user files 
+    # copy_usr_files(btx_source_variables)
+    # # Run user commands
+    run_usr_commands(btx_source_variables)
+
+    #Compile
+    command_3 = get_component_compilation_command(btx_source_variables)
+    assert_command(command_3)
     # Run
-    subtest_run_source_component
+    command_2 = get_graph_execution_command(btx_source_variables)
+    puts "command_2", command_2
+    assert_command(command_2)
   end
 end
 
