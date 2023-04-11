@@ -7,15 +7,9 @@ module Assertions
   end
 
   def assert_command(cmd)
-    _, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception, stderr_str unless exit_code == 0
-  end
-
-  def assert_command_stdout(cmd, expected_stdout)
     stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
     raise Exception, stderr_str unless exit_code == 0
-
-    assert_equal(expected_stdout, stdout_str)
+    stdout_str
   end
 
   def refute_command(cmd)
@@ -24,24 +18,16 @@ module Assertions
   end
 end
 
-def validate_file(d)
-    [:btx_model_path, :btx_log_path].each { |file|
-      assert_file_exists(d[file]) if d.key?(file)
-    }
+def get_component_with_default_values(component)
+  default = {
+    btx_component_name: 'component_name',
+    btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
+    btx_component_pluggin_name: 'pluggin_name'
+  }
+  default.update(component)
 end
 
-# def generate_component(d, component_type)
-#     cmd = "ruby -I./lib ./bin/metababel -p #{d[:btx_pluggin_name]} -c #{d[:btx_component_name]} -o #{d[:btx_component_path]}"
-#     cmd += " -i #{File.basename(d[:btx_usr_data_header_path])}" if d.key?(:btx_usr_data_header_path)
-#     case component_type
-#     when :SOURCE
-#       cmd += " -d #{d[:btx_model_path]} -t SOURCE"
-#     when :SINK
-#       cmd += " -u #{d[:btx_model_path]} -t SINK"
-#     end
-# end
-
-def get_component_generation_command(component_data)
+def get_component_generation_command(component)
   arguments = {
     btx_component_path: '-o %s ',
     btx_component_type: '-t %s ',
@@ -54,9 +40,9 @@ def get_component_generation_command(component_data)
 
   command = 'ruby -I./lib ./bin/metababel '
 
-  component_data.keys.grep(/_component_/) do |key|
+  component.keys.grep(/_component_/) do |key|
     raise Exception("Unsupported component option '#{key}'") unless arguments.key?(key)
-    command += arguments[key] % [ component_data[key] ]
+    command += arguments[key] % [ component[key] ]
   end
 
   command
@@ -69,10 +55,23 @@ end
 def get_graph_execution_command(*components)
   components_paths = components.map { |c| c[:btx_component_path]  }
   components_graph = components.map { |c| "--component=#{c[:btx_component_type].downcase}.#{c[:btx_component_pluggin_name]}.#{c[:btx_component_name]}" }
-  command = "babeltrace2 --plugin-path=#{components_paths.join(':')} #{components_graph.join(' ')}"
+  
+  "babeltrace2 --plugin-path=#{components_paths.join(':')} #{components_graph.join(' ')}"
 end
 
-def copy_usr_files(component)
+def usr_assert_files(component)
+  # Validate models
+  component.keys.grep(/_model$/) do |key|
+    assert_file_exists(component[key])
+  end
+
+  # Validate files
+  component.keys.grep(/_file_/) do |key|
+    assert_file_exists(component[key])
+  end
+end
+
+def usr_copy_files(component)
   component.keys.grep(/_file_/) do |key|
     assert_nothing_raised do
       FileUtils.cp(component[key], component[:btx_component_path])
@@ -80,144 +79,81 @@ def copy_usr_files(component)
   end
 end
 
-def run_usr_commands(component)
+def usr_run_commands(component)
   component.keys.grep(/_command_/) do |key|
     command = component[key] % component
-    puts "run_usr_commands", command
     assert_command(command)
   end
 end 
 
-def generate_usr_files(d)
-  # Callbacks
-  # If user defined callbacks use it
-  if d.key?(:btx_callbacks_path)
-    assert_nothing_raised do
-      FileUtils.cp(d[:btx_callbacks_path], d[:btx_component_path])
+module GenericTest
+  include Assertions
+
+  def test_run
+    # Provide componenents default values
+    sanitized_components = btx_components.map { |c|  get_component_with_default_values(c) }
+
+    sanitized_components.each do |c|
+      # Validate files 
+      usr_assert_files(c)
+      
+      # Generate
+      assert_generation = btx_generation_validator || :assert_command
+      send(assert_generation, get_component_generation_command(c))
+      return unless assert_generation == :assert_command
+
+      # Copy user files
+      usr_copy_files(c)
+      # Run user commands
+      usr_run_commands(c)
+      
+      # Compile
+      assert_compilation = btx_compilation_validator || :assert_command
+      send(assert_compilation, get_component_compilation_command(c))
+      return unless assert_compilation == :assert_command
     end
-  # Else we fall back to "gen_source" who use text-pretty log
-  elsif d.key?(:btx_log_path)
-      cmd = "ruby ./test/gen_source.rb -i #{d[:btx_log_path]} -o #{d[:btx_component_path]}/callbacks.c"
-      cmd += " -y #{d[:btx_model_path]}" if d.key?(:btx_model_path)
-      assert_command(cmd)
-  end
 
-  # Cast type header
-  if d.key?(:btx_usr_data_header_path)
-    assert_nothing_raised do
-      FileUtils.cp(d[:btx_usr_data_header_path], d[:btx_component_path])
-    end
-  end
-end
-
-def compile_component(d)
-  cmd = "${CC:-cc} -o #{d[:btx_component_path]}/#{d[:btx_pluggin_name]}_#{d[:btx_component_name]}.so #{d[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) $CFLAGS -Wall -Werror -fpic --shared -I ./test/include/"
-  fct = d.fetch(:btx_compile_assertion_fct, :assert_command)
-  send(fct, cmd)
-end
-
-module SourceSubtests
-  include Assertions
-
-  def subtest_run_source_component
-    expected_output = File.open(btx_source_variables[:btx_log_path], 'r').read
-    command = <<~TEXT
-      babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
-        --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]}
-    TEXT
-    assert_command_stdout(command, expected_output)
-  end
-end
-
-module SinkSubtests
-  include Assertions
-
-  def subtest_run_source_sink_components
-    command = <<~TEXT
-      babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]}:#{btx_sink_variables[:btx_component_path]} \
-        --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]} \
-        --component=sink.#{btx_sink_variables[:btx_pluggin_name]}.#{btx_sink_variables[:btx_component_name]}
-    TEXT
-    assert_command(command)
-  end
-end
-
-module SourceDetailSubtests
-  include Assertions
-
-  # Compare with text.details in place of log.
-  def subtest_run_source_component
-    expected_output = File.open(btx_source_variables[:btx_log_details_path], 'r').read
-    command = <<~TEXT
-      babeltrace2 --plugin-path=#{btx_source_variables[:btx_component_path]} \
-        --component=source.#{btx_source_variables[:btx_pluggin_name]}.#{btx_source_variables[:btx_component_name]} \
-        --component=sink.text.details
-    TEXT
-    assert_command_stdout(command, expected_output)
-  end
-end
-
-def pre_run(d,component_type)
-    # Precondition
-    validate_file(d)
-    assert_command('ruby -I./lib ./bin/metababel -h')
-    # Call Metababel
-    assert_command(generate_component(d, component_type))
-    # Mook user writting code
-    generate_usr_files(d)
-    # Compile
-    compile_component(d)
-end
-
-module SourceTest
-  include SourceSubtests
-
-  def test_source
-    # Precondition
-    command_1 = get_component_generation_command(btx_source_variables)
-    puts command_1
-    assert_command(command_1)
-    # # Copy user files 
-    # copy_usr_files(btx_source_variables)
-    # # Run user commands
-    run_usr_commands(btx_source_variables)
-
-    #Compile
-    command_3 = get_component_compilation_command(btx_source_variables)
-    assert_command(command_3)
     # Run
-    command_2 = get_graph_execution_command(btx_source_variables)
-    puts "command_2", command_2
-    assert_command(command_2)
-  end
-end
+    assert_execution = btx_execution_validator || :assert_command
+    stdout_str = send(assert_execution, get_graph_execution_command(*sanitized_components))
 
-module SinkTest
-  include SourceSubtests
-  include SinkSubtests
-
-  def test_sink
-    pre_run(btx_source_variables, :SOURCE) unless btx_source_variables.nil?
-    pre_run(btx_sink_variables, :SINK)
-    subtest_run_source_sink_components unless btx_source_variables.nil?
+    # Output validation
+    if btx_output_validation 
+      expected_output = File.open(btx_output_validation, 'r').read
+      assert_equal(expected_output,stdout_str) 
+    end 
   end
 end
 
 module VariableAccessor
-  attr_reader :btx_source_variables, :btx_sink_variables
-
+  attr_reader :btx_components, :btx_generation_validator, :btx_compilation_validator, :btx_execution_validator, :btx_output_validation
   def shutdown
-    FileUtils.remove_dir(@btx_source_variables[:btx_component_path], true) unless btx_source_variables.nil?
-    FileUtils.remove_dir(@btx_sink_variables[:btx_component_path], true) unless btx_sink_variables.nil?
+    @btx_components.each do |c|
+      FileUtils.remove_dir(c[:btx_component_path], true)
+    end
   end
 end
 
 module VariableClassAccessor
-  def btx_source_variables
-    self.class.btx_source_variables
+  def btx_components
+    self.class.btx_components
   end
 
-  def btx_sink_variables
-    self.class.btx_sink_variables
+  # If this attribute is not defined in the test class
+  # it will be nil once accesed on the test_run.
+  def btx_generation_validator
+    self.class.btx_generation_validator
+  end
+
+  def btx_compilation_validator
+    self.class.btx_compilation_validator
+  end
+
+  def btx_execution_validator
+    self.class.btx_execution_validator
+  end
+
+  def btx_output_validation
+    self.class.btx_output_validation
   end
 end
