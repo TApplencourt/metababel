@@ -36,7 +36,7 @@ def get_component_generation_command(component)
     btx_component_pluggin_name: '-p %s ',
     btx_component_downtream_model: '-d %s ',
     btx_component_upstream_model: '-u %s ',
-    btx_component_user_header_file: '-i %s ',
+    btx_component_user_header_file: '-i %s '
   }
 
   command = 'ruby -I./lib ./bin/metababel '
@@ -50,7 +50,7 @@ def get_component_generation_command(component)
 end
 
 def get_component_compilation_command(component)
-  "${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so #{component[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -Wall -Werror -fpic --shared -I ./test/include/"
+  "${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so #{component[:btx_component_path]}/*.c $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) ${CFLAGS:='-Wall -Werror'} -fpic --shared -I ./test/include/"
 end
 
 def get_graph_execution_command(*components)
@@ -121,17 +121,18 @@ module GenericTest
     stdout_str = send(assert_execution, get_graph_execution_command(*sanitized_components))
 
     # Output validation
-    if btx_output_validation 
-      expected_output = File.open(btx_output_validation, 'r').read
-      assert_equal(expected_output,stdout_str) 
-    end 
+    return unless btx_output_validation 
+    expected_output = File.open(btx_output_validation, 'r').read
+    assert_equal(expected_output,stdout_str) 
   end
 end
 
 module VariableAccessor
   attr_reader :btx_components, :btx_generation_validator, :btx_compilation_validator, :btx_execution_validator, :btx_output_validation
   def shutdown
-    @btx_components.each do |c|
+    # Sanitize provide default attributes such as btx_component_path if not provided by the user.
+    sanitized_components = @btx_components.map { |c|  get_component_with_default_values(c) }
+    sanitized_components.each do |c|
       FileUtils.remove_dir(c[:btx_component_path], true)
     end
   end
