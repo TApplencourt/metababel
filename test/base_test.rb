@@ -22,7 +22,8 @@ def get_component_with_default_values(component)
   default = {
     btx_component_name: 'component_name',
     btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
-    btx_component_pluggin_name: 'pluggin_name'
+    btx_component_pluggin_name: 'pluggin_name',
+    btx_compile: true
   }
   default.update(component)
 end
@@ -41,7 +42,7 @@ def get_component_generation_command(component)
   command = 'ruby -I./lib ./bin/metababel '
 
   component.keys.grep(/_component_/) do |key|
-    raise Exception("Unsupported component option '#{key}'") unless arguments.key?(key)
+    raise Exception, "Unsupported component option '#{key}'" unless arguments.key?(key)
     command += arguments[key] % [ component[key] ]
   end
 
@@ -94,23 +95,25 @@ module GenericTest
     sanitized_components = btx_components.map { |c|  get_component_with_default_values(c) }
 
     sanitized_components.each do |c|
-      # Validate files 
-      usr_assert_files(c)
-      
-      # Generate
-      assert_generation = btx_generation_validator || :assert_command
-      send(assert_generation, get_component_generation_command(c))
-      return unless assert_generation == :assert_command
+      if c[:btx_compile] 
+        # Validate files 
+        usr_assert_files(c)
+        
+        # Generate
+        assert_generation = btx_generation_validator || :assert_command
+        send(assert_generation, get_component_generation_command(c))
+        return unless assert_generation == :assert_command
 
-      # Copy user files
-      usr_copy_files(c)
-      # Run user commands
-      usr_run_commands(c)
-      
-      # Compile
-      assert_compilation = btx_compilation_validator || :assert_command
-      send(assert_compilation, get_component_compilation_command(c))
-      return unless assert_compilation == :assert_command
+        # Copy user files
+        usr_copy_files(c)
+        # Run user commands
+        usr_run_commands(c)
+        
+        # Compile
+        assert_compilation = btx_compilation_validator || :assert_command
+        send(assert_compilation, get_component_compilation_command(c))
+        return unless assert_compilation == :assert_command
+      end
     end
 
     # Run
