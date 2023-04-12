@@ -3,7 +3,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-<% dispatchers.each do |e| %>
+<% event_dispatchers.each do |e| %>
 <%# The signature type of callbacks %>
 typedef void
 <%= e.name_sanitized %>_callback_f(void *btx_handle, void *usr_data,
@@ -12,6 +12,17 @@ typedef void
 extern void btx_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
 <% end %>
+
+<% component_dispatchers.each do |e| %>
+<%# The signature type of callbacks %>
+typedef void
+<%= e.name_sanitized %>_callback_f(void *btx_handle,
+                                   <%= e.args.map{ |s| s.type }.join(", ") %>);
+<%# The Function who register the callbacks to the dispatcher %>
+extern void btx_register_callbacks_<%= e.name_sanitized %>(
+    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
+<% end %>
+
 #ifdef __cplusplus
 }
 #endif

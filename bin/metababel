@@ -62,13 +62,16 @@ class Babeltrace2Gen::BTTraceClass
   end
 end
 
+class GeneratedArg < Struct.new(:type, :name)
+end
+
 # We preprent an empty new line from the body as a hack, to correct the indentation
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
 def wrote_dispatchers(folder, t)
   event_name = 'event'
-  dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
+  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -76,7 +79,11 @@ def wrote_dispatchers(folder, t)
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  d = { dispatchers: dispatchers,
+
+  component_dispatchers = [ EventInfo.new('initialize_usr_data', [GeneratedArg.new('void **', '&common_data->usr_data')]) ]
+
+  d = { event_dispatchers: event_dispatchers,
+        component_dispatchers: component_dispatchers,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
