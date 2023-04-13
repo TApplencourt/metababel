@@ -41,12 +41,10 @@ class TestSourceNoCommonNoPayloadFields < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_stream_classes_model/3.btx_model.yaml'
+        btx_component_downtream_model: './test/cases_source_stream_classes_model/3.btx_model.yaml',
+        btx_metababel_generation_fail: true 
       }
     ]
-
-    # Expected to fail at component generation
-    @btx_metababel_generation_fail = true
   end
 end
 

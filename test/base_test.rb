@@ -6,16 +6,16 @@ module Assertions
     assert(File.file?(file_path), "File '#{file_path}' does not exists.")
   end
 
-  def assert_command(cmd)
+  def run_command(cmd, refute = false)
     stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception, stderr_str unless exit_code == 0
+
+    if refute 
+      raise Exception, stderr_str if exit_code == 0
+    else
+      raise Exception, stderr_str unless exit_code == 0
+    end
 
     stdout_str
-  end
-
-  def refute_command(cmd)
-    _, stderr_str, exit_code = Open3.capture3(cmd)
-    raise Exception, stderr_str if exit_code == 0
   end
 end
 
@@ -53,7 +53,7 @@ end
 def get_component_compilation_command(component)
   command = <<~TEXT
     ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so
-               #{component[:btx_component_path]}/*.c  #{component[:btx_component_path]}/metababel/*.c
+               #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
                -I ./test/include/ -I #{component[:btx_component_path]}/#{' '}
                $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
                ${CFLAGS:='-Wall -Werror'} -fpic --shared
@@ -95,17 +95,16 @@ def mock_user_callbacks(component)
          'Need to provide :btx_component_downtream_model when generating callbacks for SOURCE')
   opt_log = component.key?(:btx_log_path) ? '-i %<btx_log_path>s' : ''
   command = "ruby ./test/gen_source_callbacks.rb #{opt_log} -y %<btx_component_downtream_model>s -o %<btx_component_path>s/callbacks.c" % component
-  assert_command(command)
+  run_command(command)
 end
 
 def run_and_stop(command, component, key)
   if component.fetch(key, false)
-      refute_command(command)
+      run_command(command, true)
       return true
   end
-  assert_command(command)
+  run_command(command)
   return false
-
 end
 
 module GenericTest
@@ -122,21 +121,17 @@ module GenericTest
       usr_assert_files(c)
 
       # Generate Metababel
-      metatabel_generation_command = get_component_generation_command(c)
-      if btx_metababel_generation_fail
-        refute_command(metatabel_generation_command)
-        return
-      end
-      assert_command(metatabel_generation_command)
-      #return if run_and_stop(get_component_generation_command(c),
-      #                       c, :btx_generation_should_fail)
- 
+      # metatabel_generation_command = get_component_generation_command(c)
+      return if run_and_stop(get_component_generation_command(c),
+                             c, :btx_metababel_generation_fail)
+
       # Copy user files
       c.keys.grep(/_file_usr/) do |key|
         assert_nothing_raised do
           FileUtils.cp(c[key], c[:btx_component_path])
         end
       end
+
       # Mock user callbacks
       mock_user_callbacks(c)
 
@@ -146,7 +141,7 @@ module GenericTest
     end
 
     # Run
-    assert_execution = btx_execution_validator || :assert_command
+    assert_execution = btx_execution_validator || :run_command
     stdout_str = send(assert_execution, get_graph_execution_command(*sanitized_components))
 
     # Output validation
@@ -158,8 +153,7 @@ module GenericTest
 end
 
 module VariableAccessor
-  attr_reader :btx_components, :btx_metababel_generation_fail, :btx_execution_validator,
-              :btx_output_validation
+  attr_reader :btx_components, :btx_execution_validator, :btx_output_validation
 
   def shutdown
     # Sanitize provide default attributes such as btx_component_path if not provided by the user.
@@ -173,12 +167,6 @@ end
 module VariableClassAccessor
   def btx_components
     self.class.btx_components
-  end
-
-  # If this attribute is not defined in the test class
-  # it will be nil once accesed on the test_run.
-  def btx_metababel_generation_fail
-    self.class.btx_metababel_generation_fail
   end
 
   def btx_execution_validator
