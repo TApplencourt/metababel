@@ -6,15 +6,10 @@ module Assertions
     assert(File.file?(file_path), "File '#{file_path}' does not exists.")
   end
 
-  def run_command(cmd, refute = false)
-    stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
-
-    if refute 
-      raise Exception, stderr_str if exit_code == 0
-    else
-      raise Exception, stderr_str unless exit_code == 0
-    end
-
+  def run_command(cmd, refute: false)
+    stdout_str, _, exit_code = Open3.capture3(cmd)
+    # Sorry, it's a little too smart....
+    assert((exit_code == 0) != refute, 'Wrong Exit Code')
     stdout_str
   end
 end
@@ -29,25 +24,17 @@ def get_component_with_default_values(component)
 end
 
 def get_component_generation_command(component)
-  arguments = {
-    btx_component_path: '-o %s ',
-    btx_component_type: '-t %s ',
-    btx_component_name: '-c %s ',
-    btx_component_plugin_name: '-p %s ',
-    btx_component_downtream_model: '-d %s ',
-    btx_component_upstream_model: '-u %s ',
-    btx_component_usr_header_file: '-i %s '
+  args = {
+    btx_component_path: '-o',
+    btx_component_type: '-t',
+    btx_component_name: '-c',
+    btx_component_plugin_name: '-p',
+    btx_component_downtream_model: '-d',
+    btx_component_upstream_model: '-u',
+    btx_component_usr_header_file: '-i'
   }
-
-  command = 'ruby -I./lib ./bin/metababel '
-
-  component.keys.grep(/_component_/) do |key|
-    raise Exception, "Unsupported component option '#{key}'" unless arguments.key?(key)
-
-    command += format(arguments[key], component[key])
-  end
-
-  command
+  str_ = component.filter_map { |k, v| "#{args[k]} #{v}" if args.key?(k) }.join(' ')
+  "ruby -I./lib ./bin/metababel #{str_}"
 end
 
 def get_component_compilation_command(component)
@@ -98,32 +85,29 @@ def mock_user_callbacks(component)
   run_command(command)
 end
 
-def run_and_stop(command, component, key)
-  if component.fetch(key, false)
-      run_command(command, true)
-      return true
-  end
-  run_command(command)
-  return false
-end
-
 module GenericTest
   include Assertions
+
+  def run_and_continue(command, component, key)
+    if component.fetch(key, false)
+      run_command(command, refute: true)
+      return false
+    end
+    run_command(command)
+    true
+  end
 
   def test_run
     # Provide componenents default values
     sanitized_components = btx_components.map { |c| get_component_with_default_values(c) }
-
-    sanitized_components.each do |c|
-      return unless c[:btx_compile]
+                                         .filter do |c|
+      next true unless c[:btx_compile]
 
       # Validate files
       usr_assert_files(c)
-
       # Generate Metababel
-      # metatabel_generation_command = get_component_generation_command(c)
-      return if run_and_stop(get_component_generation_command(c),
-                             c, :btx_metababel_generation_fail)
+      next unless run_and_continue(get_component_generation_command(c),
+                                   c, :btx_metababel_generation_fail)
 
       # Copy user files
       c.keys.grep(/_file_usr/) do |key|
@@ -131,19 +115,15 @@ module GenericTest
           FileUtils.cp(c[key], c[:btx_component_path])
         end
       end
-
       # Mock user callbacks
       mock_user_callbacks(c)
-
       # Compile
-      return if run_and_stop(get_component_compilation_command(c), 
-                             c, :btx_compilation_should_fail)
+      run_and_continue(get_component_compilation_command(c), c, :btx_compilation_should_fail)
     end
+    return if sanitized_components.empty?
 
-    # Run
-    assert_execution = btx_execution_validator || :run_command
-    stdout_str = send(assert_execution, get_graph_execution_command(*sanitized_components))
-
+    # Run the Graph
+    stdout_str = run_command(get_graph_execution_command(*sanitized_components))
     # Output validation
     return unless btx_output_validation
 
@@ -153,12 +133,11 @@ module GenericTest
 end
 
 module VariableAccessor
-  attr_reader :btx_components, :btx_execution_validator, :btx_output_validation
+  attr_reader :btx_components, :btx_output_validation
 
   def shutdown
     # Sanitize provide default attributes such as btx_component_path if not provided by the user.
-    sanitized_components = @btx_components.map { |c| get_component_with_default_values(c) }
-    sanitized_components.each do |c|
+    @btx_components.map { |c| get_component_with_default_values(c) }.each do |c|
       FileUtils.remove_dir(c[:btx_component_path], true)
     end
   end
@@ -167,10 +146,6 @@ end
 module VariableClassAccessor
   def btx_components
     self.class.btx_components
-  end
-
-  def btx_execution_validator
-    self.class.btx_execution_validator
   end
 
   def btx_output_validation
