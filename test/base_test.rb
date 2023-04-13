@@ -22,10 +22,20 @@ def get_component_with_default_values(component)
   default = {
     btx_component_name: 'component_name',
     btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
-    btx_component_pluggin_name: 'pluggin_name',
+    btx_component_plugin_name: 'pluggin_name',
     btx_compile: true
   }
-  default.update(component)
+  
+  default = default.update(component)
+
+  # Infering if source_callbacks generation is needed.
+  return default unless default[:btx_component_type] == 'SOURCE'
+  return default if default.key?(:btx_file_usr_callbacks)
+
+  opt_log = default.key?(:btx_log_path) ? '-i %{btx_log_path}' : ''
+  default[:btx_command_gen_callbacks] = "ruby ./test/gen_source_callbacks.rb #{opt_log} -y %{btx_component_downtream_model} -o %{btx_component_path}/callbacks.c"
+
+  default
 end
 
 def get_component_generation_command(component)
@@ -33,7 +43,7 @@ def get_component_generation_command(component)
     btx_component_path: '-o %s ',
     btx_component_type: '-t %s ',
     btx_component_name: '-c %s ',
-    btx_component_pluggin_name: '-p %s ',
+    btx_component_plugin_name: '-p %s ',
     btx_component_downtream_model: '-d %s ',
     btx_component_upstream_model: '-u %s ',
     btx_component_user_header_file: '-i %s '
@@ -55,7 +65,7 @@ end
 
 def get_graph_execution_command(*components)
   components_paths = components.map { |c| c[:btx_component_path]  }
-  components_graph = components.map { |c| "--component=#{c[:btx_component_type].downcase}.#{c[:btx_component_pluggin_name]}.#{c[:btx_component_name]}" }
+  components_graph = components.map { |c| "--component=#{c[:btx_component_type].downcase}.#{c[:btx_component_plugin_name]}.#{c[:btx_component_name]}" }
   
   "babeltrace2 --plugin-path=#{components_paths.join(':')} #{components_graph.join(' ')}"
 end

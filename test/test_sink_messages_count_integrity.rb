@@ -10,7 +10,6 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
-        btx_command_gen_source: 'ruby ./test/gen_source.rb -i %{btx_log_path} -o %{btx_component_path}/callbacks.c',
         btx_log_path: './test/cases_sink_messages_count_integrity/1.btx_log.txt'
       },
       {
@@ -20,7 +19,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
         # TODO: Interersing, two separe components can not have the same plugging_name - component_name
         # even when the component type is different, e.g.,  sink.pluggin_name.component_name vs source.plugging_name.component_name
         btx_component_name: 'sink_pluggin',
-        btx_component_pluggin_name: 'sink_component',
+        btx_component_plugin_name: 'sink_component',
         btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/1.callbacks.c'
       }
     ]
@@ -38,14 +37,13 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventSeventyThreeMessagesInOneEven
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
-        btx_command_gen_source: 'ruby ./test/gen_source.rb -i %{btx_log_path} -o %{btx_component_path}/callbacks.c',
         btx_log_path: './test/cases_sink_messages_count_integrity/2.btx_log.txt'
       },
       {
         btx_component_type: 'SINK',
         btx_component_upstream_model:  './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
         btx_component_name: 'sink_pluggin',
-        btx_component_pluggin_name: 'sink_component',
+        btx_component_plugin_name: 'sink_component',
         btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/2.callbacks.c',
       }
     ]
@@ -63,14 +61,13 @@ class TestSinkCaseTwoEventClasesOneCallbackRegisteredHundredMessagesOnBothEvents
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
-        btx_command_gen_source: 'ruby ./test/gen_source.rb -i %{btx_log_path} -o %{btx_component_path}/callbacks.c',
         btx_log_path: './test/cases_sink_messages_count_integrity/1.btx_log.txt'
       },
       {
         btx_component_type: 'SINK',
         btx_component_upstream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
         btx_component_name: 'sink_pluggin',
-        btx_component_pluggin_name: 'sink_component',
+        btx_component_plugin_name: 'sink_component',
         btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/3.callbacks.c',
       }
     ]

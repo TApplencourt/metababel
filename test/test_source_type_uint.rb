@@ -10,7 +10,6 @@ class TestSourceTypeUInt64ZeroValue < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_type_uint/1.btx_model.yaml',
-        btx_command_gen_source: 'ruby ./test/gen_source.rb -i %{btx_log_path} -o %{btx_component_path}/callbacks.c',
         btx_log_path: './test/cases_source_type_uint/1.1.btx_log.txt' 
       }
     ]
@@ -27,7 +26,6 @@ class TestSourceTypeUInt64MaxValue < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_type_uint/1.btx_model.yaml',
-        btx_command_gen_source: 'ruby ./test/gen_source.rb -i %{btx_log_path} -y %{btx_component_downtream_model} -o %{btx_component_path}/callbacks.c',
         btx_log_path: './test/cases_source_type_uint/1.2.btx_log.txt' 
       }
     ]
@@ -44,7 +42,6 @@ class TestSourceTypeUInt32MaxValueNoCastType < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_type_uint/2.btx_model.yaml',
-        btx_command_gen_source: 'ruby ./test/gen_source.rb -i %{btx_log_path} -o %{btx_component_path}/callbacks.c',
         btx_log_path: './test/cases_source_type_uint/2.1.btx_log.txt' 
       }
     ]
