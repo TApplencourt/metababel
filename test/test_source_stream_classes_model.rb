@@ -10,7 +10,7 @@ class TestSourceNoCommonField < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_stream_classes_model/1.btx_model.yaml',
-        btx_log_path: './test/cases_source_stream_classes_model/1.btx_log.txt' 
+        btx_log_path: './test/cases_source_stream_classes_model/1.btx_log.txt'
       }
     ]
   end
@@ -26,7 +26,7 @@ class TestSourceNoPayloadField < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_stream_classes_model/2.btx_model.yaml',
-        btx_log_path: './test/cases_source_stream_classes_model/2.btx_log.txt' 
+        btx_log_path: './test/cases_source_stream_classes_model/2.btx_log.txt'
       }
     ]
   end
@@ -41,12 +41,12 @@ class TestSourceNoCommonNoPayloadFields < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_stream_classes_model/3.btx_model.yaml',
+        btx_component_downtream_model: './test/cases_source_stream_classes_model/3.btx_model.yaml'
       }
     ]
 
     # Expected to fail at component generation
-    @btx_generation_validator = :refute_command
+    @btx_metababel_generation_fail = true
   end
 end
 
@@ -60,7 +60,7 @@ class TestSourceCommonPayloadFields < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_stream_classes_model/4.btx_model.yaml',
-        btx_log_path: './test/cases_source_stream_classes_model/4.btx_log.txt' 
+        btx_log_path: './test/cases_source_stream_classes_model/4.btx_log.txt'
       }
     ]
   end
@@ -76,7 +76,7 @@ class TestSourceHundredFields < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_stream_classes_model/5.btx_model.yaml',
-        btx_log_path: './test/cases_source_stream_classes_model/5.btx_log.txt' 
+        btx_log_path: './test/cases_source_stream_classes_model/5.btx_log.txt'
       }
     ]
   end
@@ -91,7 +91,7 @@ class TestSourceDetailsComparisonAllTypes < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_stream_classes_model/6.btx_model.yaml',
+        btx_component_downtream_model: './test/cases_source_stream_classes_model/6.btx_model.yaml'
       },
       {
         btx_component_type: 'SINK',
@@ -115,7 +115,7 @@ class TestSourceDetailsComparisonIntegersNoFieldRange < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_stream_classes_model/7.btx_model.yaml',
+        btx_component_downtream_model: './test/cases_source_stream_classes_model/7.btx_model.yaml'
       },
       {
         btx_component_type: 'SINK',
@@ -139,7 +139,7 @@ class TestSourceDetailsComparisonIntegers64DifferentBases < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_stream_classes_model/8.btx_model.yaml',
+        btx_component_downtream_model: './test/cases_source_stream_classes_model/8.btx_model.yaml'
       },
       {
         btx_component_type: 'SINK',
@@ -163,7 +163,7 @@ class TestSourceDetailsComparisonIntegers32DifferentBases < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_stream_classes_model/9.btx_model.yaml',
+        btx_component_downtream_model: './test/cases_source_stream_classes_model/9.btx_model.yaml'
       },
       {
         btx_component_type: 'SINK',

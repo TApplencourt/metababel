@@ -14,7 +14,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
       },
       {
         btx_component_type: 'SINK',
-        btx_component_upstream_model:  './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
+        btx_component_upstream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
 
         # TODO: Interersing, two separe components can not have the same plugging_name - component_name
         # even when the component type is different, e.g.,  sink.pluggin_name.component_name vs source.plugging_name.component_name
@@ -32,7 +32,6 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventSeventyThreeMessagesInOneEven
   include VariableClassAccessor
 
   def self.startup
-
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
@@ -41,10 +40,10 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventSeventyThreeMessagesInOneEven
       },
       {
         btx_component_type: 'SINK',
-        btx_component_upstream_model:  './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
+        btx_component_upstream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
         btx_component_name: 'sink_pluggin',
         btx_component_plugin_name: 'sink_component',
-        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/2.callbacks.c',
+        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/2.callbacks.c'
       }
     ]
   end
@@ -56,7 +55,6 @@ class TestSinkCaseTwoEventClasesOneCallbackRegisteredHundredMessagesOnBothEvents
   include VariableClassAccessor
 
   def self.startup
-
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
@@ -68,7 +66,7 @@ class TestSinkCaseTwoEventClasesOneCallbackRegisteredHundredMessagesOnBothEvents
         btx_component_upstream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
         btx_component_name: 'sink_pluggin',
         btx_component_plugin_name: 'sink_component',
-        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/3.callbacks.c',
+        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/3.callbacks.c'
       }
     ]
   end
@@ -85,9 +83,8 @@ class TestSinkUserRegistersTheWrongCallbacks < Test::Unit::TestCase
         btx_component_type: 'SINK',
         btx_component_upstream_model: './test/cases_sink_messages_count_integrity/4.btx_model.yaml',
         btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/4.callbacks.c',
+        btx_compilation_should_fail: true
       }
     ]
-
-    @btx_compilation_validator = :refute_command
   end
 end

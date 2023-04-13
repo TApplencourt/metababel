@@ -10,7 +10,7 @@ class TestSourceTypeStringEmptyValue < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_type_string/1.btx_model.yaml',
-        btx_log_path: './test/cases_source_type_string/1.1.btx_log.txt' 
+        btx_log_path: './test/cases_source_type_string/1.1.btx_log.txt'
       }
     ]
   end
@@ -26,7 +26,7 @@ class TestSourceTypeStringLong < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_type_string/1.btx_model.yaml',
-        btx_log_path: './test/cases_source_type_string/1.2.btx_log.txt' 
+        btx_log_path: './test/cases_source_type_string/1.2.btx_log.txt'
       }
     ]
   end
@@ -42,7 +42,7 @@ class TestSourceTypeStringNestingPattern < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_source_type_string/1.btx_model.yaml',
-        btx_log_path: './test/cases_source_type_string/1.3.btx_log.txt' 
+        btx_log_path: './test/cases_source_type_string/1.3.btx_log.txt'
       }
     ]
   end
