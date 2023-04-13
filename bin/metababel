@@ -4,9 +4,10 @@ require 'yaml'
 require 'optparse'
 require 'erb'
 require 'metababel'
+require 'fileutils'
 
 def validate_model(yaml)
-  raise "Invalide Model #{yaml}" unless yaml[:stream_classes].all? do |d|
+  raise "Invalid Model #{yaml}" unless yaml[:stream_classes].all? do |d|
                                           d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
                                             d2.key?(:payload_field_class)
                                           end
@@ -39,14 +40,14 @@ EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_cl
 end
 
 def erb_render_and_save(vars,
-                        basename, out_folder, out_name = nil)
+                        basename, out_folder, out_name: nil, prefix: 'btx_')
   template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
   # We need to trim line who contain only with space, because we indent our erb block <% %>
   # The trim_mode remove line only when it's start with the erb block
   # The regex remove the lines who are not indented
   # Maybe related to `https://github.com/ruby/erb/issues/24`
   str = ERB.new(template, trim_mode: '<>').result_with_hash(vars).gsub(/^ +$\n/, '')
-  File.open(File.join(out_folder, out_name || basename), 'w') do |f|
+  File.open(File.join(out_folder, "#{prefix}#{out_name || basename}"), 'w') do |f|
     f.write(str)
   end
 end
@@ -106,7 +107,7 @@ def wrote_creates(folder, t)
 end
 
 options = { plugin_name: 'metababel',
-            component_name: 'xprof' }
+            component_name: 'btx' }
 
 OptionParser.new do |opts|
   opts.banner = 'Usage: example.rb [options]'
@@ -150,9 +151,10 @@ OptionParser.new do |opts|
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
-
-folder = options[:folder] || "#{options[:component_type]}.#{options[:component_name]}"
-Dir.mkdir(folder) unless File.exist?(folder)
+# Babeltrace can be extended by plugins, which provide one or more component classes.
+base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
+folder = "#{base_folder}/metababel"
+FileUtils.mkdir_p(folder)
 
 d = options.filter { |k, _v| %i[plugin_name component_name].include?(k) }
 
@@ -168,9 +170,11 @@ if options.key?(:params)
   d[:params_definition] = body
 end
 
-erb_render_and_save(d, "#{options[:component_type].downcase}.c", folder, outputname = "#{options[:component_name]}.c")
+erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "#{options[:plugin_name]}.c")
 erb_render_and_save(d, 'component.h', folder)
 erb_render_and_save(d, 'params.c', folder)
+erb_render_and_save(d, 'params.h', folder)
+erb_render_and_save(d, 'metababel.h', folder, prefix: "")
 
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
