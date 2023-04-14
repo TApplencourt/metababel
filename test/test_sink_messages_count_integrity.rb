@@ -10,7 +10,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
-        btx_log_path: './test/cases_sink_messages_count_integrity/1.btx_log.txt'
+        btx_log_path: './test/cases_sink_messages_count_integrity/1.btx_log.txt',
       },
       {
         btx_component_type: 'SINK',
@@ -20,7 +20,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
         # even when the component type is different, e.g.,  sink.pluggin_name.component_name vs source.plugging_name.component_name
         btx_component_name: 'sink_pluggin',
         btx_component_plugin_name: 'sink_component',
-        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/1.callbacks.c'
+        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/1.callbacks.c',
       }
     ]
   end
