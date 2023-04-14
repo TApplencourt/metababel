@@ -1,29 +1,28 @@
 require 'base_test'
 
 class TestSinkUserDefinedCastType < Test::Unit::TestCase
-  include SinkTest
-  include SourceCastTypeSubtests
-  include SinkCastTypeSubtests
+  include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
 
   def self.startup
-    @btx_source_variables = {
-      btx_model_path: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
-      btx_log_path: './test/cases_sink_stream_classes_model/1.btx_log.txt',
-      btx_component_name: 'source',
-      btx_pluggin_name: 'metababel_source',
-      btx_component_path: './test/SOURCE.metababel_test',
-      btx_usr_data_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h'
-    }
-
-    @btx_sink_variables = {
-      btx_model_path: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
-      btx_callbacks_path: './test/cases_sink_stream_classes_model/1.callbacks.c',
-      btx_component_name: 'sink',
-      btx_pluggin_name: 'metababel_sink',
-      btx_component_path: './test/SINK.metababel_test',
-      btx_usr_data_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h'
-    }
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downtream_model: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
+        btx_component_usr_header_file: '1.usr_data_header.h',
+        btx_log_path: './test/cases_sink_stream_classes_model/1.btx_log.txt',
+        btx_file_usr_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h'
+      },
+      {
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
+        btx_component_usr_header_file: '1.usr_data_header.h',
+        btx_component_name: 'sink_pluggin',
+        btx_component_plugin_name: 'sink_component',
+        btx_file_usr_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h',
+        btx_file_usr_callbacks: './test/cases_sink_stream_classes_model/1.callbacks.c'
+      }
+    ]
   end
 end

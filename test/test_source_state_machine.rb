@@ -1,19 +1,19 @@
 require 'base_test'
 
 class TestSourceStateMachineAgain < Test::Unit::TestCase
-  include SourceTest
+  include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
 
   def self.startup
-    @btx_source_variables = {
-      btx_model_path: './test/cases_source_state_machine/1.btx_model.yaml',
-      btx_log_path: './test/cases_source_state_machine/1.btx_log.txt',
-      btx_component_type: 'SOURCE',
-      btx_component_name: 'source',
-      btx_pluggin_name: 'metababel_tests',
-      btx_callbacks_path: './test/cases_source_state_machine/1.callbacks.c',
-      btx_component_path: './test/SOURCE.metababel_test'
-    }
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downtream_model: './test/cases_source_state_machine/1.btx_model.yaml',
+        btx_file_usr_callbacks: './test/cases_source_state_machine/1.callbacks.c'
+      }
+    ]
+
+    @btx_output_validation = './test/cases_source_state_machine/1.btx_log.txt'
   end
 end
