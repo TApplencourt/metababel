@@ -16,7 +16,6 @@ struct common_data_s;
 typedef struct common_data_s common_data_t;
 
 // Dispatcher
-<% if ['FILTER', 'SINK'].include?(options[:component_type]) %>
 typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
                            const bt_event *message);
 
@@ -28,7 +27,6 @@ struct name_to_dispatcher_s {
 };
 typedef struct name_to_dispatcher_s name_to_dispatcher_t;
 
-<% end %>
 <% if ['SOURCE', 'FILTER'].include?(options[:component_type]) %>
 // Structure for Downstream Message
 struct el {
@@ -40,6 +38,7 @@ struct el {
 // Struct stored in the component via `bt_self_component_set_data`
 <% if options[:component_type] == 'SOURCE' %>
 struct common_data_s {
+  name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
   bt_trace *downstream_trace;
@@ -139,6 +138,16 @@ btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data);
 void btx_initialize_usr_data(void *btx_handle, void **usr_data);
 void btx_finalize_usr_data(void *btx_handle, void *usr_data);
 void btx_register_usr_callbacks(void *btx_handle);
+<% end %>
+
+<% component_dispatchers.each do |e| %>
+<%# The signature type of callbacks %>
+typedef void
+<%= e.name_sanitized %>_callback_f(void *btx_handle,
+                                   <%= e.args.map{ |s| s.type }.join(", ") %>);
+<%# The Function who register the callbacks to the dispatcher %>
+extern void btx_register_callbacks_<%= e.name_sanitized %>(
+    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
 <% end %>
 
 #ifdef __cplusplus
