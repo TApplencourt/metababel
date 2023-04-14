@@ -17,9 +17,6 @@ SOURCE_TEMPLATE = <<~TEXT
   #include <metababel/metababel.h>
   #include <stdbool.h>
 
-  void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
-  }
-
   btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data) {
       <%- data.each do | entry | -%>
       <%- entry.fetch(:times,1).times do -%>
@@ -29,6 +26,8 @@ SOURCE_TEMPLATE = <<~TEXT
       return BTX_SOURCE_END;
   }
 
+  void btx_register_usr_callbacks(void *btx_handle) {
+  }
 TEXT
 
 def sanitize_value(field_value, field_class)

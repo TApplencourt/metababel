@@ -23,3 +23,7 @@ btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data) {
     return BTX_SOURCE_OK;
   return BTX_SOURCE_END;
 }
+
+void btx_register_usr_callbacks(void *btx_handle) {
+  btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
+}

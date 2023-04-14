@@ -137,8 +137,9 @@ btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data);
 <% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
 void btx_initialize_usr_data(void *btx_handle, void **usr_data);
 void btx_finalize_usr_data(void *btx_handle, void *usr_data);
-void btx_register_usr_callbacks(void *btx_handle);
 <% end %>
+
+void btx_register_usr_callbacks(void *btx_handle);
 
 <% component_dispatchers.each do |e| %>
 <%# The signature type of callbacks %>
