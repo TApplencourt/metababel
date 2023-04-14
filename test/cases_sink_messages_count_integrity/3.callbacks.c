@@ -34,5 +34,6 @@ static void event_1_0(void *btx_handle, void *usr_data, bt_bool cf_1, const char
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
+  btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
   btx_register_callbacks_event_1(btx_handle, &event_1_0);
 }
