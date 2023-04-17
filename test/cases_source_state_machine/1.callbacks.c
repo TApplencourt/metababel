@@ -15,13 +15,14 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
   data->count = 4;
 }
 
-btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data) {
+void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t* status) {
   usr_data_t *data = (usr_data_t *)usr_data;
   btx_push_message_event_2(btx_handle, data->i);
   data->i++;
   if (data->i < data->count)
-    return BTX_SOURCE_OK;
-  return BTX_SOURCE_END;
+    *status = BTX_SOURCE_OK;
+  else
+    *status = BTX_SOURCE_END;
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {

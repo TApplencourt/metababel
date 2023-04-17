@@ -17,13 +17,13 @@ SOURCE_TEMPLATE = <<~TEXT
   #include <metababel/metababel.h>
   #include <stdbool.h>
 
-  btx_source_status_t btx_push_usr_messages(void *btx_handle, void *usr_data) {
+  void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t *status) {
       <%- data.each do | entry | -%>
       <%- entry.fetch(:times,1).times do -%>
       btx_push_message_<%= entry[:name] %>(btx_handle, <%= entry[:field_values].join(",") %>);
       <%- end -%>
       <%- end -%>
-      return BTX_SOURCE_END;
+      *status = BTX_SOURCE_END;
   }
 
   void btx_register_usr_callbacks(void *btx_handle) {

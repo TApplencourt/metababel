@@ -39,9 +39,10 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                                    capacity, count);
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
     }
-    btx_source_status_t status = btx_push_usr_messages(
+    btx_source_status_t status;
+    btx_push_usr_messages(
         message_iterator_private_data->common_data,
-        message_iterator_private_data->common_data->usr_data);
+        message_iterator_private_data->common_data->usr_data, &status);
     if (status == BTX_SOURCE_END) {
       btx_push_messages_stream_end(self_message_iterator,
                                    message_iterator_private_data);
