@@ -2,9 +2,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
-}
-
 static void event_1_0(void *btx_handle, void *usr_data, const char *cf_2) 
 {}
 

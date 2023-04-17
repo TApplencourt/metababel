@@ -132,11 +132,7 @@ struct common_data_s {
 
 /* Users functions to implement */
 <% if options[:component_type] == 'SOURCE'  %>
-void btx_initialize_usr_data(void *btx_handle, void **usr_data);
 void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t* status);
-<% elsif ['FILTER', 'SINK'].include?(options[:component_type]) %>
-void btx_initialize_usr_data(void *btx_handle, void **usr_data);
-void btx_finalize_usr_data(void *btx_handle, void *usr_data);
 <% end %>
 
 void btx_register_usr_callbacks(void *btx_handle);

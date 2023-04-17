@@ -111,7 +111,10 @@ end
 
 def wrote_component(d, folder)
   component_dispatchers = [EventInfo.new('initialize_usr_data',
-                                         [GeneratedArg.new('void **', '&common_data->usr_data')])]
+                                         [GeneratedArg.new('void **', '&common_data->usr_data')]),
+                           EventInfo.new('finalize_usr_data',
+                                         [GeneratedArg.new('void *', 'common_data->usr_data')])
+                          ]
   d2 = { component_dispatchers: component_dispatchers,
          event_name: 'dummy_event' }
 
