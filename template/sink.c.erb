@@ -67,7 +67,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
     name_to_dispatcher_t *s = NULL;
     lookup_dispatcher(common_data, event_class, &s);
     if (s)
-      (*(s->dispatcher))(s->callbacks, common_data, event);
+      (*((dispatcher_t (*)) (s->dispatcher)))(s->callbacks, common_data, event);
 
     bt_message_put_ref(message);
   }

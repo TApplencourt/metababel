@@ -15,13 +15,9 @@ extern "C" {
 struct common_data_s;
 typedef struct common_data_s common_data_t;
 
-// Dispatcher
-typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
-                           const bt_event *message);
-
 struct name_to_dispatcher_s {
   const char *name;
-  dispatcher_t *dispatcher;
+  void *dispatcher;
   UT_array *callbacks;
   UT_hash_handle hh;
 };
