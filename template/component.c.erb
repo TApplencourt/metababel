@@ -3,7 +3,8 @@
 #include <assert.h>
 #include <babeltrace2/babeltrace.h>
 #include <metababel/btx_component.h>
-
+#include <stdio.h>
+#include <stdbool.h>
 <% component_dispatchers.each do |e| %>
 
 static void
@@ -36,9 +37,10 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
     utarray_new(s->callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
+    // 3. Add the callbacks to the array
+    utarray_push_back(s->callbacks, &callback);
+  } else {
+    assert(false && "Only one callbacks for <%= e.name_sanitized %>");
   }
-  // Add the callbacks to the array
-  utarray_push_back(s->callbacks, &callback);
 }
-
 <% end %>
