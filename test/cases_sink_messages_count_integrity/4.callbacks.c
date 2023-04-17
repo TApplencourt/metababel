@@ -1,6 +1,4 @@
-#include <assert.h>
 #include <metababel/metababel.h>
-#include <stdio.h>
 
 static void event_1_0(void *btx_handle, void *usr_data, const char *cf_2) {}
 

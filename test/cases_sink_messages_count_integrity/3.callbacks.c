@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <metababel/metababel.h>
-#include <stdio.h>
 
 struct data_s {
   uint64_t event_1_calls_count;
