@@ -7,9 +7,9 @@ module Assertions
   end
 
   def run_command(cmd, refute: false)
-    stdout_str, _, exit_code = Open3.capture3(cmd)
+    stdout_str, stdout_err, exit_code = Open3.capture3(cmd)
     # Sorry, it's a little too smart....
-    assert((exit_code == 0) != refute, 'Wrong Exit Code')
+    assert((exit_code == 0) != refute, "Wrong Exit code #{stdout_err}")
     stdout_str
   end
 end
@@ -41,7 +41,7 @@ def get_component_compilation_command(component)
   command = <<~TEXT
     ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so
                #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-               -I ./test/include/ -I #{component[:btx_component_path]}/#{' '}
+               -I ./include -I #{component[:btx_component_path]}/#{' '}
                $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
                ${CFLAGS:='-Wall -Werror'} -fpic --shared
   TEXT

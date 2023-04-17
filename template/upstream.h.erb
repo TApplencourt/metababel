@@ -3,7 +3,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-<% dispatchers.each do |e| %>
+
+// Dispatcher
+typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
+                           const bt_event *message);
+
+<% event_dispatchers.each do |e| %>
 <%# The signature type of callbacks %>
 typedef void
 <%= e.name_sanitized %>_callback_f(void *btx_handle, void *usr_data,
