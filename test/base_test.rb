@@ -15,12 +15,15 @@ module Assertions
 end
 
 def get_component_with_default_values(component)
-  {
-    btx_component_name: 'component_name',
+
+  default = {
+    btx_component_name: "component_name",
     btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
-    btx_component_plugin_name: 'pluggin_name',
+    btx_component_plugin_name: "plugin_name",
     btx_compile: true
-  }.update(component)
+  }
+  
+  default.update(component)
 end
 
 def get_component_generation_command(component)
@@ -31,9 +34,10 @@ def get_component_generation_command(component)
     btx_component_plugin_name: '-p',
     btx_component_downtream_model: '-d',
     btx_component_upstream_model: '-u',
+    btx_component_upstream_models: '-u',
     btx_component_usr_header_file: '-i'
   }
-  str_ = component.filter_map { |k, v| "#{args[k]} #{v}" if args.key?(k) }.join(' ')
+  str_ = component.filter_map { |k, v| "#{args[k]} #{ k.id2name.end_with?('s') ? v.join(',') : v }" if args.key?(k) }.join(' ')
   "ruby -I./lib ./bin/metababel #{str_}"
 end
 
