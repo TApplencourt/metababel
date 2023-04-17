@@ -39,10 +39,19 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                                    capacity, count);
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
     }
-    btx_source_status_t status;
-    btx_push_usr_messages(
-        message_iterator_private_data->common_data,
-        message_iterator_private_data->common_data->usr_data, &status);
+
+    btx_source_status_t status = BTX_SOURCE_END;
+
+    /* Call User Data */
+    name_to_dispatcher_t *s = NULL;
+    HASH_FIND_STR(
+        message_iterator_private_data->common_data->name_to_dispatcher,
+        "push_usr_messages", s);
+    if (s)
+      (*((btx_dispatch_push_usr_messages_f(*))(s->dispatcher)))(
+          s->callbacks, message_iterator_private_data->common_data,
+          message_iterator_private_data->common_data->usr_data, &status);
+
     if (status == BTX_SOURCE_END) {
       btx_push_messages_stream_end(self_message_iterator,
                                    message_iterator_private_data);
@@ -82,7 +91,8 @@ source_initialize(bt_self_component_source *self_component_source,
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
   if (s)
-    (*(s->dispatcher))(s->callbacks, common_data, NULL);
+    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
+        s->callbacks, common_data, &common_data->usr_data);
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =

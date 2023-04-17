@@ -1,5 +1,5 @@
-#include <metababel/metababel.h>
 #include <inttypes.h>
+#include <metababel/metababel.h>
 
 struct usr_data_s {
   uint64_t i;
@@ -15,7 +15,8 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
   data->count = 4;
 }
 
-void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t* status) {
+void btx_push_usr_messages(void *btx_handle, void *usr_data,
+                           btx_source_status_t *status) {
   usr_data_t *data = (usr_data_t *)usr_data;
   btx_push_message_event_2(btx_handle, data->i);
   data->i++;
@@ -26,5 +27,7 @@ void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
+  btx_register_callbacks_initialize_usr_data(btx_handle,
+                                             &btx_initialize_usr_data);
+  btx_register_callbacks_push_usr_messages(btx_handle, &btx_push_usr_messages);
 }

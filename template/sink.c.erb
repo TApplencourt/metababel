@@ -93,7 +93,8 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
   if (s)
-    (*(s->dispatcher))(s->callbacks, common_data, NULL);
+    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
+        s->callbacks, common_data, &common_data->usr_data);
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
       bt_self_component_sink_as_self_component(self_component_sink),
@@ -119,9 +120,10 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(common_data->name_to_dispatcher, "finalize_usr_data", s);
   if (s)
-    (*(s->dispatcher))(s->callbacks, common_data, NULL);
+    (*((btx_dispatch_finalize_usr_data_f(*))(s->dispatcher)))(
+        s->callbacks, common_data, common_data->usr_data);
 
-  //btx_finalize_usr_data((void *)common_data, common_data->usr_data);
+  // btx_finalize_usr_data((void *)common_data, common_data->usr_data);
   bt_value_put_ref(common_data->params);
 
   /* Free the allocated structure */

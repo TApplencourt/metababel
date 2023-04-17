@@ -109,12 +109,20 @@ def wrote_creates(folder, t)
   erb_render_and_save(d, 'downstream.c', folder)
 end
 
-def wrote_component(d, folder)
+def wrote_component(options, d, folder)
+
   component_dispatchers = [EventInfo.new('initialize_usr_data',
-                                         [GeneratedArg.new('void **', '&common_data->usr_data')]),
+                                         [GeneratedArg.new('void **', 'usr_data_p')]),
                            EventInfo.new('finalize_usr_data',
-                                         [GeneratedArg.new('void *', 'common_data->usr_data')])
+                                         [GeneratedArg.new('void *', 'usr_data')]),
                           ]
+
+  if options[:component_type] == "SOURCE"
+     component_dispatchers <<  EventInfo.new('push_usr_messages',
+                                         [GeneratedArg.new('void *', 'usr_data'),
+                                          GeneratedArg.new('btx_source_status_t*', 'status') ])
+  end
+
   d2 = { component_dispatchers: component_dispatchers,
          event_name: 'dummy_event' }
 
@@ -192,7 +200,7 @@ erb_render_and_save(d, 'params.c', folder)
 erb_render_and_save(d, 'params.h', folder)
 erb_render_and_save(d, 'metababel.h', folder, prefix: '')
 
-wrote_component(d, folder)
+wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 

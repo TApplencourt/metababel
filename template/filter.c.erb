@@ -220,11 +220,9 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Call User Data */
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
-  if (s) {
-    (*(s->dispatcher))(s->callbacks, common_data, NULL);
-  } else {
-    btx_initialize_usr_data((void *)common_data, &common_data->usr_data);
-  }
+  if (s)
+    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(s->callbacks,
+                                                                common_data);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(

@@ -27,6 +27,7 @@ SOURCE_TEMPLATE = <<~TEXT
   }
 
   void btx_register_usr_callbacks(void *btx_handle) {
+    btx_register_callbacks_push_usr_messages(btx_handle, &btx_push_usr_messages);
   }
 TEXT
 
