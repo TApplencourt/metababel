@@ -8,13 +8,6 @@
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-sink-cmp-cls.html
  */
 
-static void lookup_dispatcher(common_data_t *common_data,
-                              const bt_event_class *event_class,
-                              name_to_dispatcher_t **s) {
-  const char *class_name = bt_event_class_get_name(event_class);
-  HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
-}
-
 /*
  * Consume Message
  */
@@ -64,10 +57,12 @@ sink_consume(bt_self_component_sink *self_component_sink) {
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
+    /* Call dispatcher */
     name_to_dispatcher_t *s = NULL;
-    lookup_dispatcher(common_data, event_class, &s);
+    const char *class_name = bt_event_class_get_name(event_class);
+    HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
     if (s)
-      (*((dispatcher_t (*)) (s->dispatcher)))(s->callbacks, common_data, event);
+      (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event);
 
     bt_message_put_ref(message);
   }
