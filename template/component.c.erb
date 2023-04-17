@@ -4,7 +4,17 @@
 #include <babeltrace2/babeltrace.h>
 #include <metababel/btx_component.h>
 #include <stdbool.h>
+// stdio needed because `params_definition` contain fprintf
 #include <stdio.h>
+
+void btx_populate_params(common_data_t *common_data) {
+  const bt_value *params = common_data->params;
+  btx_params_t *usr_params = common_data->btx_params;
+  (void)params;
+  (void)usr_params;
+  <%= params_definition %>
+}
+
 <% component_dispatchers.each do |e| %>
 
 static void btx_dispatch_<%= e.name_sanitized %>(

@@ -5,14 +5,14 @@ extern "C" {
 #endif
 
 // Params
-struct params_s {
+struct btx_params_s {
   <%= params_declaration %>
 
 }; <%# Need empty line for nice code gen %>
-typedef struct params_s params_t;
+typedef struct btx_params_s btx_params_t;
 
 /* Implemented by params.c */
-void btx_read_params(void *btx_handle, params_t *usr_params);
+void btx_populate_params(void *btx_handle, btx_params_t *usr_params);
 
 #ifdef __cplusplus
 }

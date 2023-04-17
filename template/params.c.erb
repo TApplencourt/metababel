@@ -4,9 +4,10 @@
 // stdio needed because `params_definition` contain fprintf
 #include <stdio.h>
 
-void btx_read_params(void *btx_handle, params_t *usr_params) {
+void btx_populate_params(common_data_t *common_data_t) {
   common_data_t *common_data = (common_data_t *)btx_handle;
   const bt_value *params = common_data->params;
+   btx_params_t *usr_params = common_data->btx_params;
   (void)params;
   <%= params_definition %>
 }

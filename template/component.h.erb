@@ -3,9 +3,6 @@
 #include "utarray.h"
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
-<% if options.key?(:usr_data_header) %>
-#include "<%= options[:usr_data_header] %>"
-<% end %>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +11,19 @@ extern "C" {
 // Forward declaration of common_data
 struct common_data_s;
 typedef struct common_data_s common_data_t;
+
+// Params
+struct btx_params_s {
+  <%= params_declaration %>
+
+}; <%# Need empty line for nice code gen %>
+typedef struct btx_params_s btx_params_t;
+
+void btx_populate_params(common_data_t *common_data_t);
+
+<% if options.key?(:usr_data_header) %>
+#include "<%= options[:usr_data_header] %>"
+<% end %>
 
 struct name_to_dispatcher_s {
   const char *name;
@@ -37,6 +47,7 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
+  btx_params_t* btx_params;
   bt_trace *downstream_trace;
   /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
@@ -74,6 +85,7 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
+  btx_params_t* btx_params;
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
@@ -121,6 +133,7 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
+  btx_params_t* btx_params;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };

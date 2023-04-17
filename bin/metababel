@@ -115,6 +115,9 @@ def wrote_component(options, d, folder)
                                          [GeneratedArg.new('void **', 'usr_data_p')]),
                            EventInfo.new('finalize_usr_data',
                                          [GeneratedArg.new('void *', 'usr_data')]),
+                           EventInfo.new('read_params',
+                                         [GeneratedArg.new('void *', 'usr_data'),
+                                          GeneratedArg.new('btx_params_t *', 'usr_params')])
                           ]
 
   if options[:component_type] == "SOURCE"
@@ -196,8 +199,6 @@ if options.key?(:params)
 end
 
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "#{options[:plugin_name]}.c")
-erb_render_and_save(d, 'params.c', folder)
-erb_render_and_save(d, 'params.h', folder)
 erb_render_and_save(d, 'metababel.h', folder, prefix: '')
 
 wrote_component(options, d, folder)

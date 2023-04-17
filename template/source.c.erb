@@ -83,16 +83,31 @@ source_initialize(bt_self_component_source *self_component_source,
   /* Allocate a private data structure */
   common_data_t *common_data = calloc(1, sizeof(common_data_t));
   common_data->params = params;
+  // Read parameters
+  btx_populate_params(common_data);
   bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
   /* Call User Data */
+  {
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
   if (s)
     (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
         s->callbacks, common_data, &common_data->usr_data);
+  }
+
+  /* Call Parameter */
+  {
+
+  name_to_dispatcher_t *s = NULL;
+  HASH_FIND_STR(common_data->name_to_dispatcher, "read_params", s);
+
+  if (s)
+    (*((btx_dispatch_read_params_f(*))(s->dispatcher)))(
+        s->callbacks, common_data, common_data->usr_data, common_data->btx_params);
+  }
 
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
