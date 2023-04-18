@@ -20,7 +20,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
         # even when the component type is different, e.g.,  sink.pluggin_name.component_name vs source.plugging_name.component_name
         btx_component_name: 'sink_pluggin',
         btx_component_plugin_name: 'sink_component',
-        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/1.callbacks.c',
+        btx_file_usr_callbacks: './test/cases_sink_messages_count_integrity/1.callbacks.c'
       }
     ]
   end
