@@ -10,7 +10,7 @@ struct data_s {
 typedef struct data_s data_t;
 
 void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
-  data_t *data = calloc(sizeof(data_t *));
+  data_t *data = calloc(1,sizeof(data_t *));
   *usr_data = data;
 }
 
@@ -35,7 +35,7 @@ static void event_2_0(void *btx_handle, void *usr_data, uint64_t pf_1) {
 
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
-  btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data)
+  btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data);
   btx_register_callbacks_event_1(btx_handle, &event_1_0);
   btx_register_callbacks_event_2(btx_handle, &event_2_0);
 }
