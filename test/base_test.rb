@@ -7,18 +7,18 @@ module Assertions
   end
 
   def run_command(cmd, refute: false)
-    stdout_str, stdout_err, exit_code = Open3.capture3(cmd)
+    stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
     # Sorry, it's a little too smart....
-    assert((exit_code == 0) != refute, "Wrong Exit code #{stdout_err}")
+    assert((exit_code == 0) != refute, stderr_str)
     stdout_str
   end
 end
 
 def get_component_with_default_values(component)
   {
-    btx_component_name: 'component_name',
+    btx_component_name: "component_name",
     btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
-    btx_component_plugin_name: 'pluggin_name',
+    btx_component_plugin_name: "plugin_name",
     btx_compile: true
   }.update(component)
 end
@@ -33,7 +33,7 @@ def get_component_generation_command(component)
     btx_component_upstream_model: '-u',
     btx_component_usr_header_file: '-i'
   }
-  str_ = component.filter_map { |k, v| "#{args[k]} #{v}" if args.key?(k) }.join(' ')
+  str_ = component.filter_map { |k, v| "#{args[k]} #{ [v].flatten.join(',') }" if args.key?(k) }.join(' ')
   "ruby -I./lib ./bin/metababel #{str_}"
 end
 
@@ -48,19 +48,31 @@ def get_component_compilation_command(component)
   command.split.join(' ')
 end
 
-def get_graph_execution_command(*components)
-  components_paths = components.map { |c| c[:btx_component_path] }
-  components_graph = components.map do |c|
-    "--component=#{c[:btx_component_type].downcase}.#{c[:btx_component_plugin_name]}.#{c[:btx_component_name]}"
+def get_graph_execution_command(components, connections)
+  plugin_path = components.map { |c| c[:btx_component_path] }
+  components_list = components.map do |c|
+    uuid = ['type','plugin_name','name'].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
+    uuid_label=[c[:btx_component_label],uuid].compact.join(':')
+    "--component=#{uuid_label}"
   end
+  
+  components_connections = connections.map { |c| "--connect=#{c}" }
 
-  "babeltrace2 --plugin-path=#{components_paths.join(':')} #{components_graph.join(' ')}"
+  command = <<~TEXT
+  babeltrace2 --plugin-path=#{plugin_path.join(':')}
+              #{components_connections.empty? ? '' : 'run'} 
+              #{components_list.join(' ')} 
+              #{components_connections.join(' ')}
+  TEXT
+  command.split.join(' ')
 end
 
 def usr_assert_files(component)
   # Validate models
   component.keys.grep(/_model$/) do |key|
-    assert_file_exists(component[key])
+    [ component[key] ].flatten.each do |file_name| 
+      assert_file_exists(file_name)
+    end 
   end
 
   # Validate files
@@ -123,7 +135,7 @@ module GenericTest
     return if sanitized_components.empty?
 
     # Run the Graph
-    stdout_str = run_command(get_graph_execution_command(*sanitized_components))
+    stdout_str = run_command(get_graph_execution_command(sanitized_components, btx_connect))
     # Output validation
     return unless btx_output_validation
 
@@ -133,7 +145,7 @@ module GenericTest
 end
 
 module VariableAccessor
-  attr_reader :btx_components, :btx_output_validation
+  attr_reader :btx_components, :btx_output_validation, :btx_connect
 
   def shutdown
     # Sanitize provide default attributes such as btx_component_path if not provided by the user.
@@ -147,6 +159,10 @@ module VariableClassAccessor
   def btx_components
     self.class.btx_components
   end
+
+  def btx_connect
+    self.class.btx_connect ? self.class.btx_connect : []
+  end 
 
   def btx_output_validation
     self.class.btx_output_validation
