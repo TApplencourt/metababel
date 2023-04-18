@@ -9,7 +9,7 @@ class TestSourceTypeBoolTrueValue < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_type_bool/1.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_source_type_bool/1.btx_model.yaml',
         btx_log_path: './test/cases_source_type_bool/1.1.btx_log.txt'
       }
     ]
@@ -25,7 +25,7 @@ class TestSourceTypeBoolFalseValue < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_type_bool/1.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_source_type_bool/1.btx_model.yaml',
         btx_log_path: './test/cases_source_type_bool/1.2.btx_log.txt'
       }
     ]

@@ -9,7 +9,7 @@ require 'base_test'
 #     @btx_components = [
 #       {
 #         btx_component_type: 'SOURCE',
-#         btx_component_downtream_model: './test/cases_source_state_machine/1.btx_model.yaml',
+#         btx_component_downstream_model: './test/cases_source_state_machine/1.btx_model.yaml',
 #         btx_file_usr_callbacks: './test/cases_source_state_machine/1.callbacks.c'
 #       }
 #     ]
@@ -27,7 +27,7 @@ class TestSourceStateMachinePushMessageInitialize < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downtream_model: './test/cases_source_state_machine/1.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_source_state_machine/1.btx_model.yaml',
         btx_file_usr_callbacks: './test/cases_source_state_machine/2.callbacks.c'
       }
     ]
@@ -45,7 +45,7 @@ end
 #     @btx_components = [
 #       {
 #         btx_component_type: 'SOURCE',
-#         btx_component_downtream_model: './test/cases_source_state_machine/1.btx_model.yaml',
+#         btx_component_downstream_model: './test/cases_source_state_machine/1.btx_model.yaml',
 #         btx_file_usr_callbacks: './test/cases_source_state_machine/3.callbacks.c'
 #       }
 #     ]

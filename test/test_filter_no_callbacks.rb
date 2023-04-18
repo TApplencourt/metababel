@@ -12,7 +12,7 @@ class TestFilterNoCallbacks < Test::Unit::TestCase
         btx_component_name: 'component',
         btx_component_plugin_name: 'plugin',
         btx_component_path: './test/SOURCE.plugin.component',
-        btx_component_downtream_model: './test/cases_filter_no_callbacks/1.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_filter_no_callbacks/1.btx_model.yaml',
         btx_log_path: './test/cases_filter_no_callbacks/1.btx_log.txt'
       },
       {
@@ -20,7 +20,7 @@ class TestFilterNoCallbacks < Test::Unit::TestCase
         btx_component_name: 'filter_component',
         btx_component_plugin_name: 'filter_plugin',
         btx_component_upstream_model: './test/cases_filter_no_callbacks/1.btx_model.yaml',
-        btx_component_downtream_model: './test/cases_filter_no_callbacks/1.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_filter_no_callbacks/1.btx_model.yaml',
         btx_file_usr_callbacks: './test/cases_filter_no_callbacks/1.callbacks.c'
       }
     ]
