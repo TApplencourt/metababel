@@ -45,7 +45,7 @@ def get_component_compilation_command(component)
   command = <<~TEXT
     ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so
                #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-               -I ./test/include/ -I #{component[:btx_component_path]}/#{' '}
+               -I ./include -I #{component[:btx_component_path]}/#{' '}
                $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
                ${CFLAGS:='-Wall -Werror'} -fpic --shared
   TEXT

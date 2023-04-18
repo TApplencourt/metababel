@@ -8,12 +8,6 @@
 /* Loosely inspired by
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-flt-cmp-cls.html
  */
-static void lookup_dispatcher(common_data_t *common_data,
-                              const bt_event_class *event_class,
-                              name_to_dispatcher_t **s) {
-  const char *class_name = bt_event_class_get_name(event_class);
-  HASH_FIND_STR(common_data->name_to_dispatcher, class_name, *s);
-}
 
 static const char *get_port_name(uint64_t current) {
   int num_len = snprintf(NULL, 0, "in%ld", current);
@@ -112,9 +106,10 @@ filter_message_iterator_next_processing_reading(
 
     /* Call dispatcher or forward message downstream */
     name_to_dispatcher_t *s = NULL;
-    lookup_dispatcher(common_data, event_class, &s);
+    const char *class_name = bt_event_class_get_name(event_class);
+    HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
     if (s) {
-      (*(s->dispatcher))(s->callbacks, common_data, event);
+      (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event);
       /* The message have been consumed, we can discard it */
       bt_message_put_ref(upstream_message);
     } else {
@@ -217,8 +212,12 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
-  /* Register User Data */
-  btx_initialize_usr_data((void *)common_data, &common_data->usr_data);
+  /* Call User Data */
+  name_to_dispatcher_t *s = NULL;
+  HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
+  if (s)
+    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(s->callbacks,
+                                                                common_data);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(

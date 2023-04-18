@@ -8,10 +8,10 @@ require 'fileutils'
 
 def validate_model(yaml)
   raise "Invalid Model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                          d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
-                                            d2.key?(:payload_field_class)
-                                          end
-                                        end
+                                         d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
+                                           d2.key?(:payload_field_class)
+                                         end
+                                       end
 end
 
 class Hash
@@ -62,13 +62,16 @@ class Babeltrace2Gen::BTTraceClass
   end
 end
 
+class GeneratedArg < Struct.new(:type, :name)
+end
+
 # We preprent an empty new line from the body as a hack, to correct the indentation
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_dispatchers(folder, t)
+def wrote_event_dispatchers(folder, t)
   event_name = 'event'
-  dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
+  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -76,7 +79,7 @@ def wrote_dispatchers(folder, t)
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  d = { dispatchers: dispatchers,
+  d = { event_dispatchers: event_dispatchers,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
@@ -104,6 +107,27 @@ def wrote_creates(folder, t)
 
   erb_render_and_save(d, 'downstream.h', folder)
   erb_render_and_save(d, 'downstream.c', folder)
+end
+
+def wrote_component(options, d, folder)
+
+  component_dispatchers = [EventInfo.new('initialize_usr_data',
+                                         [GeneratedArg.new('void **', 'usr_data_p')]),
+                           EventInfo.new('finalize_usr_data',
+                                         [GeneratedArg.new('void *', 'usr_data')]),
+                          ]
+
+  if options[:component_type] == "SOURCE"
+     component_dispatchers <<  EventInfo.new('push_usr_messages',
+                                         [GeneratedArg.new('void *', 'usr_data'),
+                                          GeneratedArg.new('btx_source_status_t*', 'status') ])
+  end
+
+  d2 = { component_dispatchers: component_dispatchers,
+         event_name: 'dummy_event' }
+
+  erb_render_and_save(d2.update(d), 'component.h', folder)
+  erb_render_and_save(d2.update(d), 'component.c', folder)
 end
 
 options = { plugin_name: 'metababel',
@@ -151,6 +175,7 @@ OptionParser.new do |opts|
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
+
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
 folder = "#{base_folder}/metababel"
@@ -171,11 +196,11 @@ if options.key?(:params)
 end
 
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "#{options[:plugin_name]}.c")
-erb_render_and_save(d, 'component.h', folder)
 erb_render_and_save(d, 'params.c', folder)
 erb_render_and_save(d, 'params.h', folder)
-erb_render_and_save(d, 'metababel.h', folder, prefix: "")
+erb_render_and_save(d, 'metababel.h', folder, prefix: '')
 
+wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 
@@ -194,5 +219,5 @@ if %w[FILTER SINK].include?(options[:component_type])
   end
   validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_dispatchers(folder, t)
+  wrote_event_dispatchers(folder, t)
 end
