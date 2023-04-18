@@ -53,7 +53,6 @@ def get_graph_execution_command(components, connections)
   components_list = components.map do |c|
     uuid = ['type','plugin_name','name'].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
     uuid_label=[c["btx_component_label"],uuid].compact.join(':')
-    puts uuid
     "--component=#{uuid_label}"
   end
   
