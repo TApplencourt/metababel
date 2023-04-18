@@ -54,10 +54,13 @@ end
 
 def get_graph_execution_command(components, connections)
   components_paths = components.map { |c| c[:btx_component_path] }
-  components_list = components.map do |c|
-    btx_component_label = c[:btx_component_label] ? "#{c[:btx_component_label]}:" : ''
-    "--component=#{btx_component_label}#{c[:btx_component_type].downcase}.#{c[:btx_component_plugin_name]}.#{c[:btx_component_name]}"
-  end
+ components_list = components.map do |c|
+	uuid = ["type", "plugin_name","component_name"].map { |l| c["btx_component_#{l}".to_s].downcase }.join('.')
+	uuid_label=[c["btx_component_label"],uuid].compact.join(':')
+	"--component=#{uuid_label}"
+end
+  
+  
 
   components_connections = connections.map { |c| "--connect=\"#{c}\"" }
   "babeltrace2 --plugin-path=#{components_paths.join(':')} \
