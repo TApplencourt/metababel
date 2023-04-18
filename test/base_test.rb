@@ -51,13 +51,15 @@ end
 def get_graph_execution_command(components, connections)
   plugin_path = components.map { |c| c[:btx_component_path] }
   components_list = components.map do |c|
-    btx_component_label = c[:btx_component_label] ? "#{c[:btx_component_label]}:" : ''
-    "--component=#{btx_component_label}#{c[:btx_component_type].downcase}.#{c[:btx_component_plugin_name]}.#{c[:btx_component_name]}"
+    uuid = ['type','plugin_name','name'].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
+    uuid_label=[c["btx_component_label"],uuid].compact.join(':')
+    puts uuid
+    "--component=#{uuid_label}"
   end
-
+  
   components_connections = connections.map { |c| "--connect=\"#{c}\"" }
   "babeltrace2 --plugin-path=#{plugin_path.join(':')} \
-    #{connections.empty? ? '' : 'run'} #{components_list.join(' ')} #{components_connections.join(' ')}"
+    #{components_connections.empty? ? '' : 'run'} #{components_list.join(' ')} #{components_connections.join(' ')}"
 end
 
 def usr_assert_files(component)
