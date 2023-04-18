@@ -10,7 +10,7 @@ class TestSinkCaseTwoEventClasesOneCallbackPerEventHundredMessagesOnBothEvents <
       {
         btx_component_type: 'SOURCE',
         btx_component_downtream_model: './test/cases_sink_messages_count_integrity/1.btx_model.yaml',
-        btx_log_path: './test/cases_sink_messages_count_integrity/1.btx_log.txt',
+        btx_log_path: './test/cases_sink_messages_count_integrity/1.btx_log.txt'
       },
       {
         btx_component_type: 'SINK',
