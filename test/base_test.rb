@@ -9,7 +9,7 @@ module Assertions
   def run_command(cmd, refute: false)
     stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
     # Sorry, it's a little too smart....
-    assert((exit_code == 0) != refute, stderr_str)
+    assert((exit_code == 0) != refute, "cmd:#{cmd}\nstderr_str:#{stderr_str}")
     stdout_str
   end
 end
