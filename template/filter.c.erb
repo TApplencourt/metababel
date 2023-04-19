@@ -21,6 +21,50 @@ static const char *get_port_name(uint64_t current) {
  */
 
 static inline bt_message_iterator_class_next_method_status
+filter_message_iterator_next_initializing(
+    bt_self_message_iterator *self_message_iterator,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+  /* Retrieve our private data from the message iterator's user data */
+  btx_message_iterator_t *message_iterator_private_data =
+      bt_self_message_iterator_get_data(self_message_iterator);
+
+  // Call Initialize user callback
+  {
+    name_to_dispatcher_t *s = NULL;
+    HASH_FIND_STR(
+        message_iterator_private_data->common_data->name_to_dispatcher,
+        "initialize_usr_data", s);
+    if (s)
+      (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
+          s->callbacks, message_iterator_private_data->common_data,
+          &message_iterator_private_data->common_data->usr_data);
+  }
+
+  // Call Parameter
+  {
+
+    name_to_dispatcher_t *s = NULL;
+    HASH_FIND_STR(
+        message_iterator_private_data->common_data->name_to_dispatcher,
+        "read_params", s);
+
+    if (s)
+      (*((btx_dispatch_read_params_f(*))(s->dispatcher)))(
+          s->callbacks, message_iterator_private_data->common_data,
+          message_iterator_private_data->common_data->usr_data,
+          message_iterator_private_data->common_data->btx_params);
+  }
+
+  // We need to transition in the procesing state
+  message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
+  if (message_iterator_private_data->queue)
+    message_iterator_private_data->processing_state =
+        BTX_FILTER_PROCESSING_STATE_SENDING;
+
+  return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
+}
+
+static inline bt_message_iterator_class_next_method_status
 filter_message_iterator_next_processing_sending(
     bt_self_message_iterator *self_message_iterator,
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
@@ -72,9 +116,8 @@ filter_message_iterator_next_processing_reading(
       name_to_dispatcher_t *s = NULL;
       HASH_FIND_STR(common_data->name_to_dispatcher, "finalize_usr_data", s);
       if (s)
-        (*((btx_dispatch_finalize_usr_data_f(*))(s->dispatcher)))(s->callbacks,
-                                                                    common_data,
-                                                                    common_data->usr_data);
+        (*((btx_dispatch_finalize_usr_data_f(*))(s->dispatcher)))(
+            s->callbacks, common_data, common_data->usr_data);
       message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
       message_iterator_private_data->processing_state =
           BTX_FILTER_PROCESSING_STATE_FINISHED;
@@ -190,6 +233,9 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
       bt_self_message_iterator_get_data(self_message_iterator);
 
   switch (message_iterator_private_data->state) {
+  case BTX_FILTER_STATE_INITIALIZING:
+    return filter_message_iterator_next_initializing(self_message_iterator,
+                                                     messages, capacity, count);
   case BTX_FILTER_STATE_PROCESSING:
     return filter_message_iterator_next_processing(self_message_iterator,
                                                    messages, capacity, count);
@@ -218,13 +264,6 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
-  /* Call User Data */
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
-  if (s)
-    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(s->callbacks,
-                                                                common_data,
-                                                                &common_data->usr_data);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
@@ -327,7 +366,7 @@ filter_message_iterator_initialize(
   bt_self_message_iterator_set_data(self_message_iterator,
                                     message_iterator_private_data);
 
-  message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
+  message_iterator_private_data->state = BTX_FILTER_STATE_INITIALIZING;
   message_iterator_private_data->processing_state =
       BTX_FILTER_PROCESSING_STATE_READING;
 
@@ -337,7 +376,8 @@ filter_message_iterator_initialize(
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
-
+  // We allocate it, we need to free it
+  free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
   free(common_data);
 }

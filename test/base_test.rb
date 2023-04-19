@@ -9,7 +9,7 @@ module Assertions
   def run_command(cmd, refute: false)
     stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
     # Sorry, it's a little too smart....
-    assert((exit_code == 0) != refute, stderr_str)
+    assert((exit_code == 0) != refute, "cmd:#{cmd}\nstderr_str:#{stderr_str}")
     stdout_str
   end
 end
@@ -29,7 +29,7 @@ def get_component_generation_command(component)
     btx_component_type: '-t',
     btx_component_name: '-c',
     btx_component_plugin_name: '-p',
-    btx_component_downtream_model: '-d',
+    btx_component_downstream_model: '-d',
     btx_component_upstream_model: '-u',
     btx_component_usr_header_file: '-i'
   }
@@ -90,10 +90,10 @@ def mock_user_callbacks(component)
   # We support only generation of SOURCE callbacks
   return unless component[:btx_component_type] == 'SOURCE'
 
-  assert(component.include?(:btx_component_downtream_model),
-         'Need to provide :btx_component_downtream_model when generating callbacks for SOURCE')
+  assert(component.include?(:btx_component_downstream_model),
+         'Need to provide :btx_component_downstream_model when generating callbacks for SOURCE')
   opt_log = component.key?(:btx_log_path) ? '-i %<btx_log_path>s' : ''
-  command = "ruby ./test/gen_source_callbacks.rb #{opt_log} -y %<btx_component_downtream_model>s -o %<btx_component_path>s/callbacks.c" % component
+  command = "ruby ./test/gen_source_callbacks.rb #{opt_log} -y %<btx_component_downstream_model>s -o %<btx_component_path>s/callbacks.c" % component
   run_command(command)
 end
 

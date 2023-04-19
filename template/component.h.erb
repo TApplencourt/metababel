@@ -47,7 +47,7 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
-  btx_params_t* btx_params;
+  btx_params_t *btx_params;
   bt_trace *downstream_trace;
   /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
@@ -85,7 +85,7 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
-  btx_params_t* btx_params;
+  btx_params_t *btx_params;
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
@@ -94,6 +94,7 @@ struct common_data_s {
 };
 
 enum btx_filter_state_e {
+  BTX_FILTER_STATE_INITIALIZING,
   BTX_FILTER_STATE_PROCESSING,
   BTX_FILTER_STATE_FINALIZING,
   BTX_FILTER_STATE_FINISHED,
@@ -133,7 +134,7 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   void *usr_data;
   const bt_value *params;
-  btx_params_t* btx_params;
+  btx_params_t *btx_params;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };

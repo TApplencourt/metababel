@@ -31,6 +31,34 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   case BTX_SOURCE_STATE_INITIALIZING:
     btx_push_messages_stream_beginning(self_message_iterator,
                                        message_iterator_private_data);
+
+    /* Call Initialize user callback */
+    {
+      name_to_dispatcher_t *s = NULL;
+      HASH_FIND_STR(
+          message_iterator_private_data->common_data->name_to_dispatcher,
+          "initialize_usr_data", s);
+      if (s)
+        (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
+            s->callbacks, message_iterator_private_data->common_data,
+            &message_iterator_private_data->common_data->usr_data);
+    }
+
+    /* Call Parameter */
+    {
+
+      name_to_dispatcher_t *s = NULL;
+      HASH_FIND_STR(
+          message_iterator_private_data->common_data->name_to_dispatcher,
+          "read_params", s);
+
+      if (s)
+        (*((btx_dispatch_read_params_f(*))(s->dispatcher)))(
+            s->callbacks, message_iterator_private_data->common_data,
+            message_iterator_private_data->common_data->usr_data,
+            message_iterator_private_data->common_data->btx_params);
+    }
+
     message_iterator_private_data->state = BTX_SOURCE_STATE_PROCESSING;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BTX_SOURCE_STATE_PROCESSING:
@@ -53,6 +81,19 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
           message_iterator_private_data->common_data->usr_data, &status);
 
     if (status == BTX_SOURCE_END) {
+
+      /* Call Initialize user callback */
+      {
+        name_to_dispatcher_t *s = NULL;
+        HASH_FIND_STR(
+            message_iterator_private_data->common_data->name_to_dispatcher,
+            "finalize_usr_data", s);
+        if (s)
+          (*((btx_dispatch_finalize_usr_data_f(*))(s->dispatcher)))(
+              s->callbacks, message_iterator_private_data->common_data,
+              message_iterator_private_data->common_data->usr_data);
+      }
+
       btx_push_messages_stream_end(self_message_iterator,
                                    message_iterator_private_data);
       message_iterator_private_data->state = BTX_SOURCE_STATE_FINALIZING;
@@ -89,26 +130,6 @@ source_initialize(bt_self_component_source *self_component_source,
 
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
-  /* Call User Data */
-  {
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
-  if (s)
-    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
-        s->callbacks, common_data, &common_data->usr_data);
-  }
-
-  /* Call Parameter */
-  {
-
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, "read_params", s);
-
-  if (s)
-    (*((btx_dispatch_read_params_f(*))(s->dispatcher)))(
-        s->callbacks, common_data, common_data->usr_data, common_data->btx_params);
-  }
-
   /* Upcast `self_component_source` to the `bt_self_component` type */
   bt_self_component *self_component =
       bt_self_component_source_as_self_component(self_component_source);
@@ -170,8 +191,8 @@ source_message_iterator_initialize(
 static void source_finalize(bt_self_component_source *self_component_source) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_source_as_self_component(self_component_source));
-
-  // TODO: Missing {initizialize,finialize}_usr_source
+  // We allocate it, we need to free it
+  free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
   free(common_data);
 }
