@@ -9,11 +9,7 @@ struct data_s {
 typedef struct data_s data_t;
 
 void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
-  data_t *data = malloc(sizeof(data_t *));
-  *usr_data = data;
-
-  data->event_1_calls_count = 0;
-  data->event_2_calls_count = 0;
+  *usr_data =  calloc(1, sizeof(data_t *));
 }
 
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
