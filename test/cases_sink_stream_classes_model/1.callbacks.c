@@ -8,7 +8,6 @@ struct data_s {
 
 typedef struct data_s data_t;
 
-
 void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
   *usr_data = calloc(1, sizeof(data_t *));
 }

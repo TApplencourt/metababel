@@ -1,10 +1,10 @@
-#include <metababel/metababel.h>
 #include <assert.h>
+#include <metababel/metababel.h>
 #include <stdio.h>
 
-
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
-  for (int i = 0; i < 4; ++i) btx_push_message_event_1(btx_handle, i);
+  for (int i = 0; i < 4; ++i)
+    btx_push_message_event_1(btx_handle, i);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
