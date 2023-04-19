@@ -18,7 +18,7 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
 void btx_push_usr_messages(void *btx_handle, void *usr_data,
                            btx_source_status_t *status) {
   usr_data_t *data = (usr_data_t *)usr_data;
-  btx_push_message_event_2(btx_handle, data->i++);
+  btx_push_message_event_1(btx_handle, data->i++);
   *status = (data->i < data->count) ? BTX_SOURCE_OK : BTX_SOURCE_END;
 }
 
