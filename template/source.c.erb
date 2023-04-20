@@ -82,7 +82,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
     if (status == BTX_SOURCE_END) {
 
-      /* Call Initialize user callback */
+      /* Call Finalize user callback */
       {
         name_to_dispatcher_t *s = NULL;
         HASH_FIND_STR(
