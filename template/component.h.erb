@@ -147,15 +147,12 @@ void btx_register_usr_callbacks(void *btx_handle);
 typedef void
 <%= e.name_sanitized %>_callback_f(void *btx_handle,
                                    <%= e.args.map{ |s| s.type }.join(", ") %>);
-
-typedef void btx_dispatch_<%= e.name_sanitized %>_f(
-    UT_array *callbacks, common_data_t *common_data,
-    <%= e.args.map{ |s| s.type }.join(", ") %>);
-
 <%# The Function who register the callbacks to the dispatcher %>
-extern void btx_register_callbacks_<%= e.name_sanitized %>(
+void btx_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
 
+void btx_call_callbacks_<%= e.name_sanitized %>(
+    common_data_t *common_data, <%= e.args.map{ |s| s.type }.join(", ") %>);
 <% end %>
 
 #ifdef __cplusplus

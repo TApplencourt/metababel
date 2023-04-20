@@ -17,6 +17,10 @@ void btx_populate_params(common_data_t *common_data) {
 
 <% component_dispatchers.each do |e| %>
 
+typedef void btx_dispatch_<%= e.name_sanitized %>_f(
+    UT_array *callbacks, common_data_t *common_data,
+    <%= e.args.map{ |s| s.type }.join(", ") %>);
+
 static void btx_dispatch_<%= e.name_sanitized %>(
     UT_array *callbacks, common_data_t *common_data,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
@@ -50,5 +54,16 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
   } else {
     assert(false && "Only one callbacks for <%= e.name_sanitized %>");
   }
+}
+
+void btx_call_callbacks_<%= e.name_sanitized %>(
+    common_data_t *common_data,
+    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+  name_to_dispatcher_t *s = NULL;
+  HASH_FIND_STR(common_data->name_to_dispatcher, "<%= e.name %>", s);
+
+  if (s)
+    (*((btx_dispatch_<%= e.name_sanitized %>_f(*))(s->dispatcher)))(
+        s->callbacks, common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
 }
 <% end %>

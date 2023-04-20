@@ -80,16 +80,20 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   /* Allocate a private data structure */
   common_data_t *common_data = calloc(1, sizeof(common_data_t));
   common_data->params = params;
+  // Read parameters
+  btx_populate_params(common_data);
+
   bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
-  /* Call User Data */
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, "initialize_usr_data", s);
-  if (s)
-    (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
-        s->callbacks, common_data, &common_data->usr_data);
+
+  /* Call Initialize user callback */
+  btx_call_callbacks_initialize_usr_data(common_data, &common_data->usr_data);
+  /* Call read callbacks */
+  btx_call_callbacks_read_params(common_data, common_data->usr_data,
+                                 common_data->btx_params);
+
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
       bt_self_component_sink_as_self_component(self_component_sink),
@@ -112,12 +116,10 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
       bt_self_component_sink_as_self_component(self_component_sink));
 
   /* Finalize User Data */
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, "finalize_usr_data", s);
-  if (s)
-    (*((btx_dispatch_finalize_usr_data_f(*))(s->dispatcher)))(
-        s->callbacks, common_data, common_data->usr_data);
-
+  /* Call Finalize user callback */
+  btx_call_callbacks_finalize_usr_data(common_data, common_data->usr_data);
+  // We allocate it, we need to free it
+  free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
 
   /* Free the allocated structure */

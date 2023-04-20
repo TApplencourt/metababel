@@ -29,35 +29,19 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
    * not put any message into the message array */
   switch (message_iterator_private_data->state) {
   case BTX_SOURCE_STATE_INITIALIZING:
+    /* Begining of Stream */
     btx_push_messages_stream_beginning(self_message_iterator,
                                        message_iterator_private_data);
 
     /* Call Initialize user callback */
-    {
-      name_to_dispatcher_t *s = NULL;
-      HASH_FIND_STR(
-          message_iterator_private_data->common_data->name_to_dispatcher,
-          "initialize_usr_data", s);
-      if (s)
-        (*((btx_dispatch_initialize_usr_data_f(*))(s->dispatcher)))(
-            s->callbacks, message_iterator_private_data->common_data,
-            &message_iterator_private_data->common_data->usr_data);
-    }
-
-    /* Call Parameter */
-    {
-
-      name_to_dispatcher_t *s = NULL;
-      HASH_FIND_STR(
-          message_iterator_private_data->common_data->name_to_dispatcher,
-          "read_params", s);
-
-      if (s)
-        (*((btx_dispatch_read_params_f(*))(s->dispatcher)))(
-            s->callbacks, message_iterator_private_data->common_data,
-            message_iterator_private_data->common_data->usr_data,
-            message_iterator_private_data->common_data->btx_params);
-    }
+    btx_call_callbacks_initialize_usr_data(
+        message_iterator_private_data->common_data,
+        &message_iterator_private_data->common_data->usr_data);
+    /* Call read callbacks */
+    btx_call_callbacks_read_params(
+        message_iterator_private_data->common_data,
+        message_iterator_private_data->common_data->usr_data,
+        message_iterator_private_data->common_data->btx_params);
 
     message_iterator_private_data->state = BTX_SOURCE_STATE_PROCESSING;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
@@ -70,30 +54,16 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
     btx_source_status_t status = BTX_SOURCE_END;
 
-    /* Call User Data */
-    name_to_dispatcher_t *s = NULL;
-    HASH_FIND_STR(
-        message_iterator_private_data->common_data->name_to_dispatcher,
-        "push_usr_messages", s);
-    if (s)
-      (*((btx_dispatch_push_usr_messages_f(*))(s->dispatcher)))(
-          s->callbacks, message_iterator_private_data->common_data,
-          message_iterator_private_data->common_data->usr_data, &status);
-
+    btx_call_callbacks_push_usr_messages(
+        message_iterator_private_data->common_data,
+        message_iterator_private_data->common_data->usr_data, &status);
     if (status == BTX_SOURCE_END) {
 
       /* Call Finalize user callback */
-      {
-        name_to_dispatcher_t *s = NULL;
-        HASH_FIND_STR(
-            message_iterator_private_data->common_data->name_to_dispatcher,
-            "finalize_usr_data", s);
-        if (s)
-          (*((btx_dispatch_finalize_usr_data_f(*))(s->dispatcher)))(
-              s->callbacks, message_iterator_private_data->common_data,
-              message_iterator_private_data->common_data->usr_data);
-      }
-
+      btx_call_callbacks_finalize_usr_data(
+          message_iterator_private_data->common_data,
+          message_iterator_private_data->common_data->usr_data);
+      /* End of Stream */
       btx_push_messages_stream_end(self_message_iterator,
                                    message_iterator_private_data);
       message_iterator_private_data->state = BTX_SOURCE_STATE_FINALIZING;
