@@ -216,15 +216,15 @@ static void source_message_iterator_finalize(
 /* Mandatory */
 BT_PLUGIN_MODULE();
 
-BT_PLUGIN(<%= plugin_name %>);
-BT_PLUGIN_SOURCE_COMPONENT_CLASS(<%= component_name %>,
+BT_PLUGIN(<%= options[:plugin_name] %>);
+BT_PLUGIN_SOURCE_COMPONENT_CLASS(<%= options[:component_name] %>,
                                  source_message_iterator_next);
 
-BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD(<%= component_name %>,
+BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD(<%= options[:component_name] %>,
                                                    source_initialize);
-BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD(<%= component_name %>,
+BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD(<%= options[:component_name] %>,
                                                  source_finalize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
-    <%= component_name %>, source_message_iterator_initialize);
+    <%= options[:component_name] %>, source_message_iterator_initialize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(
-    <%= component_name %>, source_message_iterator_finalize);
+    <%= options[:component_name] %>, source_message_iterator_finalize);
