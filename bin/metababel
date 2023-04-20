@@ -129,8 +129,8 @@ def wrote_component(options, d, folder)
   d2 = { component_dispatchers: component_dispatchers,
          event_name: 'dummy_event' }
 
-  erb_render_and_save(d2.update(d), 'component.h', folder)
-  erb_render_and_save(d2.update(d), 'component.c', folder)
+  erb_render_and_save(d2.update(d).update(:options => options), 'component.h', folder)
+  erb_render_and_save(d2.update(d).update(:options => options), 'component.c', folder)
 end
 
 options = { plugin_name: 'metababel',
@@ -199,7 +199,7 @@ if options.key?(:params)
 end
 
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "#{options[:plugin_name]}.c")
-erb_render_and_save(d, 'metababel.h', folder, prefix: '')
+erb_render_and_save({options: options}, 'metababel.h', folder, prefix: '')
 
 wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
