@@ -17,10 +17,12 @@ end
 def get_component_with_default_values(component)
   # We have only one component per plugins, the component name can be arbitrary.
   # TODO: We need to downcase for SOURCE -> source somehwere. They will need to be fixed later
+  uuid = [component[:btx_component_type],
+          component[:btx_component_label]].compact.map(&:downcase).join('_')
+
   { btx_component_name: 'component',
-    btx_component_plugin_name: [component[:btx_component_type],
-                                component[:btx_component_label]].compact.map(&:downcase).join('_'),
-    btx_component_path: "./test/#{component[:btx_component_type]}.#{component[:btx_plugin_name]}.#{component[:btx_component_name]}",
+    btx_component_plugin_name: uuid,
+    btx_component_path: "./test/#{uuid}",
     btx_compile: true }.update(component)
 end
 
