@@ -64,8 +64,8 @@ def get_graph_execution_command(components, connections)
 
   command = <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
-                #{components_connections.empty? ? '' : 'run'}#{' '}
-                #{components_list.join(' ')}#{' '}
+                #{components_connections.empty? ? '' : 'run'}
+                #{components_list.join(' ')}
                 #{components_connections.join(' ')}
   TEXT
   command.split.join(' ')
