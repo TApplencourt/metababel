@@ -15,10 +15,10 @@ module Assertions
 end
 
 def get_component_with_default_values(component)
-  {
-    btx_component_name: "component_name",
-    btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
-    btx_component_plugin_name: "plugin_name",
+  # We have only one component per plugins, the component name can be arbitrary
+  { btx_component_name: "component",
+    btx_component_plugin_name: [ component[:btx_component_type], component[:btx_component_label] ].compact.map(&:downcase).join("_"),
+    btx_component_path: "./test/#{component[:btx_component_type]}.#{component[:btx_plugin_name]}.#{component[:btx_component_name]}",
     btx_compile: true
   }.update(component)
 end
@@ -39,7 +39,7 @@ end
 
 def get_component_compilation_command(component)
   command = <<~TEXT
-    ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so
+    ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_component_type]}_#{component[:btx_plugin_name]}_#{component[:btx_component_name]}.so
                #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
                -I ./include -I #{component[:btx_component_path]}/#{' '}
                $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
@@ -49,7 +49,7 @@ def get_component_compilation_command(component)
 end
 
 def get_graph_execution_command(components, connections)
-  plugin_path = components.map { |c| c[:btx_component_path] }
+  plugin_path = components.map { |c| c[:btx_component_path] }.uniq
   components_list = components.map do |c|
     uuid = ['type','plugin_name','name'].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
     uuid_label=[c[:btx_component_label],uuid].compact.join(':')
