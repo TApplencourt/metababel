@@ -41,8 +41,9 @@ def get_component_generation_command(component)
 end
 
 def get_component_compilation_command(component)
+  uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
   command = <<~TEXT
-    ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_component_type]}_#{component[:btx_plugin_name]}_#{component[:btx_component_name]}.so
+    ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
                #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
                -I ./include -I #{component[:btx_component_path]}/#{' '}
                $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
