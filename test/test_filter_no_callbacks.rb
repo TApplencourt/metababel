@@ -9,7 +9,6 @@ class TestFilterNoCallbacks < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_path: './test/SOURCE.plugin.component',
         btx_component_downstream_model: './test/cases_filter_no_callbacks/1.btx_model.yaml',
         btx_log_path: './test/cases_filter_no_callbacks/1.btx_log.txt'
       },

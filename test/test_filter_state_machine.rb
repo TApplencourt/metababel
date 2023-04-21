@@ -10,14 +10,12 @@ class TestFilterStateMachine < Test::Unit::TestCase
       {
         btx_component_label: 'A',
         btx_component_type: 'SOURCE',
-        btx_component_path: './test/SOURCE.plugin_0.component_0',
         btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml',
         btx_log_path: './test/cases_filter_state_machine/1.A.btx_log.txt'
       },
       {
         btx_component_label: 'B',
         btx_component_type: 'SOURCE',
-        btx_component_path: './test/SOURCE.plugin_1.component_1',
         btx_component_downstream_model: './test/cases_filter_state_machine/1.B.btx_model.yaml',
         btx_log_path: './test/cases_filter_state_machine/1.B.btx_log.txt'
       },
@@ -54,7 +52,6 @@ class TestFilterStateMachinePushMessagesInitialize < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_path: './test/SOURCE.plugin.component',
         btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml',
       },
       {
@@ -78,7 +75,6 @@ class TestFilterStateMachinePushMessagesFinalize < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_path: './test/SOURCE.plugin.component',
         btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml',
       },
       {
