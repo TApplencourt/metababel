@@ -15,12 +15,15 @@ module Assertions
 end
 
 def get_component_with_default_values(component)
-  {
-    btx_component_name: "component_name",
-    btx_component_path: "./test/#{component[:btx_component_type]}.metababel_test",
-    btx_component_plugin_name: "plugin_name",
-    btx_compile: true
-  }.update(component)
+  # We have only one component per plugins, the component name can be arbitrary.
+  # TODO: We need to downcase for SOURCE -> source somehwere. They will need to be fixed later
+  uuid = [component[:btx_component_type],
+          component[:btx_component_label]].compact.map(&:downcase).join('_')
+
+  { btx_component_name: 'component',
+    btx_component_plugin_name: uuid,
+    btx_component_path: "./test/#{uuid}",
+    btx_compile: true }.update(component)
 end
 
 def get_component_generation_command(component)
@@ -33,13 +36,14 @@ def get_component_generation_command(component)
     btx_component_upstream_model: '-u',
     btx_component_usr_header_file: '-i'
   }
-  str_ = component.filter_map { |k, v| "#{args[k]} #{ [v].flatten.join(',') }" if args.key?(k) }.join(' ')
+  str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
   "ruby -I./lib ./bin/metababel #{str_}"
 end
 
 def get_component_compilation_command(component)
+  uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
   command = <<~TEXT
-    ${CC:-cc} -o #{component[:btx_component_path]}/#{component[:btx_pluggin_name]}_#{component[:btx_component_name]}.so
+    ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
                #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
                -I ./include -I #{component[:btx_component_path]}/#{' '}
                $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
@@ -49,20 +53,20 @@ def get_component_compilation_command(component)
 end
 
 def get_graph_execution_command(components, connections)
-  plugin_path = components.map { |c| c[:btx_component_path] }
+  plugin_path = components.map { |c| c[:btx_component_path] }.uniq
   components_list = components.map do |c|
-    uuid = ['type','plugin_name','name'].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
-    uuid_label=[c[:btx_component_label],uuid].compact.join(':')
+    uuid = %w[type plugin_name name].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
+    uuid_label = [c[:btx_component_label], uuid].compact.join(':')
     "--component=#{uuid_label}"
   end
-  
+
   components_connections = connections.map { |c| "--connect=#{c}" }
 
   command = <<~TEXT
-  babeltrace2 --plugin-path=#{plugin_path.join(':')}
-              #{components_connections.empty? ? '' : 'run'} 
-              #{components_list.join(' ')} 
-              #{components_connections.join(' ')}
+    babeltrace2 --plugin-path=#{plugin_path.join(':')}
+                #{components_connections.empty? ? '' : 'run'}
+                #{components_list.join(' ')}
+                #{components_connections.join(' ')}
   TEXT
   command.split.join(' ')
 end
@@ -70,9 +74,9 @@ end
 def usr_assert_files(component)
   # Validate models
   component.keys.grep(/_model$/) do |key|
-    [ component[key] ].flatten.each do |file_name| 
+    [component[key]].flatten.each do |file_name|
       assert_file_exists(file_name)
-    end 
+    end
   end
 
   # Validate files
@@ -161,8 +165,8 @@ module VariableClassAccessor
   end
 
   def btx_connect
-    self.class.btx_connect ? self.class.btx_connect : []
-  end 
+    self.class.btx_connect || []
+  end
 
   def btx_output_validation
     self.class.btx_output_validation

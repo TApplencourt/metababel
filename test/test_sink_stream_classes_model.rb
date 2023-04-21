@@ -18,8 +18,6 @@ class TestSinkUserDefinedCastType < Test::Unit::TestCase
         btx_component_type: 'SINK',
         btx_component_upstream_model: './test/cases_sink_stream_classes_model/1.btx_model.yaml',
         btx_component_usr_header_file: '1.usr_data_header.h',
-        btx_component_name: 'sink_pluggin',
-        btx_component_plugin_name: 'sink_component',
         btx_file_usr_header_path: './test/cases_sink_stream_classes_model/1.usr_data_header.h',
         btx_file_usr_callbacks: './test/cases_sink_stream_classes_model/1.callbacks.c'
       }
