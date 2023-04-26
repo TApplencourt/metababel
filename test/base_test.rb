@@ -67,7 +67,16 @@ def get_graph_execution_command(components, connections)
 
   components_connections = connections.map { |c| "--connect=#{c}" }
 
-  command = ENV["METABABEL_VALGRIND"] ? "valgrind --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=all -- " : "" 
+  command = ""
+  if ENV["METABABEL_VALGRIND"]
+    command += <<~TEXT
+      valgrind --leak-check=full
+               --show-leak-kinds=all
+               --errors-for-leak-kinds=all
+               --error-exitcode=1
+               --
+    TEXT
+  end
 
   command += <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
