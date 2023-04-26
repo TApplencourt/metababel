@@ -205,7 +205,7 @@ if options.key?(:params)
   d[:params_definition] = body
 end
 
-erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "#{options[:plugin_name]}.c")
+erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "main.c")
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 wrote_component(options, d, folder)
