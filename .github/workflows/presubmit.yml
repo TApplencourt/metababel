@@ -6,6 +6,7 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
+        gem: [true, false]
     name: Build and check ${{matrix.compiler}}
     runs-on: ubuntu-latest
     steps:
@@ -18,5 +19,11 @@ jobs:
         with:
           packages: ${{matrix.compiler}} ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
+      - name: Install Gem
+        run: |
+          gem build metababel
+          sudo gem install metababel
+          echo "METABABEL_INSTALL=1" >> $GITHUB_ENV
+        if: ${{ matrix.gem == true }}
       - name: Run tests
         run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test

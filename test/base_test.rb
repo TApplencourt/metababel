@@ -37,7 +37,12 @@ def get_component_generation_command(component)
     btx_component_usr_header_file: '-i'
   }
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
-  "ruby -I./lib ./bin/metababel #{str_}"
+
+  if ENV["METABABEL_INSTALL"]
+    "metababel #{str_}"
+  else
+    "ruby -I./lib ./bin/metababel #{str_}"
+  end
 end
 
 def get_component_compilation_command(component)
