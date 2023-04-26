@@ -39,7 +39,7 @@ def get_component_generation_command(component)
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
 
   if ENV["METABABEL_INSTALL"]
-    "metababel #{str_}"
+    "metababel2 #{str_}"
   else
     "ruby -I./lib ./bin/metababel #{str_}"
   end

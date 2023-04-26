@@ -7,7 +7,7 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         gem: [true, false]
-    name: Build and check ${{matrix.compiler}}
+    name: Build and check with ${{matrix.compiler}}, installing gem? ${{matrix.gem}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
