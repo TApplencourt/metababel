@@ -2,9 +2,13 @@ name: Presubmit
 on: [push, pull_request]
 
 jobs:
-  run_tests_gcc:
+  build-and-check:
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        gem: [true, false]
+    name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}
     runs-on: ubuntu-latest
-    name: Run tests gcc
     steps:
       - uses: actions/checkout@v3
       - run: |
@@ -13,22 +17,13 @@ jobs:
         if: ${{ ! steps.load-cache.outputs.cache-hit }}
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: gcc ruby babeltrace2 libbabeltrace2-dev
+          packages: ${{matrix.compiler}} ruby babeltrace2 libbabeltrace2-dev
           version: 1.0
+      - name: Install Gem
+        run: |
+          gem build metababel
+          sudo gem install metababel
+          echo "METABABEL_INSTALL=1" >> $GITHUB_ENV
+        if: ${{ matrix.gem == true }}
       - name: Run tests
-        run: CC=gcc CFLAGS="-Wall -Werror" rake test
-  run_tests_llvm:
-    runs-on: ubuntu-latest
-    name: Run tests llvm
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          sudo add-apt-repository ppa:lttng/ppa
-          sudo apt-get update
-        if: ${{ ! steps.load-cache.outputs.cache-hit }}
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: clang ruby babeltrace2 libbabeltrace2-dev
-          version: 1.0
-      - name: Run tests
-        run: CC=clang CFLAGS="-Wall -Werror" rake test
+        run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test
