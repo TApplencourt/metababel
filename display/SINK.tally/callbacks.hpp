@@ -3,9 +3,7 @@
 //! This file contains the infraestructure used to tabulate data 
 //! in messages that were generated from different backends.
 
-#include "component.h"
-#include "upstream.h"
-#include "babeltrace2/babeltrace.h"
+#include <metababel/metababel.h>
 
 #include <map>
 #include <unordered_map>
