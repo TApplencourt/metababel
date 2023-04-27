@@ -69,16 +69,9 @@ def get_graph_execution_command(components, connections)
 
   command = ""
   if ENV["METABABEL_VALGRIND"]
-#    command += <<~TEXT
-#      valgrind --leak-check=full
-#               --show-leak-kinds=all
-#               --errors-for-leak-kinds=all
-#               --error-exitcode=1
-#               --
-#    TEXT
-
     command += <<~TEXT
       valgrind --error-exitcode=1
+               --leak-check=full
                --quiet
                --
     TEXT

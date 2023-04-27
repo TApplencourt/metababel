@@ -153,6 +153,7 @@ module Babeltrace2Gen
           pr "bt_field_class *#{var_pc};"
           @packet_context_field_class.get_declarator(trace_class: trace_class, variable: var_pc)
           pr "bt_stream_class_set_packet_context_field_class(#{variable}, #{var_pc});"
+          pr "bt_field_class_put_ref(#{var_pc});"
         end
       end
 
@@ -162,6 +163,7 @@ module Babeltrace2Gen
           pr "bt_field_class *#{var_ecc};"
           @event_common_context_field_class.get_declarator(trace_class: trace_class, variable: var_ecc)
           pr "bt_stream_class_set_event_common_context_field_class(#{variable}, #{var_ecc});"
+          pr "bt_field_class_put_ref(#{var_ecc});"
         end
       end
       # Need to do is afert packet an devent_common_context because it can refer members to those
@@ -174,12 +176,16 @@ module Babeltrace2Gen
         scope do
           pr "bt_event_class *#{var_name};"
           ec.get_declarator(trace_class: trace_class, variable: var_name, stream_class: variable)
+          pr "bt_event_class_put_ref(#{var_name});"
         end
       end
 
       bt_set_conditionally(@assigns_automatic_stream_id) do |v|
         pr "bt_stream_class_set_assigns_automatic_stream_id(#{variable}, #{v});"
       end
+
+      pr "bt_stream_class_put_ref(#{variable});"
+
     end
   end
 
@@ -218,6 +224,7 @@ module Babeltrace2Gen
           pr "bt_field_class *#{var_name};"
           @specific_context_field_class.get_declarator(trace_class: trace_class, variable: var_name)
           pr "bt_event_class_set_specific_context_field_class(#{variable}, #{var_name});"
+          pr "bt_field_class_put_ref(#{var_name});"
         end
       end
 
@@ -227,6 +234,7 @@ module Babeltrace2Gen
           pr "bt_field_class *#{var_name};"
           @payload_field_class.get_declarator(trace_class: trace_class, variable: var_name)
           pr "bt_event_class_set_payload_field_class(#{variable}, #{var_name});"
+          pr "bt_field_class_put_ref(#{var_name});"
         end
       end
     end
@@ -588,6 +596,7 @@ module Babeltrace2Gen
           pr "bt_field_class *#{var_name};"
           m.field_class.get_declarator(trace_class: trace_class, variable: var_name)
           pr "bt_field_class_structure_append_member(#{variable}, \"#{m.name}\", #{var_name});"
+          pr "bt_field_class_put_ref(#{var_name});"
         end
       end
     end

@@ -48,7 +48,7 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   {
     bt_stream_class *stream_class =
         bt_trace_class_borrow_stream_class_by_index(trace_class, <%= i %>);
-    bt_stream_create(stream_class, trace);
+    bt_stream_put_ref(bt_stream_create(stream_class, trace));
   }
   <% end %>
   return trace;

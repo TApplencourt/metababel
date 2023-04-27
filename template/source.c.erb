@@ -111,6 +111,8 @@ source_initialize(bt_self_component_source *self_component_source,
    * stream */
   common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
 
+  bt_trace_class_put_ref(trace_class);
+
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(self_component, common_data);
 
@@ -163,6 +165,14 @@ static void source_finalize(bt_self_component_source *self_component_source) {
       bt_self_component_source_as_self_component(self_component_source));
   // We allocare it, we need to put ref
   bt_trace_put_ref(common_data->downstream_trace);
+
+  // Delete name_to_dispatcher
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
+    HASH_DEL(common_data->name_to_dispatcher, current);
+    utarray_free(current->callbacks);
+    free(current);
+  }
 
   // We allocate it, we need to free it
   free(common_data->btx_params);
