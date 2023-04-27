@@ -50,8 +50,8 @@ def get_component_compilation_command(component)
   command = <<~TEXT
     ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
                #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-               -I ./include -I #{component[:btx_component_path]}/#{' '}
-               $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
+               -I ./include -I #{component[:btx_component_path]}/
+               $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)
                ${CFLAGS:='-Wall -Werror'} -fpic --shared
   TEXT
   command.split.join(' ')
@@ -69,11 +69,17 @@ def get_graph_execution_command(components, connections)
 
   command = ""
   if ENV["METABABEL_VALGRIND"]
+#    command += <<~TEXT
+#      valgrind --leak-check=full
+#               --show-leak-kinds=all
+#               --errors-for-leak-kinds=all
+#               --error-exitcode=1
+#               --
+#    TEXT
+
     command += <<~TEXT
-      valgrind --leak-check=full
-               --show-leak-kinds=all
-               --errors-for-leak-kinds=all
-               --error-exitcode=1
+      valgrind --error-exitcode=1
+               --quiet
                --
     TEXT
   end

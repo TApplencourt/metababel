@@ -14,30 +14,16 @@
         :field_value_range: 32
         :cast_type: int
   :event_classes:
-  - :name: lttng_ust_ze_profiling:event_profiling_results
+  - :name: GetPlatformIDs
     :payload_field_class:
       :type: structure
       :members:
-        - :name: hEvent
+        - :name: num_entries
           :field_class:
             :type: integer_unsigned
-            :field_value_range: 32
-            :cast_type: uint32_t
-  - :name: zeCommandListAppendMemoryCopy_entry
-    :payload_field_class:
-      :type: structure
-      :members:
-        - :name: timestamp
+        - :name: platforms
           :field_class:
             :type: integer_unsigned
-            :field_value_range: 32
-            :cast_type: uint32_t
-  - :name: zeCommandListAppendMemoryCopy_exit
-    :payload_field_class:
-      :type: structure
-      :members:
-        - :name: timestamp
+        - :name: num_platform
           :field_class:
             :type: integer_unsigned
-            :field_value_range: 32
-            :cast_type: uint32_t

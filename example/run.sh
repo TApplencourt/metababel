@@ -1,13 +1,13 @@
 #!/bin/bash -xe
 
-ruby -I../lib ../bin/metababel -d 1.stream_classes.yaml -t SOURCE -p metababel1 --params 1.params.yaml 
-make -C SOURCE.metababel1.btx/
-babeltrace2 --plugin-path=SOURCE.metababel1.btx --component=source.metababel1.btx --params="display=tests2323" --component=sink.text.details
+# Source
+ruby -I ../lib ../bin/metababel --downstream fake_api.yaml --component SOURCE -o btx_source
+gcc -o btx_source.so btx_source/*.c btx_source/metababel/*.c -I btx_source/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
 
-#ruby -I../lib ../bin/metababel -u 1.stream_classes.yaml -t SINK -p metababel2
-#make -C SINK.xprof
-#babeltrace2  --plugin-path=SOURCE.xprof:SINK.xprof  --component=source.metababel1.xprof --component=sink.metababel2.xprof
+babeltrace2 --plugin-path=. --component=source.metababel_source.btx_source
 
-#ruby -I../lib ../bin/metababel -u 1.stream_classes.yaml -d 2.stream_classes.yaml -t FILTER -p metababel3
-#make -C FILTER.xprof
-#babeltrace2  --plugin-path=SOURCE.xprof:FILTER.xprof  --component=source.metababel1.xprof --component=filter.metababel3.xprof | wc -l
+# Sink
+ruby -I../lib ../bin/metababel --upstream fake_api.yaml --component SINK -o btx_sink
+gcc -o btx_sink.so btx_sink/*.c btx_sink/metababel/*.c -I btx_sink/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
+
+babeltrace2 --plugin-path=. --component=source.metababel_source.btx_source  --component=sink.metababel_sink.btx_sink

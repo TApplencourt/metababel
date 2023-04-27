@@ -131,12 +131,10 @@ def wrote_component(options, d, folder)
   erb_render_and_save(d2.update(d).update(options: options), 'component.c', folder)
 end
 
-options = { plugin_name: 'metababel',
-            component_name: 'btx' }
-
 # Display help if no arguments.
 ARGV << '-h' if ARGV.empty?
 
+options = {}
 OptionParser.new do |opts|
   opts.banner = 'Usage: example.rb [options]'
 
@@ -185,6 +183,8 @@ OptionParser.new do |opts|
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
+options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
+options[:component_name] ||= "btx"
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
