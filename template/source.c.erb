@@ -161,6 +161,9 @@ source_message_iterator_initialize(
 static void source_finalize(bt_self_component_source *self_component_source) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_source_as_self_component(self_component_source));
+  // We allocare it, we need to put ref
+  bt_trace_put_ref(common_data->downstream_trace);
+
   // We allocate it, we need to free it
   free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
