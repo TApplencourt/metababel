@@ -50,6 +50,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
   for (uint64_t i = 0; i < message_count; i++) {
     const bt_message *message = messages[i];
     if (bt_message_get_type(message) != BT_MESSAGE_TYPE_EVENT) {
+      bt_message_put_ref(message);
       continue;
     }
 
@@ -118,6 +119,15 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
   /* Finalize User Data */
   /* Call Finalize user callback */
   btx_call_callbacks_finalize_usr_data(common_data, common_data->usr_data);
+
+  // Delete name_to_dispatcher
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
+    HASH_DEL(common_data->name_to_dispatcher, current);
+    utarray_free(current->callbacks);
+    free(current);
+  }
+
   // We allocate it, we need to free it
   free(common_data->btx_params);
   bt_value_put_ref(common_data->params);

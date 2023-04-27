@@ -361,6 +361,15 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
       bt_self_component_filter_as_self_component(self_component_filter));
   // We allocate it, we need to free it
   free(common_data->btx_params);
+
+  // Delete name_to_dispatcher
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
+    HASH_DEL(common_data->name_to_dispatcher, current);
+    utarray_free(current->callbacks);
+    free(current);
+  }
+
   bt_value_put_ref(common_data->params);
   free(common_data);
 }
