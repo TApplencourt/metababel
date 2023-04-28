@@ -70,7 +70,7 @@ def get_graph_execution_command(components, connections)
   command = ""
   if ENV["METABABEL_VALGRIND"]
     command += <<~TEXT
-      valgrind --suppressions=./test/dlopen.supp
+      valgrind --suppressions=.valgrind/dlopen.supp
                --error-exitcode=1
                --leak-check=full
                --quiet
