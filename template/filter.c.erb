@@ -9,7 +9,7 @@
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-flt-cmp-cls.html
  */
 
-static const char *get_port_name(uint64_t current) {
+static char *get_port_name(uint64_t current) {
   int num_len = snprintf(NULL, 0, "in%ld", current);
   char *result = (char *)malloc(num_len + 1);
   sprintf(result, "in%ld", current);
@@ -91,9 +91,10 @@ filter_message_iterator_next_processing_reading(
     /* We are setting the state, so this function will never being call twice */
     bt_message_iterator_put_ref(
         message_iterator_private_data->head_mi->message_iterator);
+    struct el_mi *tmp = message_iterator_private_data->head_mi;
+    CDL_DELETE(message_iterator_private_data->head_mi, tmp);
+    free(tmp);
 
-    CDL_DELETE(message_iterator_private_data->head_mi,
-               message_iterator_private_data->head_mi);
     if (!message_iterator_private_data->head_mi) {
       /* Call Finalize user callback */
       btx_call_callbacks_finalize_usr_data(
@@ -275,9 +276,12 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   const uint64_t current =
       bt_component_filter_get_input_port_count(common_data->component);
 
-  bt_self_component_filter_add_input_port(self_component_filter,
-                                          get_port_name(current), NULL, NULL);
-
+  {
+    char *name = get_port_name(current);
+    bt_self_component_filter_add_input_port(self_component_filter, name, NULL,
+                                            NULL);
+    free(name);
+  }
   bt_self_component_filter_add_output_port(self_component_filter, "out", NULL,
                                            NULL);
 
@@ -290,17 +294,26 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Instantiate a `downstream_trace` of `trace_class` and all the children
    * stream */
   common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
+  btx_streams_get_ref(common_data->downstream_trace); // ??
+  bt_trace_class_put_ref(trace_class);
+
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
 bt_component_class_port_connected_method_status
-filter_input_port_connected(bt_self_component_filter *self_comp,
+filter_input_port_connected(bt_self_component_filter *self_component_filter,
                             bt_self_component_port_input *self_port,
                             const bt_port_output *other_port) {
   const uint64_t current = bt_component_filter_get_input_port_count(
-      bt_self_component_filter_as_component_filter(self_comp));
-  bt_self_component_filter_add_input_port(self_comp, get_port_name(current),
-                                          NULL, NULL);
+      bt_self_component_filter_as_component_filter(self_component_filter));
+
+  {
+    char *name = get_port_name(current);
+    bt_self_component_filter_add_input_port(self_component_filter, name, NULL,
+                                            NULL);
+    free(name);
+  }
+
   return BT_COMPONENT_CLASS_PORT_CONNECTED_METHOD_STATUS_OK;
 }
 /*
@@ -343,6 +356,7 @@ filter_message_iterator_initialize(
     el_mi *mi = (el_mi *)malloc(sizeof *mi);
     bt_message_iterator_create_from_message_iterator(
         self_message_iterator, self_port, &mi->message_iterator);
+
     CDL_APPEND(message_iterator_private_data->head_mi, mi);
   }
 
@@ -360,6 +374,19 @@ filter_message_iterator_initialize(
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
+
+  btx_streams_put_ref(common_data->downstream_trace); // ??
+  // We allocate it, we need to put ref
+  bt_trace_put_ref(common_data->downstream_trace);
+
+  // Delete name_to_dispatcher
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
+    HASH_DEL(common_data->name_to_dispatcher, current);
+    utarray_free(current->callbacks);
+    free(current);
+  }
+
   // We allocate it, we need to free it
   free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
@@ -372,12 +399,14 @@ static void filter_message_iterator_finalize(
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
-  struct el *elt, *tmp;
-  DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
-    DL_DELETE(message_iterator_private_data->pool, elt);
-    free(elt);
+  {
+    struct el *elt, *tmp;
+    DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
+      DL_DELETE(message_iterator_private_data->pool, elt);
+      free(elt);
+    }
   }
-
+  assert(!message_iterator_private_data->head_mi);
   /* Free the allocated structure */
   free(message_iterator_private_data);
 }
@@ -389,10 +418,10 @@ BT_PLUGIN(<%= options[:plugin_name] %>);
 BT_PLUGIN_FILTER_COMPONENT_CLASS(<%= options[:component_name] %>,
                                  filter_message_iterator_next);
 
-BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD(<%= options[:component_name] %>,
-                                                   filter_initialize);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD(<%= options[:component_name] %>,
-                                                 filter_finalize);
+BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD(
+    <%= options[:component_name] %>, filter_initialize);
+BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD(
+    <%= options[:component_name] %>, filter_finalize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
     <%= options[:component_name] %>, filter_message_iterator_initialize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(

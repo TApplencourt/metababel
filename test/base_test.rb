@@ -50,10 +50,10 @@ def get_component_compilation_command(component)
   uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
   command = <<~TEXT
     ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
-               #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-               -I ./include -I #{component[:btx_component_path]}/#{' '}
-               $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)#{' '}
-               ${CFLAGS:='-Wall -Werror'} -fpic --shared
+              #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
+              -I ./include -I #{component[:btx_component_path]}/
+              $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)
+              ${CFLAGS:='-Wall -Werror'} -fpic --shared
   TEXT
   command.split.join(' ')
 end
@@ -68,7 +68,18 @@ def get_graph_execution_command(components, connections)
 
   components_connections = connections.map { |c| "--connect=#{c}" }
 
-  command = <<~TEXT
+  command = ""
+  if ENV["METABABEL_VALGRIND"]
+    command += <<~TEXT
+      valgrind --suppressions=.valgrind/dlopen.supp
+               --error-exitcode=1
+               --leak-check=full
+               --quiet
+               --
+    TEXT
+  end
+
+  command += <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
                 #{components_connections.empty? ? '' : 'run'}
                 #{components_list.join(' ')}

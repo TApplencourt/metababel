@@ -14,6 +14,8 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
   *usr_data = data;
 }
 
+void btx_finalize_usr_data(void *btx_handle, void *usr_data) { free(usr_data); }
+
 void btx_push_usr_messages(void *btx_handle, void *usr_data,
                            btx_source_status_t *status) {
   usr_data_t *data = (usr_data_t *)usr_data;
@@ -24,5 +26,6 @@ void btx_push_usr_messages(void *btx_handle, void *usr_data,
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_usr_data(btx_handle,
                                              &btx_initialize_usr_data);
+  btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data);
   btx_register_callbacks_push_usr_messages(btx_handle, &btx_push_usr_messages);
 }
