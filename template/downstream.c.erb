@@ -54,6 +54,26 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   return trace;
 }
 
+// Workarround of a bug where gepping trace alive (and not the stream) provoke
+// some segfault
+void btx_streams_get_ref(bt_trace *trace) {
+  <% stream_classes.each_with_index do |_,i| %>
+  {
+    bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+    bt_stream_get_ref(stream);
+  }
+  <% end %>
+}
+
+void btx_streams_put_ref(bt_trace *trace) {
+  <% stream_classes.each_with_index do |_,i| %>
+  {
+    bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+    bt_stream_put_ref(stream);
+  }
+  <% end %>
+}
+
 void btx_push_messages_stream_beginning(
     bt_self_message_iterator *self_message_iterator,
     btx_message_iterator_t *message_iterator_private_data) {

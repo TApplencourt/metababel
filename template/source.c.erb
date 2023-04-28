@@ -110,7 +110,7 @@ source_initialize(bt_self_component_source *self_component_source,
   /* Instantiate a `downstream_trace` of `trace_class` and all the children
    * stream */
   common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
-
+  btx_streams_get_ref(common_data->downstream_trace); // ??
   bt_trace_class_put_ref(trace_class);
 
   /* Set the component's user data to our private data structure */
@@ -163,6 +163,8 @@ source_message_iterator_initialize(
 static void source_finalize(bt_self_component_source *self_component_source) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_source_as_self_component(self_component_source));
+
+  btx_streams_put_ref(common_data->downstream_trace); // ??
   // We allocare it, we need to put ref
   bt_trace_put_ref(common_data->downstream_trace);
 
@@ -203,10 +205,10 @@ BT_PLUGIN(<%= options[:plugin_name] %>);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS(<%= options[:component_name] %>,
                                  source_message_iterator_next);
 
-BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD(<%= options[:component_name] %>,
-                                                   source_initialize);
-BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD(<%= options[:component_name] %>,
-                                                 source_finalize);
+BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD(
+    <%= options[:component_name] %>, source_initialize);
+BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD(
+    <%= options[:component_name] %>, source_finalize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
     <%= options[:component_name] %>, source_message_iterator_initialize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(

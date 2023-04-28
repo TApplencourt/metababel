@@ -17,6 +17,9 @@ btx_downstream_trace_class_create_rec(bt_self_component *self_component);
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class);
 
+void btx_streams_get_ref(bt_trace *trace);
+void btx_streams_put_ref(bt_trace *trace);
+
 void btx_push_messages_stream_beginning(
     bt_self_message_iterator *self_message_iterator,
     btx_message_iterator_t *message_iterator_private_data);

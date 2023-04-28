@@ -167,8 +167,8 @@ BT_PLUGIN(<%= options[:plugin_name] %>);
 /* Add the output  component class */
 BT_PLUGIN_SINK_COMPONENT_CLASS(<%= options[:component_name] %>, sink_consume);
 
-BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(<%= options[:component_name] %>,
-                                                 sink_initialize);
+BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(
+    <%= options[:component_name] %>, sink_initialize);
 BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(<%= options[:component_name] %>,
                                                sink_finalize);
 
