@@ -8,20 +8,23 @@ LDFLAGS_BT2 = $(pkg-config --libs babeltrace2)
 LDFLAGS_DEMANGLE = -liberty
 METABABEL_ROOT = ../..
 
-tally.so: tally.o upstream.o tally_callbacks.o params.o my_demangle.o
-	$(CXX) $^ -o tally.so -shared $(LDFLAGS_DEMANGLE) $(LDFLAGS_BT2)
+btx_main.so: btx_main.o btx_upstream.o btx_component.o callbacks.o my_demangle.o
+	$(CXX) $^ -o btx_main.so -shared $(LDFLAGS_DEMANGLE) $(LDFLAGS_BT2)
  
-tally.o: tally.c
-	$(CC) tally.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
+btx_main.o: btx_main.c
+	$(CC) btx_main.c -I $(METABABEL_ROOT)/include -I . $(CFLAGS) $(CFFLAGS_BT2) -c
 
-upstream.o: upstream.c
-	$(CC) upstream.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c 
+btx_upstream.o: metababel/btx_upstream.c
+	$(CC) metababel/btx_upstream.c -I $(METABABEL_ROOT)/include -I . $(CFLAGS) $(CFFLAGS_BT2) -c 
 
-tally_callbacks.o: tally_callbacks.cpp tally_callbacks.hpp 
-	$(CXX) tally_callbacks.cpp -I $(METABABEL_ROOT)/include $(CXXFLAGS)  -c
+btx_component.o: metababel/btx_component.c
+	$(CC) metababel/btx_component.c -I $(METABABEL_ROOT)/include -I . $(CFLAGS) $(CFFLAGS_BT2) -c
 
-params.o: params.c
-	$(CC) params.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
+callbacks.o: callbacks.cpp callbacks.hpp 
+	$(CXX) callbacks.cpp -I $(METABABEL_ROOT)/include -I . $(CXXFLAGS)  -c
+
+# btx_params.o: metababel/btx_params.c
+# 	$(CC) metababel/btx_params.c -I $(METABABEL_ROOT)/include $(CFLAGS) $(CFFLAGS_BT2) -c
 
 # For C++ Compiler
 my_demangle.o: my_demangle.c my_demangle.h
@@ -33,4 +36,5 @@ my_demangle.o: my_demangle.c my_demangle.h
 
 # For test purposes
 clean:
-	rm -f *.o *.so component.h upstream.{h,c} params.c tally.c
+	rm -f *.o *.so metababel/* callbacks.c btx_main.c
+	rmdir metababel

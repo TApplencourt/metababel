@@ -1,4 +1,4 @@
-#include "tally_callbacks.hpp"
+#include "callbacks.hpp"
 #include <chrono>
 
 using namespace std::chrono;
@@ -8,18 +8,17 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
     struct tally_dispatch *data = new struct tally_dispatch;
     /* User makes our API usr_data to point to his/her data structure */
     *usr_data = data;
+}
 
-    params_t *params = (params_t*) malloc(sizeof(params_t));
-    btx_read_params(btx_handle, params);
+void btx_read_params(void *btx_handle, void *usr_data, btx_params_t *usr_params) {
+    struct tally_dispatch *data = (struct tally_dispatch *) usr_data;
 
-    data->display_compact = params->display_compact;
-    data->demangle_name = params->demangle_name;
-    data->display_human = params->display_human;
-    data->display_metadata = params->display_metadata;
-    data->display_name_max_size = params->display_name_max_size;
-    data->display_kernel_verbose = params->display_kernel_verbose;
-
-    free(params);
+    data->display_compact = usr_params->display_compact;
+    data->demangle_name = usr_params->demangle_name;
+    data->display_human = usr_params->display_human;
+    data->display_metadata = usr_params->display_metadata;
+    data->display_name_max_size = usr_params->display_name_max_size;
+    data->display_kernel_verbose = usr_params->display_kernel_verbose;
 }
 
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
@@ -105,7 +104,7 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
         std::cout << j << std::endl;
     }
 
-    /* Desolate user data */
+    /* Delete user data */
     delete data;
 }
 
@@ -180,9 +179,13 @@ static void lttng_thapi_metadata_usr_callback(
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-    btx_register_callbacks_lttng_host(btx_handle, &lttng_host_usr_callback);
-    btx_register_callbacks_lttng_device(btx_handle, &lttng_device_usr_callback);
-    btx_register_callbacks_lttng_traffic(btx_handle, &lttng_traffic_usr_callback);
-    btx_register_callbacks_lttng_device_name(btx_handle, &lttng_device_name_usr_callback);
-    btx_register_callbacks_lttng_ust_thapi_metadata(btx_handle, &lttng_thapi_metadata_usr_callback);
+  btx_register_callbacks_initialize_usr_data(btx_handle,&btx_initialize_usr_data);
+  btx_register_callbacks_read_params(btx_handle, &btx_read_params);
+  btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data);
+
+  btx_register_callbacks_lttng_host(btx_handle, &lttng_host_usr_callback);
+  btx_register_callbacks_lttng_device(btx_handle, &lttng_device_usr_callback);
+  btx_register_callbacks_lttng_traffic(btx_handle, &lttng_traffic_usr_callback);
+  btx_register_callbacks_lttng_device_name(btx_handle, &lttng_device_name_usr_callback);
+  btx_register_callbacks_lttng_ust_thapi_metadata(btx_handle, &lttng_thapi_metadata_usr_callback);
 }
