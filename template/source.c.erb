@@ -165,7 +165,7 @@ static void source_finalize(bt_self_component_source *self_component_source) {
       bt_self_component_source_as_self_component(self_component_source));
 
   btx_streams_put_ref(common_data->downstream_trace); // ??
-  // We allocare it, we need to put ref
+  // We allocate it, we need to put ref
   bt_trace_put_ref(common_data->downstream_trace);
 
   // Delete name_to_dispatcher

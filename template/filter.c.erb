@@ -375,7 +375,7 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
       bt_self_component_filter_as_self_component(self_component_filter));
 
   btx_streams_put_ref(common_data->downstream_trace); // ??
-  // We allocare it, we need to put ref
+  // We allocate it, we need to put ref
   bt_trace_put_ref(common_data->downstream_trace);
 
   // Delete name_to_dispatcher
