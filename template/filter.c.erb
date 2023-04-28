@@ -241,6 +241,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 
   /* Allocate a private data structure */
   common_data_t *common_data = calloc(1, sizeof(common_data_t));
+  common_data->btx_params = calloc(1,sizeof(btx_params_t));
   common_data->params = params;
   // Read parameters
   btx_populate_params(common_data);

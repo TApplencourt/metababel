@@ -31,6 +31,7 @@ def get_component_generation_command(component)
     btx_component_path: '-o',
     btx_component_type: '-t',
     btx_component_name: '-c',
+    btx_component_params: '--params',
     btx_component_plugin_name: '-p',
     btx_component_downstream_model: '-d',
     btx_component_upstream_model: '-u',

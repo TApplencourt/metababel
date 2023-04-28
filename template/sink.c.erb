@@ -80,6 +80,7 @@ sink_initialize(bt_self_component_sink *self_component_sink,
                 const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
   common_data_t *common_data = calloc(1, sizeof(common_data_t));
+  common_data->btx_params = calloc(1,sizeof(btx_params_t));
   common_data->params = params;
   // Read parameters
   btx_populate_params(common_data);
