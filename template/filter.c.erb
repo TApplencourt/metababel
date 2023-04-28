@@ -301,13 +301,19 @@ filter_initialize(bt_self_component_filter *self_component_filter,
 }
 
 bt_component_class_port_connected_method_status
-filter_input_port_connected(bt_self_component_filter *self_comp,
+filter_input_port_connected(bt_self_component_filter *self_component_filter,
                             bt_self_component_port_input *self_port,
                             const bt_port_output *other_port) {
   const uint64_t current = bt_component_filter_get_input_port_count(
-      bt_self_component_filter_as_component_filter(self_comp));
-  bt_self_component_filter_add_input_port(self_comp, get_port_name(current),
-                                          NULL, NULL);
+      bt_self_component_filter_as_component_filter(self_component_filter));
+
+  {
+    char* name = get_port_name(current);
+    bt_self_component_filter_add_input_port(self_component_filter,
+                                            name, NULL, NULL);
+    free(name);
+  }
+
   return BT_COMPONENT_CLASS_PORT_CONNECTED_METHOD_STATUS_OK;
 }
 /*
