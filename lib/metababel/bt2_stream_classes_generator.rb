@@ -90,17 +90,23 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:)
+      trace_class_name = 'trace_class'
+      pr "bt_trace_class *#{trace_class_name} = bt_trace_class_create(#{variable});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
-        pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{variable}, #{v});"
+        pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{trace_class_name}, #{v});"
       end
 
       @stream_classes.each_with_index do |m, i|
-        stream_class_name = "#{variable}_sc_#{i}"
+        stream_class_name = "#{trace_class_name}_sc_#{i}"
         scope do
+          clock_class_name = 'clock_class'
+          pr "bt_clock_class *#{clock_class_name} = bt_clock_class_create(#{variable});"
           pr "bt_stream_class *#{stream_class_name};"
-          m.get_declarator(trace_class: variable, variable: stream_class_name)
+          m.get_declarator(trace_class: trace_class_name, variable: stream_class_name, clock_class: clock_class_name)
+          pr "bt_clock_class_put_ref(#{clock_class_name});"
         end
       end
+      pr "return #{trace_class_name};"
     end
   end
 
@@ -109,10 +115,14 @@ module Babeltrace2Gen
     include BTPrinter
     include BTLocator
     extend BTFromH
-    attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :id, :name
+    attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :clock_class, :id, :name
 
     def initialize(parent:, name: nil, packet_context_field_class: nil, event_common_context_field_class: nil,
-                   event_classes: [], id: nil, assigns_automatic_event_class_id: nil, assigns_automatic_stream_id: nil)
+                   event_classes: [], id: nil, assigns_automatic_event_class_id: nil, assigns_automatic_stream_id: nil,
+                   clock_class: false)
+      # Handle clock class property:
+      #   https://babeltrace.org/docs/v2.0/libbabeltrace2/group__api-tir-clock-cls.html#gae0f705eb48cd65784da28b1906ca05a5
+
       @parent = parent
       @name = name
 
@@ -137,15 +147,17 @@ module Babeltrace2Gen
       end
       @assigns_automatic_stream_id = assigns_automatic_stream_id
       @id = id
+      @clock_class = clock_class
     end
 
-    def get_declarator(trace_class:, variable:)
+    def get_declarator(trace_class:, variable:, clock_class: nil)
       if @id
         pr "#{variable} = bt_stream_class_create_with_id(#{trace_class}, #{@id});"
       else
         pr "#{variable} = bt_stream_class_create(#{trace_class});"
       end
       pr "bt_stream_class_set_name(#{variable}, \"#{name}\");" if @name
+      pr "bt_stream_class_set_default_clock_class(#{variable}, #{clock_class});" unless @clock_class == false
 
       if @packet_context_field_class
         var_pc = "#{variable}_pc_fc"
@@ -185,7 +197,6 @@ module Babeltrace2Gen
       end
 
       pr "bt_stream_class_put_ref(#{variable});"
-
     end
   end
 

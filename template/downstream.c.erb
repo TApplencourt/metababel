@@ -36,11 +36,8 @@ void btx_downstream_push_message(
 }
 
 bt_trace_class *
-btx_downstream_trace_class_create_rec(bt_self_component *self_component) {
-  bt_trace_class *trace_class = bt_trace_class_create(self_component);
-  <%= body_declarator_classes %>
-  return trace_class;
-}
+btx_downstream_trace_class_create_rec(bt_self_component *self_component){
+    <%= body_declarator_classes %>}
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   bt_trace *trace = bt_trace_create(trace_class);
@@ -124,9 +121,14 @@ void btx_push_message_<%= e.name_sanitized %>(
   bt_stream_class *stream_class = bt_stream_borrow_class(stream);
   bt_event_class *event_class = bt_stream_class_borrow_event_class_by_index(
       stream_class, <%= e.index_event_class %>);
-
+  <% if e.clock_class == false %>
   bt_message *message = bt_message_event_create(
       common_data->self_message_iterator, event_class, stream);
+  <% else %>
+  bt_message *message = bt_message_event_create_with_default_clock_snapshot(
+      common_data->self_message_iterator, event_class, stream, timestamp);
+  <% end %>
+
   bt_event *downstream_event = bt_message_event_borrow_event(message);
 
   btx_set_message_<%= e.name_sanitized %>(
