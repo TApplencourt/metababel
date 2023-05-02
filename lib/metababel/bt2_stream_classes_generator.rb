@@ -119,7 +119,7 @@ module Babeltrace2Gen
 
     def initialize(parent:, name: nil, packet_context_field_class: nil, event_common_context_field_class: nil,
                    event_classes: [], id: nil, assigns_automatic_event_class_id: nil, assigns_automatic_stream_id: nil,
-                   clock_class: false)
+                   clock_class: nil)
       # Handle clock class property:
       #   https://babeltrace.org/docs/v2.0/libbabeltrace2/group__api-tir-clock-cls.html#gae0f705eb48cd65784da28b1906ca05a5
 
@@ -150,14 +150,14 @@ module Babeltrace2Gen
       @clock_class = clock_class
     end
 
-    def get_declarator(trace_class:, variable:, clock_class: nil)
+    def get_declarator(trace_class:, variable:, clock_class:)
       if @id
         pr "#{variable} = bt_stream_class_create_with_id(#{trace_class}, #{@id});"
       else
         pr "#{variable} = bt_stream_class_create(#{trace_class});"
       end
       pr "bt_stream_class_set_name(#{variable}, \"#{name}\");" if @name
-      pr "bt_stream_class_set_default_clock_class(#{variable}, #{clock_class});" unless @clock_class == false
+      pr "bt_stream_class_set_default_clock_class(#{variable}, #{clock_class});" if @clock_class
 
       if @packet_context_field_class
         var_pc = "#{variable}_pc_fc"

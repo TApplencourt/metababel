@@ -1,6 +1,6 @@
 :stream_classes:
 - :name: ze
-  :clock_class:
+  :clock_class: {}
   :event_classes:
   - :name: send_msg
     :payload_field_class:
