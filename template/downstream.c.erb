@@ -121,7 +121,7 @@ void btx_push_message_<%= e.name_sanitized %>(
   bt_stream_class *stream_class = bt_stream_borrow_class(stream);
   bt_event_class *event_class = bt_stream_class_borrow_event_class_by_index(
       stream_class, <%= e.index_event_class %>);
-  <% if !e.clock_class %>
+  <% if !e.default_clock_class %>
   bt_message *message = bt_message_event_create(
       common_data->self_message_iterator, event_class, stream);
   <% else %>

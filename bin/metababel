@@ -33,7 +33,7 @@ class Hash
   end
 end
 
-EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :clock_class) do
+EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -56,7 +56,7 @@ class Babeltrace2Gen::BTTraceClass
   def map_event_classes_with_index
     @stream_classes.map.with_index do |s, index_stream_class|
       s.event_classes.map.with_index do |e, index_event_class|
-        yield(e, index_stream_class, index_event_class, s.clock_class)
+        yield(e, index_stream_class, index_event_class, s.default_clock_class)
       end
     end.flatten
   end
@@ -71,9 +71,9 @@ end
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, t)
   event_name = 'event'
-  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, clock_class|
+  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = []
-    arg_variables << GeneratedArg.new("uint64_t", "timestamp") if clock_class
+    arg_variables << GeneratedArg.new("uint64_t", "timestamp") if default_clock_class
 
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -90,14 +90,14 @@ end
 
 def wrote_creates(folder, t)
   event_name = 'event'
-  downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, clock_class|
+  downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    arg_variables.insert(0,GeneratedArg.new("uint64_t", "timestamp")) if clock_class
+    arg_variables.insert(0,GeneratedArg.new("uint64_t", "timestamp")) if default_clock_class
 
-    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, clock_class)
+    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do

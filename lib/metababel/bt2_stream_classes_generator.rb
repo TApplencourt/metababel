@@ -102,7 +102,7 @@ module Babeltrace2Gen
           clock_class_name = 'clock_class'
           pr "bt_clock_class *#{clock_class_name} = bt_clock_class_create(#{variable});"
           pr "bt_stream_class *#{stream_class_name};"
-          m.get_declarator(trace_class: trace_class_name, variable: stream_class_name, clock_class: clock_class_name)
+          m.get_declarator(trace_class: trace_class_name, variable: stream_class_name, default_clock_class: clock_class_name)
           pr "bt_clock_class_put_ref(#{clock_class_name});"
         end
       end
@@ -115,11 +115,11 @@ module Babeltrace2Gen
     include BTPrinter
     include BTLocator
     extend BTFromH
-    attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :clock_class, :id, :name
+    attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class, :id, :name
 
     def initialize(parent:, name: nil, packet_context_field_class: nil, event_common_context_field_class: nil,
                    event_classes: [], id: nil, assigns_automatic_event_class_id: nil, assigns_automatic_stream_id: nil,
-                   clock_class: nil)
+                   default_clock_class: nil)
       # Handle clock class property:
       #   https://babeltrace.org/docs/v2.0/libbabeltrace2/group__api-tir-clock-cls.html#gae0f705eb48cd65784da28b1906ca05a5
 
@@ -147,17 +147,17 @@ module Babeltrace2Gen
       end
       @assigns_automatic_stream_id = assigns_automatic_stream_id
       @id = id
-      @clock_class = clock_class
+      @default_clock_class = default_clock_class
     end
 
-    def get_declarator(trace_class:, variable:, clock_class:)
+    def get_declarator(trace_class:, variable:, default_clock_class:)
       if @id
         pr "#{variable} = bt_stream_class_create_with_id(#{trace_class}, #{@id});"
       else
         pr "#{variable} = bt_stream_class_create(#{trace_class});"
       end
       pr "bt_stream_class_set_name(#{variable}, \"#{name}\");" if @name
-      pr "bt_stream_class_set_default_clock_class(#{variable}, #{clock_class});" if @clock_class
+      pr "bt_stream_class_set_default_clock_class(#{variable}, #{default_clock_class});" if @default_clock_class
 
       if @packet_context_field_class
         var_pc = "#{variable}_pc_fc"
