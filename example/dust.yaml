@@ -1,0 +1,18 @@
+:stream_classes:
+- :name: ze
+  :default_clock_class: {}
+  :event_classes:
+  - :name: send_msg
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: msg
+          :field_class:
+            :type: string 
+  - :name: recv_msg
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: msg
+          :field_class:
+            :type: string
