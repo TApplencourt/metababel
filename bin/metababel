@@ -101,7 +101,7 @@ def wrote_creates(folder, t)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
-    t.get_declarator(variable: 'self_component')
+    t.get_declarator(variable: 'trace_class', self_component: 'self_component')
   end
 
   d = { body_declarator_classes: body_declarator_classes,

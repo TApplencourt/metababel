@@ -89,24 +89,19 @@ module Babeltrace2Gen
       end
     end
 
-    def get_declarator(variable:)
-      trace_class_name = 'trace_class'
-      pr "bt_trace_class *#{trace_class_name} = bt_trace_class_create(#{variable});"
+    def get_declarator(variable:, self_component:)
+      pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
-        pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{trace_class_name}, #{v});"
+        pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{variable}, #{v});"
       end
 
       @stream_classes.each_with_index do |m, i|
-        stream_class_name = "#{trace_class_name}_sc_#{i}"
+        stream_class_name = "#{variable}_sc_#{i}"
         scope do
-          clock_class_name = 'clock_class'
-          pr "bt_clock_class *#{clock_class_name} = bt_clock_class_create(#{variable});"
           pr "bt_stream_class *#{stream_class_name};"
-          m.get_declarator(trace_class: trace_class_name, variable: stream_class_name, default_clock_class: clock_class_name)
-          pr "bt_clock_class_put_ref(#{clock_class_name});"
+          m.get_declarator(variable: stream_class_name, self_component: self_component, trace_class: variable)
         end
       end
-      pr "return #{trace_class_name};"
     end
   end
 
@@ -150,14 +145,23 @@ module Babeltrace2Gen
       @default_clock_class = default_clock_class
     end
 
-    def get_declarator(trace_class:, variable:, default_clock_class:)
+    def get_declarator(variable:, trace_class:, self_component:)
       if @id
         pr "#{variable} = bt_stream_class_create_with_id(#{trace_class}, #{@id});"
       else
         pr "#{variable} = bt_stream_class_create(#{trace_class});"
       end
       pr "bt_stream_class_set_name(#{variable}, \"#{name}\");" if @name
-      pr "bt_stream_class_set_default_clock_class(#{variable}, #{default_clock_class});" if @default_clock_class
+      if @default_clock_class
+        clock_class_name = "#{variable}_dcc"
+        scope do
+          pr "bt_clock_class *#{clock_class_name};"
+          # TODO: @default_clock_class.get_declarator(variable: clock_class_name, self_component: self_component)
+          pr "#{clock_class_name} = bt_clock_class_create(#{self_component});"
+          pr "bt_stream_class_set_default_clock_class(#{variable}, #{clock_class_name});"
+          pr "bt_clock_class_put_ref(#{clock_class_name});"
+        end
+      end
 
       if @packet_context_field_class
         var_pc = "#{variable}_pc_fc"
