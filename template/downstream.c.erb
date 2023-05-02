@@ -36,10 +36,10 @@ void btx_downstream_push_message(
 }
 
 bt_trace_class *
-btx_downstream_trace_class_create_rec(bt_self_component *self_component){
-    bt_trace_class *trace_class;
-    <%= body_declarator_classes %>
-    return trace_class;
+btx_downstream_trace_class_create_rec(bt_self_component *self_component) {
+  bt_trace_class *trace_class;
+  <%= body_declarator_classes %>
+  return trace_class;
 }
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
