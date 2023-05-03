@@ -207,6 +207,8 @@ if options.key?(:params)
   end
   d[:params_declaration] = c.get_struct_definition('params')
   d[:params_definition] = body
+else
+  d[:params_declaration] = "char _dummy;"
 end
 
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "main.c")
