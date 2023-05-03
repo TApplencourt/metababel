@@ -159,7 +159,6 @@ module GenericTest
     stdout_str = run_command(get_graph_execution_command(sanitized_components, btx_connect))
     # Output validation
     return unless btx_output_validation
-
     expected_output = File.open(btx_output_validation, 'r').read
     assert_equal(expected_output, stdout_str)
   end

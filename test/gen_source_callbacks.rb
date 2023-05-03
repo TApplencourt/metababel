@@ -1,6 +1,7 @@
 require 'optparse'
 require 'yaml'
 require 'erb'
+require 'time'
 
 REGEXT_PRETTY = /
  =\s            # We are interested to the right of the equal sign
@@ -59,13 +60,18 @@ def parse_log(input_path, yaml_path = nil)
       match = line.match(REGEXT_PRETTY)
       raise "Unsupported format for '#{line}'." unless match
 
-      i = line.index('{')
-      head, _, tail = line.partition(': {')
-
-      field_values =  tail.scan(REGEXT_PRETTY).flatten
+      head, tail = line.match(/(\S+): {(.*)/).captures
+      field_values_ts = line.match(/^\[(\S+)\]/)  { |m|
+        t = Time.parse(m.to_s)
+        # Need to convert in nasosecond
+        t.to_i*1000000000+t.nsec
+      }
+      # TODO: Can add an assert so that the stream class have a default clock
+      field_values = tail.scan(REGEXT_PRETTY).flatten
       data = {
         name: head.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
-        field_values: field_values.zip(field_classes).map { |fvalue, fclass| sanitize_value(fvalue, fclass) }
+        field_values: [field_values_ts,
+                       field_values.zip(field_classes).map { |fvalue, fclass| sanitize_value(fvalue, fclass) }].compact.flatten(1)
       }
     end
   end
