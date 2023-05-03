@@ -15,6 +15,5 @@ class TestSourceTimestamp < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/cases_source_timestamp/1.btx_log.txt'
-  
   end
 end
