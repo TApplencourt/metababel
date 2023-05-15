@@ -39,6 +39,12 @@ EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_cl
   end
 end
 
+StreamClassInfo = Struct.new(:name, :args, :body) do
+  def name_sanitized
+    name.gsub(/[^0-9A-Za-z-]/, '_')
+  end
+end
+
 def erb_render_and_save(vars,
                         basename, out_folder, out_name: nil, prefix: 'btx_')
   template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
@@ -81,7 +87,17 @@ def wrote_event_dispatchers(folder, t)
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
+  field = "#{event_name}_cc_f"
+  stream_classes_matching_dispatchers = t.stream_classes.map do |s|
+    arg_variables = []
+    body = Babeltrace2Gen.context(indent: 1) do
+      s.event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
+    end
+    StreamClassInfo.new(s.name, arg_variables, "\n" + body)
+  end
+
   d = { event_dispatchers: event_dispatchers,
+        stream_class_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)

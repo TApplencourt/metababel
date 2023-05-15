@@ -1,6 +1,7 @@
 #include "utarray.h"
 #include "uthash.h"
 #include <assert.h>
+#include <stdbool.h>
 #include <babeltrace2/babeltrace.h>
 #include <metababel/btx_component.h>
 #include <metababel/btx_upstream.h>
@@ -9,7 +10,8 @@
 static void
 btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
                                      common_data_t *common_data,
-                                     const bt_event *<%= event_name %>) {
+                                     const bt_event *<%= event_name %>,
+                                     bool *is_callback_called) {
 
   <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
@@ -22,6 +24,8 @@ btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
     (*p)((void *)common_data, common_data->usr_data,
          <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
+
+  if(callbacks) *is_callback_called = true;
 }
 
 void btx_register_callbacks_<%= e.name_sanitized %>(
@@ -45,3 +49,79 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
   utarray_push_back(s->callbacks, &callback);
 }
 <% end %>
+
+<% stream_classes_matching_dispatchers.each do |s| %>
+void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks, common_data_t *common_data,
+                                                   const bt_event *event, bool *is_callback_called) {
+
+  <% s.args.each do |a| %>
+  <%= a.type %> <%= a.name %>;
+  <% end %>
+  <%= s.body %>
+
+  <%= s.name_sanitized %>_condition_to_callback_t **p = NULL;
+  while ((p = utarray_next(callbacks, p))) {
+      if ( ((*p)->condition)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", ") ) {
+      ((*p)->callback)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", "));
+      *is_callback_called = true;
+    }
+  }
+}
+
+void btx_register_matching_callback_<%= s.name_sanitized %>(
+    void *btx_handle,
+    <%= s.name_sanitized %>_callback_condition_f *condition,
+    <%= s.name_sanitized %>_conditioned_callback_f *callback) {
+  // Look-up our dispatcher
+  name_to_dispatcher_t *s = NULL;
+  name_to_dispatcher_t **name_to_matching_dispatcher =
+      &((common_data_t *)btx_handle)->name_to_matching_dispatcher;
+  HASH_FIND_STR(*name_to_matching_dispatcher, "<%= s.name_sanitized %>", s);
+  if (!s) {
+    // We didn't find the dispatcher, so we need to:
+    // 1. Create it
+    s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
+    s->name = "<%= s.name_sanitized %>";
+    s->dispatcher = (void *)&btx_matching_dispatch_<%= s.name_sanitized %>;
+    utarray_new(s->callbacks, &ut_ptr_icd);
+    // 2. Register it
+    HASH_ADD_KEYPTR(hh, *name_to_matching_dispatcher, s->name, strlen(s->name), s);
+  }
+  // Add the callbacks to the array
+  <%= s.name_sanitized %>_condition_to_callback_t *m =
+      (<%= s.name_sanitized %>_condition_to_callback_t *) malloc(sizeof(<%= s.name_sanitized %>_condition_to_callback_t));
+  m->condition = condition;
+  m->callback = callback;
+  utarray_push_back(s->callbacks, &m);
+}
+<% end %>
+
+void btx_delete_dispatchers(common_data_t *common_data){
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
+    HASH_DEL(common_data->name_to_dispatcher, current);
+    utarray_free(current->callbacks);
+    free(current);
+  }
+}
+
+void btx_delete_matching_dispatchers(common_data_t *common_data){
+  <% stream_classes_matching_dispatchers.each do |s| %>
+  // Look-up our dispatcher
+  name_to_dispatcher_t *s = NULL;
+  name_to_dispatcher_t **name_to_matching_dispatcher =
+      &((common_data_t *)btx_handle)->name_to_matching_dispatcher;
+  HASH_FIND_STR(*name_to_dispatcher, "<%= s.name %>", s);
+  if (s) {
+    // Removes the item from the hash table.
+    HASH_DEL(common_data->name_to_matching_dispatcher, s);
+    // Deletes every condition, callback pair.
+    <%= s.name_sanitized %>_condition_to_callback_t **p = NULL;
+    while ((p = utarray_next(s->callbacks, p))) {
+      free(*p);
+    }
+    utarray_free(s->callbacks);
+    free(s);
+  }
+  <% end %>
+}

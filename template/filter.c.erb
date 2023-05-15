@@ -136,11 +136,26 @@ filter_message_iterator_next_processing_reading(
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
     /* Call dispatcher or forward message downstream */
-    name_to_dispatcher_t *s = NULL;
+    bool is_callback_called = false;
     const char *class_name = bt_event_class_get_name(event_class);
-    HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
-    if (s) {
-      (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event);
+
+    {
+      name_to_dispatcher_t *s = NULL;
+      HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
+      if (s) {
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event, &is_callback_called);
+      }
+    }
+
+    {
+      name_to_dispatcher_t *s = NULL;
+      HASH_FIND_STR(common_data->name_to_matching_dispatcher, class_name, s);
+      if (s) {
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event, &is_callback_called);
+      }
+    }
+
+    if (is_callback_called) {
       /* The message have been consumed, we can discard it */
       bt_message_put_ref(upstream_message);
     } else {
@@ -380,12 +395,8 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
   bt_trace_put_ref(common_data->downstream_trace);
 
   // Delete name_to_dispatcher
-  name_to_dispatcher_t *current, *tmp;
-  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
-    HASH_DEL(common_data->name_to_dispatcher, current);
-    utarray_free(current->callbacks);
-    free(current);
-  }
+  btx_delete_dispatchers(common_data);
+  btx_delete_matching_dispatchers(common_data);
 
   // We allocate it, we need to free it
   free(common_data->btx_params);
