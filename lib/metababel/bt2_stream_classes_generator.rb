@@ -31,32 +31,38 @@ module Babeltrace2Gen
       is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_menber_class
     end
 
-    def find_field_class_path(path, variable)
+    def find_field_class_path(path, variable_sm, variable)
+      # 'variable_sm` is a `bt_field_class_structure_member`
+      # `variable` is a `bt_field_class`
       path.scan(/\["(\w+)"\]|\[(\d+)\]/).each do |m|
         # String
         if m.first
-          pr "#{variable} = bt_field_class_structure_borrow_member_by_name(#{variable}, \"#{m.first}\");"
+          pr "#{variable_sm} = bt_field_class_structure_borrow_member_by_name(#{variable}, \"#{m.first}\");"
         else
-          pr "#{variable} = bt_field_class_structure_borrow_member_by_index(#{variable}, #{m.last});"
+          pr "#{variable_sm} = bt_field_class_structure_borrow_member_by_index(#{variable}, #{m.last});"
         end
       end
     end
 
     def find_field_class(path, variable)
+      # variable is a  `bt_field_class`
+      variable_sm = "#{variable}_sm"
+      pr "bt_field_class_structure_member *#{variable_sm};"
       m = path.match(/\A(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)(.*)/)
-      case m[1]
+      path_variable = case m[1]
       when 'PACKET_CONTEXT'
-        pr "#{variable} = #{rec_stream_class.packet_context_field_class.variable};"
+        "#{rec_stream_class.packet_context_field_class.variable}"
       when 'EVENT_COMMON_CONTEXT'
-        pr "#{variable} = #{rec_stream_class.event_common_context_field_class.variable};"
+        "#{rec_stream_class.event_common_context_field_class.variable}"
       when 'EVENT_SPECIFIC_CONTEXT'
-        pr "#{variable} = #{rec_event_class.specific_context_field_class.varible};"
+        "#{rec_event_class.specific_context_field_class.varible}"
       when 'EVENT_PAYLOAD'
-        pr "#{variable} = #{rec_event_class.payload_field_class.variable};"
+        "#{rec_event_class.payload_field_class.variable}"
       else
         raise "invalid path #{path}"
       end
-      find_field_class_path(m[2], variable)
+      find_field_class_path(m[2], variable_sm, path_variable)
+      pr "#{variable} = bt_field_class_structure_member_borrow_field_class(#{variable_sm});"
     end
   end
 
@@ -223,7 +229,7 @@ module Babeltrace2Gen
     end
 
     def get_declarator(trace_class:, variable:, stream_class:)
-      # Store the variable name for instrocption purpose for LOCATION_PATH
+      # Store the variable name for instrospection purpose (PATH)
       @variable = variable
       if @id
         pr "#{variable} = bt_event_class_create_with_id(#{stream_class}, #{@id});"
@@ -563,13 +569,20 @@ module Babeltrace2Gen
         if @length_field_path
           element_field_class_variable_length = "#{element_field_class_variable}_length"
           pr "bt_field_class *#{element_field_class_variable_length};"
-          find_field_class(@length_field_path, element_field_class_variable_length)
+          scope do
+            find_field_class(@length_field_path, element_field_class_variable_length)
+          end
           pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, #{element_field_class_variable_length});"
+          pr "bt_field_class_put_ref(#{element_field_class_variable_length});";
         else
           pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, NULL);"
         end
       end
     end
+
+    def get_setter(field:, arg_variables:)
+    end
+
   end
 
   class BTMemberClass
