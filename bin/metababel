@@ -87,13 +87,12 @@ def wrote_event_dispatchers(folder, t)
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  field = "#{event_name}_cc_f"
   stream_classes_matching_dispatchers = t.stream_classes.map do |s|
     arg_variables = []
     body = ''
     if s.event_common_context_field_class
       body = Babeltrace2Gen.context(indent: 1) do
-        s.event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
+        s.get_getter(event: event_name, arg_variables: arg_variables)
       end
     end
     StreamClassInfo.new(s.name, arg_variables, "\n" + body)

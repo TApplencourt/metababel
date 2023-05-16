@@ -58,9 +58,12 @@ void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks, common_d
   <%= a.type %> <%= a.name %>;
   <% end %>
   <%= s.body %>
+  const bt_event_class *event_class = bt_event_borrow_class_const(event);
+  const char *class_name = bt_event_class_get_name(event_class);
+
   <%= s.name_sanitized %>_condition_to_callback_t **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
-      if ( ((*p)->condition)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", ") %>) {
+      if ( ((*p)->condition)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", ") %>) ) {
       ((*p)->callback)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", ") %>);
       *is_callback_called = true;
     }
@@ -109,8 +112,8 @@ void btx_delete_matching_dispatchers(common_data_t *common_data){
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
   name_to_dispatcher_t **name_to_matching_dispatcher =
-      &((common_data_t *)btx_handle)->name_to_matching_dispatcher;
-  HASH_FIND_STR(*name_to_dispatcher, "<%= s.name %>", s);
+      &common_data->name_to_matching_dispatcher;
+  HASH_FIND_STR(*name_to_matching_dispatcher, "<%= s.name %>", s);
   if (s) {
     // Removes the item from the hash table.
     HASH_DEL(common_data->name_to_matching_dispatcher, s);
