@@ -134,6 +134,7 @@ typedef struct btx_message_iterator_s btx_message_iterator_t;
 <% elsif options[:component_type] == 'SINK' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  name_to_dispatcher_t *name_to_matching_dispatcher;
   void *usr_data;
   const bt_value *params;
   btx_params_t *btx_params;
