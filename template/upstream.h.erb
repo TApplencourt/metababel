@@ -30,18 +30,17 @@ typedef bool
 <%# The signature type of callbacks to be called if the condition is met %>
 typedef void
 <%= s.name_sanitized %>_conditioned_callback_f(void *btx_handle, void *usr_data, const char* event_class_name,
-                       <%= s.args.map{ |a| a.type }.join(", ") %>);
+                                               <%= s.args.map{ |a| a.type }.join(", ") %>);
 
 typedef struct  <%= s.name_sanitized %>_condition_to_callback_s {
     <%= s.name_sanitized %>_callback_condition_f *condition;
     <%= s.name_sanitized %>_conditioned_callback_f *callback;
 };
-
 typedef struct <%= s.name_sanitized %>_condition_to_callback_s  <%= s.name_sanitized %>_condition_to_callback_t;
 
 extern void btx_register_matching_callback_<%= s.name_sanitized %>(void *btx_handle,
-                                                                   <%= s.name_sanitized %>_callback_condition_f *condition,
-                                                                   <%= s.name_sanitized %>_conditioned_callback_f *callback);
+                                            <%= s.name_sanitized %>_callback_condition_f *condition,
+                                            <%= s.name_sanitized %>_conditioned_callback_f *callback);
 <% end %>
 
 void btx_delete_matching_dispatchers(common_data_t *common_data);
