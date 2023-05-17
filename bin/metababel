@@ -95,6 +95,9 @@ def wrote_event_dispatchers(folder, t)
         s.get_getter(event: event_name, arg_variables: arg_variables)
       end
     end
+    puts s.name
+    arg_variables.insert(0,GeneratedArg.new("const char*", "event_class_name"))
+
     StreamClassInfo.new(s.name, arg_variables, "\n" + body)
   end
 

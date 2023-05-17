@@ -23,22 +23,24 @@ extern void btx_register_callbacks_<%= e.name_sanitized %>(
 void btx_delete_dispatchers(common_data_t *common_data);
 
 // Matching dispatcher
+
+struct condition_to_callback_s {
+  void *condition;
+  void *callback;
+};
+typedef struct condition_to_callback_s condition_to_callback_t;
+
+
 <% stream_classes_matching_dispatchers.each do |s| %>
 <%# The signature type of condition callbacks %>
 typedef bool
-<%= s.name_sanitized %>_callback_condition_f(void *btx_handle, void *usr_data, const char* event_class_name,
+<%= s.name_sanitized %>_callback_condition_f(void *btx_handle, void *usr_data,
                                              <%= s.args.map{ |a| a.type }.join(", ") %>);
 
 <%# The signature type of callbacks to be called if the condition is met %>
 typedef void
-<%= s.name_sanitized %>_conditioned_callback_f(void *btx_handle, void *usr_data, const char* event_class_name,
+<%= s.name_sanitized %>_conditioned_callback_f(void *btx_handle, void *usr_data,
                                                <%= s.args.map{ |a| a.type }.join(", ") %>);
-
-struct  <%= s.name_sanitized %>_condition_to_callback_s {
-    <%= s.name_sanitized %>_callback_condition_f *condition;
-    <%= s.name_sanitized %>_conditioned_callback_f *callback;
-};
-typedef struct <%= s.name_sanitized %>_condition_to_callback_s  <%= s.name_sanitized %>_condition_to_callback_t;
 
 extern void btx_register_matching_callback_<%= s.name_sanitized %>(void *btx_handle,
                                             <%= s.name_sanitized %>_callback_condition_f *condition,

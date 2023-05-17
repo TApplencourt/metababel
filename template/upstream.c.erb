@@ -1,17 +1,15 @@
 #include "utarray.h"
 #include "uthash.h"
 #include <assert.h>
-#include <stdbool.h>
 #include <babeltrace2/babeltrace.h>
 #include <metababel/btx_component.h>
 #include <metababel/btx_upstream.h>
+#include <stdbool.h>
 
 <% event_dispatchers.each do |e| %>
-static void
-btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
-                                     common_data_t *common_data,
-                                     const bt_event *<%= event_name %>,
-                                     bool *is_callback_called) {
+static void btx_dispatch_<%= e.name_sanitized %>(
+    UT_array *callbacks, common_data_t *common_data,
+    const bt_event *<%= event_name %>, bool *is_callback_called) {
 
   <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
@@ -25,7 +23,8 @@ btx_dispatch_<%= e.name_sanitized %>(UT_array *callbacks,
          <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 
-  if(callbacks) *is_callback_called = true;
+  if (callbacks)
+    *is_callback_called = true;
 }
 
 void btx_register_callbacks_<%= e.name_sanitized %>(
@@ -51,28 +50,35 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
 <% end %>
 
 <% stream_classes_matching_dispatchers.each do |s| %>
-void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks, common_data_t *common_data,
-                                                   const bt_event *event, bool *is_callback_called) {
+void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
+                                                   common_data_t *common_data,
+                                                   const bt_event *event,
+                                                   bool *is_callback_called) {
 
   <% s.args.each do |a| %>
   <%= a.type %> <%= a.name %>;
   <% end %>
   <%= s.body %>
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
-  const char *class_name = bt_event_class_get_name(event_class);
+  event_class_name = bt_event_class_get_name(event_class);
 
-  <%= s.name_sanitized %>_condition_to_callback_t **p = NULL;
+  condition_to_callback_t **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
-      if ( ((*p)->condition)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", ") %>) ) {
-      ((*p)->callback)((void *)common_data, common_data->usr_data, class_name, <%= s.args.map{ |a| a.name }.join(", ") %>);
+    <%= s.name_sanitized %>_callback_condition_f *condition =
+        (<%= s.name_sanitized %>_callback_condition_f *)((*p)->condition);
+    <%= s.name_sanitized %>_conditioned_callback_f *callback =
+        (<%= s.name_sanitized %>_conditioned_callback_f *)((*p)->callback);
+    if (condition((void *)common_data, common_data->usr_data,
+                  <%= s.args.map{ |a| a.name }.join(", ") %>)) {
+      callback((void *)common_data, common_data->usr_data,
+               <%= s.args.map{ |a| a.name }.join(", ") %>);
       *is_callback_called = true;
     }
   }
 }
 
 void btx_register_matching_callback_<%= s.name_sanitized %>(
-    void *btx_handle,
-    <%= s.name_sanitized %>_callback_condition_f *condition,
+    void *btx_handle, <%= s.name_sanitized %>_callback_condition_f *condition,
     <%= s.name_sanitized %>_conditioned_callback_f *callback) {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
@@ -87,18 +93,19 @@ void btx_register_matching_callback_<%= s.name_sanitized %>(
     s->dispatcher = (void *)&btx_matching_dispatch_<%= s.name_sanitized %>;
     utarray_new(s->callbacks, &ut_ptr_icd);
     // 2. Register it
-    HASH_ADD_KEYPTR(hh, *name_to_matching_dispatcher, s->name, strlen(s->name), s);
+    HASH_ADD_KEYPTR(hh, *name_to_matching_dispatcher, s->name, strlen(s->name),
+                    s);
   }
   // Add the callbacks to the array
-  <%= s.name_sanitized %>_condition_to_callback_t *m =
-      (<%= s.name_sanitized %>_condition_to_callback_t *) malloc(sizeof(<%= s.name_sanitized %>_condition_to_callback_t));
-  m->condition = condition;
-  m->callback = callback;
+  condition_to_callback_t *m =
+      (condition_to_callback_t *)malloc(sizeof(condition_to_callback_t));
+  m->condition = (void *)condition;
+  m->callback = (void *)callback;
   utarray_push_back(s->callbacks, &m);
 }
 <% end %>
 
-void btx_delete_dispatchers(common_data_t *common_data){
+void btx_delete_dispatchers(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
@@ -107,23 +114,17 @@ void btx_delete_dispatchers(common_data_t *common_data){
   }
 }
 
-void btx_delete_matching_dispatchers(common_data_t *common_data){
-  <% stream_classes_matching_dispatchers.each do |s| %>
-  // Look-up our dispatcher
-  name_to_dispatcher_t *s = NULL;
-  name_to_dispatcher_t **name_to_matching_dispatcher =
-      &common_data->name_to_matching_dispatcher;
-  HASH_FIND_STR(*name_to_matching_dispatcher, "<%= s.name %>", s);
-  if (s) {
+void btx_delete_matching_dispatchers(common_data_t *common_data) {
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_matching_dispatcher, current, tmp) {
     // Removes the item from the hash table.
-    HASH_DEL(common_data->name_to_matching_dispatcher, s);
+    HASH_DEL(common_data->name_to_matching_dispatcher, current);
     // Deletes every condition, callback pair.
-    <%= s.name_sanitized %>_condition_to_callback_t **p = NULL;
-    while ((p = utarray_next(s->callbacks, p))) {
+    condition_to_callback_t **p = NULL;
+    while ((p = utarray_next(current->callbacks, p))) {
       free(*p);
     }
-    utarray_free(s->callbacks);
-    free(s);
+    utarray_free(current->callbacks);
+    free(current);
   }
-  <% end %>
 }
