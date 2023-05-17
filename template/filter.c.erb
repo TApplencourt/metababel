@@ -148,8 +148,11 @@ filter_message_iterator_next_processing_reading(
     }
 
     {
+      const bt_stream_class* stream_class = bt_event_class_borrow_stream_class_const(event_class);
+      const char* stream_class_name = bt_stream_class_get_name(stream_class);
+
       name_to_dispatcher_t *s = NULL;
-      HASH_FIND_STR(common_data->name_to_matching_dispatcher, class_name, s);
+      HASH_FIND_STR(common_data->name_to_matching_dispatcher, stream_class_name, s);
       if (s) {
         (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event, &is_callback_called);
       }
