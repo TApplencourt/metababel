@@ -580,7 +580,28 @@ module Babeltrace2Gen
       end
     end
 
+    def bt_get_variable(arg_variables)
+      if arg_variables.empty? || arg_variables.first.is_a?(GeneratedArg)
+        variable = rec_menber_class.name
+        type = @cast_type || @element_field_class.class.instance_variable_get(:@bt_type)
+        arg_variables << GeneratedArg.new("#{type}*", variable)
+        variable
+      else
+        arg_variables.shift
+      end
+    end
+
     def get_setter(field:, arg_variables:)
+      # Assume length is the element before. So freaking ugly!
+      length_ = arg_variables[-1]
+      usr_var = bt_get_variable(arg_variables)
+      pr "bt_field_array_dynamic_set_length(#{field}, #{length_.name});"
+      pr "for(uint64_t _i=0; _i < #{length_.name} ; _i++)"
+      scope do
+        v = "#{field}_e"
+        pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
+        @element_field_class.get_setter(field: v, arg_variables: ["#{usr_var}[_i]"]);
+      end
     end
 
   end
