@@ -79,11 +79,10 @@ def wrote_event_dispatchers(folder, t)
   event_name = 'event'
   event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = []
-    arg_variables << GeneratedArg.new("uint64_t", "timestamp") if default_clock_class
-
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
+    arg_variables.insert(0,GeneratedArg.new("uint64_t", "timestamp")) if default_clock_class
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
@@ -117,7 +116,6 @@ def wrote_creates(folder, t)
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
     arg_variables.insert(0,GeneratedArg.new("uint64_t", "timestamp")) if default_clock_class
-
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
