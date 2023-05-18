@@ -644,9 +644,7 @@ module Babeltrace2Gen
       when ::Integer
         @members[index]
       when ::String
-        m = @members.find { |m| m.name == index }
-        raise("Cannot Find #{index}") unless m
-        m
+        @members.find { |m| m.name == index }
       else
         raise("Unknow Type (#{index.class}) for index: #{index}")
       end
