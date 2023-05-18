@@ -55,7 +55,7 @@ module Babeltrace2Gen
       when 'EVENT_COMMON_CONTEXT'
         "#{rec_stream_class.event_common_context_field_class.variable}"
       when 'EVENT_SPECIFIC_CONTEXT'
-        "#{rec_event_class.specific_context_field_class.varible}"
+        "#{rec_event_class.specific_context_field_class.variable}"
       when 'EVENT_PAYLOAD'
         "#{rec_event_class.payload_field_class.variable}"
       else
@@ -63,6 +63,17 @@ module Babeltrace2Gen
       end
       find_field_class_path(m[2], variable_sm, path_variable)
       pr "#{variable} = bt_field_class_structure_member_borrow_field_class(#{variable_sm});"
+    end
+
+    def find_path(path)
+      root, id = path.match(/^(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)\["?(.+)?"\]/).captures
+      r =  case root
+      when 'EVENT_PAYLOAD'
+        rec_event_class.payload_field_class
+      else
+        raise "invalid path #{path}"
+      end
+      r[id]
     end
   end
 
@@ -592,10 +603,11 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      # Assume length is the element before. So freaking ugly!
-      length_ = arg_variables[-1]
-      usr_var = bt_get_variable(arg_variables)
+      length_ = find_path(@length_field_path)
+      # I think should be `variable` and not name
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_.name});"
+
+      usr_var = bt_get_variable(arg_variables)
       pr "for(uint64_t _i=0; _i < #{length_.name} ; _i++)"
       scope do
         v = "#{field}_e"
@@ -629,10 +641,14 @@ module Babeltrace2Gen
 
     def [](index)
       case index
-      when Integer
+      when ::Integer
         @members[index]
-      when String
-        @members.find { |m| m.name == index }
+      when ::String
+        m = @members.find { |m| m.name == index }
+        raise("Cannot Find #{index}") unless m
+        m
+      else
+        raise("Unknow Type (#{index.class}) for index: #{index}")
       end
     end
 
