@@ -77,7 +77,7 @@ end
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, t)
   event_name = 'event'
-  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -94,13 +94,14 @@ def wrote_event_dispatchers(folder, t)
         s.get_getter(event: event_name, arg_variables: arg_variables)
       end
     end
-    puts s.name
-    arg_variables.insert(0,GeneratedArg.new("const char*", "event_class_name"))
 
+    # We need to provide at least one arg to avoid the code generation to leave a leading ','
+    # in the function signatures resulting in a compile error.
+    arg_variables.insert(0,GeneratedArg.new("const char*", "event_class_name"))
     StreamClassInfo.new(s.name, arg_variables, "\n" + body)
   end
 
-  d = { event_dispatchers: event_dispatchers,
+  d = { event_class_dispatchers: event_class_dispatchers,
         stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 

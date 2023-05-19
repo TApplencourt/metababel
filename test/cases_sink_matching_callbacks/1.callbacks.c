@@ -12,9 +12,6 @@ typedef struct data_s data_t;
 void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
   data_t *data = calloc(1, sizeof(data_t));
   *usr_data = data;
-
-  data->condition_calls_count = 0;
-  data->callback_calls_count = 0;
 }
 
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {

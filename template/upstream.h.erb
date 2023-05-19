@@ -10,7 +10,7 @@ typedef void(dispatcher_t)(UT_array *callbacks,
                            const bt_event *message,
                            bool *is_callback_called);
 
-<% event_dispatchers.each do |e| %>
+<% event_class_dispatchers.each do |e| %>
 <%# The signature type of callbacks %>
 typedef void
 <%= e.name_sanitized %>_callback_f(void *btx_handle, void *usr_data,

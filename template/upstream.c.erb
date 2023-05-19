@@ -6,7 +6,7 @@
 #include <metababel/btx_upstream.h>
 #include <stdbool.h>
 
-<% event_dispatchers.each do |e| %>
+<% event_class_dispatchers.each do |e| %>
 static void btx_dispatch_<%= e.name_sanitized %>(
     UT_array *callbacks, common_data_t *common_data,
     const bt_event *<%= event_name %>, bool *is_callback_called) {
