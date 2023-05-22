@@ -68,11 +68,11 @@ void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
         (<%= s.name_sanitized %>_callback_condition_f *)((*p)->condition);
     <%= s.name_sanitized %>_conditioned_callback_f *callback =
         (<%= s.name_sanitized %>_conditioned_callback_f *)((*p)->callback);
-    if (condition((void *)common_data, common_data->usr_data,
-                  <%= s.args.map{ |a| a.name }.join(", ") %>)) {
-      callback((void *)common_data, common_data->usr_data,
-               <%= s.args.map{ |a| a.name }.join(", ") %>);
-      *is_callback_called = true;
+
+    // is_callback_called is an output argument, indicates if the condution is met.
+    condition((void *)common_data, common_data->usr_data, is_callback_called, <%= s.args.map{ |a| a.name }.join(", ") %>);
+    if (*is_callback_called) {
+      callback((void *)common_data, common_data->usr_data,<%= s.args.map{ |a| a.name }.join(", ") %>);
     }
   }
 }

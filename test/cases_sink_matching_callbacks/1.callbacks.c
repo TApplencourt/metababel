@@ -23,11 +23,11 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   free(data);
 }
 
-static bool btx_condition(void *btx_handle, void *usr_data, const char* event_class_name)
+static void btx_condition(void *btx_handle, void *usr_data, bool *matched, const char* event_class_name)
 {
   data_t *data = (data_t *)usr_data;
   data->condition_calls_count += 1;
-  return true;
+  *matched = true;
 }
 
 static void btx_callback(void *btx_handle, void *usr_data, const char* event_class_name)
