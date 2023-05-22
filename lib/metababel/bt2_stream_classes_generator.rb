@@ -203,11 +203,11 @@ module Babeltrace2Gen
       pr "bt_stream_class_put_ref(#{variable});"
     end
 
-    # event_common_context_field_class provide the code to get fields data, but it
-    # do not include the code to get the fields data from the event. We need to place
-    # the code here in place of the template beacuse the name of the field is being
-    # generated here. If we put that code in the template and the field name chages
-    # it will differ from the name defined in the template.
+    # The getters code generated from event_common_context_field_class do not include
+    # the event variable name used by the getters. As we do not know the variable
+    # name that should be generated, we can not put it directly in the template,
+    # since, if the code generation generates another name we must update the
+    # template in addition.
     def get_getter(event:, arg_variables:)
       if event_common_context_field_class
         field = "#{event}_cc_f"
