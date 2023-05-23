@@ -6,14 +6,6 @@ require 'erb'
 require 'metababel'
 require 'fileutils'
 
-def validate_model(yaml)
-  raise "Invalid Model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                         d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
-                                           d2.key?(:payload_field_class)
-                                         end
-                                       end
-end
-
 class Hash
   # Copy pasted from rails (https://apidock.com/rails/Hash/deep_merge%21)
   def deep_merge!(other_hash, &block)
