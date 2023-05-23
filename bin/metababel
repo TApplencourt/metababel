@@ -231,7 +231,6 @@ if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 
   y = YAML.load_file(options[:downstream])
-  validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
@@ -243,7 +242,6 @@ if %w[FILTER SINK].include?(options[:component_type])
     # Need to specialize for merging arrays
     y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
-  validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_event_dispatchers(folder, t)
 end
