@@ -14,7 +14,7 @@ typedef void
 <%= e.name_sanitized %>_callback_f(void *btx_handle, void *usr_data,
                                    <%= e.args.map{ |s| s.type }.join(", ") %>);
 <%# The Function who register the callbacks to the dispatcher %>
-extern void btx_register_callbacks_<%= e.name_sanitized %>(
+void btx_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
 <% end %>
 
@@ -39,7 +39,7 @@ typedef void <%= s.name_sanitized %>_conditioned_callback_f(
     void *btx_handle, void *usr_data,
     <%= s.args.map{ |a| a.type }.join(", ") %>);
 
-extern void btx_register_matching_callback_<%= s.name_sanitized %>(
+void btx_register_matching_callback_<%= s.name_sanitized %>(
     void *btx_handle, <%= s.name_sanitized %>_callback_condition_f *condition,
     <%= s.name_sanitized %>_conditioned_callback_f *callback);
 <% end %>

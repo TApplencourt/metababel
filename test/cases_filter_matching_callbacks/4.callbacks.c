@@ -16,8 +16,8 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   data_t *data = (data_t *)usr_data;
 
-  assert(data->condition_calls_count == 8);
-  assert(data->callback_calls_count == 8);
+  assert(data->condition_calls_count == 4);
+  assert(data->callback_calls_count == 4);
 
   free(data);
 }
@@ -25,14 +25,14 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
 static void btx_condition(void *btx_handle, void *usr_data, bool *matched, const char* event_class_name)
 {
   data_t *data = (data_t *)usr_data;
-  data->condition_calls_count += 1;
-  *matched = true;
+  *matched = (0 == strcmp(event_class_name, "event_1"));
+  if (*matched) data->condition_calls_count += 1;
 }
 
 static void btx_callback(void *btx_handle, void *usr_data, const char* event_class_name)
 {
   data_t *data = (data_t *)usr_data;
-  data->callback_calls_count += 1;
+  if (0 == strcmp(event_class_name, "event_1")) data->callback_calls_count += 1;
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
@@ -42,5 +42,4 @@ void btx_register_usr_callbacks(void *btx_handle) {
   // We can use the same condition and callback function because scA and scB do not have common fields
   // Then the function signature is the same in both cases.
   btx_register_matching_callback_scA(btx_handle, &btx_condition, &btx_callback);
-  btx_register_matching_callback_scB(btx_handle, &btx_condition, &btx_callback);
 }
