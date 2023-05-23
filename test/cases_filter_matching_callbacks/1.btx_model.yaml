@@ -1,6 +1,6 @@
 ---
 :stream_classes:
-- :name: scC
+- :name: scA
   :event_classes:
   - :name: event_1
     :payload_field_class:
@@ -10,6 +10,8 @@
         :field_class:
           :type: integer_unsigned
           :field_value_range: 64
+- :name: scB
+  :event_classes:
   - :name: event_2
     :payload_field_class:
       :type: structure

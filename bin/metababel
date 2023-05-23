@@ -39,6 +39,12 @@ EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_cl
   end
 end
 
+StreamClassInfo = Struct.new(:name, :args, :body) do
+  def name_sanitized
+    name.gsub(/[^0-9A-Za-z-]/, '_')
+  end
+end
+
 def erb_render_and_save(vars,
                         basename, out_folder, out_name: nil, prefix: 'btx_')
   template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
@@ -71,7 +77,7 @@ end
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, t)
   event_name = 'event'
-  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = []
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -80,7 +86,23 @@ def wrote_event_dispatchers(folder, t)
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  d = { event_dispatchers: event_dispatchers,
+  stream_classes_matching_dispatchers = t.stream_classes.map do |s|
+    arg_variables = []
+    body = ''
+    if s.event_common_context_field_class
+      body = Babeltrace2Gen.context(indent: 1) do
+        s.get_getter(event: event_name, arg_variables: arg_variables)
+      end
+    end
+
+    # We need to provide at least one arg to avoid the code generation to leave a leading ','
+    # in the function signatures resulting in a compile error.
+    arg_variables.insert(0,GeneratedArg.new("const char*", "event_class_name"))
+    StreamClassInfo.new(s.name, arg_variables, "\n" + body)
+  end
+
+  d = { event_class_dispatchers: event_class_dispatchers,
+        stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
