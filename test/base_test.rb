@@ -39,7 +39,7 @@ def get_component_generation_command(component)
   }
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
 
-  if ENV["METABABEL_INSTALL"]
+  if ENV['METABABEL_INSTALL']
     "metababel #{str_}"
   else
     "ruby -I./lib ./bin/metababel #{str_}"
@@ -68,8 +68,8 @@ def get_graph_execution_command(components, connections)
 
   components_connections = connections.map { |c| "--connect=#{c}" }
 
-  command = ""
-  if ENV["METABABEL_VALGRIND"]
+  command = ''
+  if ENV['METABABEL_VALGRIND']
     command += <<~TEXT
       valgrind --suppressions=.valgrind/dlopen.supp
                --error-exitcode=1
