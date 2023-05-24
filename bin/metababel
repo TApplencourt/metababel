@@ -5,6 +5,19 @@ require 'optparse'
 require 'erb'
 require 'metababel'
 require 'fileutils'
+require 'set'
+
+def validate_model(yaml)
+  # Stream and event classes must have a 'name' as minimum requirement.
+  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                         d.key?(:name) && d[:event_classes].all? do |d2|
+                                           d2.key?(:name)
+                                         end
+                                       end
+  # Event class name must be unique
+  events = yaml[:stream_classes].flat_map { |sc|  sc[:event_classes] }.map { |e| e[:name] }
+  raise "Duplicated 'event' in model #{yaml}" unless events.length() == events.to_set.length()
+end
 
 class Hash
   # Copy pasted from rails (https://apidock.com/rails/Hash/deep_merge%21)
@@ -231,6 +244,7 @@ if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 
   y = YAML.load_file(options[:downstream])
+  validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
@@ -242,6 +256,7 @@ if %w[FILTER SINK].include?(options[:component_type])
     # Need to specialize for merging arrays
     y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
+  validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_event_dispatchers(folder, t)
 end

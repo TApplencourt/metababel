@@ -42,7 +42,6 @@ class TestSourceNoCommonNoPayloadFields < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/cases_source_stream_classes_model/3.btx_model.yaml',
-        btx_metababel_generation_fail: true
       }
     ]
   end
@@ -173,5 +172,69 @@ class TestSourceDetailsComparisonIntegers32DifferentBases < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/cases_source_stream_classes_model/9.btx_details.txt'
+  end
+end
+
+class TestSourceNoNameForStreamClass < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_source_stream_classes_model/10.btx_model.yaml',
+        btx_metababel_generation_fail: true
+      }
+    ]
+  end
+end
+
+class TestSourceNoNameForEventClass < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_source_stream_classes_model/11.btx_model.yaml',
+        btx_metababel_generation_fail: true
+      }
+    ]
+  end
+end
+
+class TestSourceEventDuplicationInDifferentStreams < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_source_stream_classes_model/12.btx_model.yaml',
+        btx_metababel_generation_fail: true
+      }
+    ]
+  end
+end
+
+class TestSourceEventDuplicationInTheSameStream < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_source_stream_classes_model/13.btx_model.yaml',
+        btx_metababel_generation_fail: true
+      }
+    ]
   end
 end
