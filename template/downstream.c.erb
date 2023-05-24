@@ -108,12 +108,14 @@ void btx_push_messages_stream_end(
 
 <% downstream_events.each do |e| %>
 static void btx_set_message_<%= e.name_sanitized %>(
-    bt_event *<%= event_name %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
+    bt_event *
+        <%= event_name %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
   <%= e.body %>
 }
 
 void btx_push_message_<%= e.name_sanitized %>(
-    void *btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
+    void *
+        btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
 
   common_data_t *common_data = (common_data_t *)btx_handle;
 

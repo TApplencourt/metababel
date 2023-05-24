@@ -23,8 +23,8 @@ class TestFilterStateMachine < Test::Unit::TestCase
         btx_component_label: 'C',
         btx_component_type: 'FILTER',
         btx_component_upstream_model: [
-            './test/cases_filter_state_machine/1.A.btx_model.yaml',
-            './test/cases_filter_state_machine/1.B.btx_model.yaml'
+          './test/cases_filter_state_machine/1.A.btx_model.yaml',
+          './test/cases_filter_state_machine/1.B.btx_model.yaml'
         ],
         btx_component_downstream_model: './test/cases_filter_state_machine/1.btx_model.yaml',
         btx_file_usr_callbacks: './test/cases_filter_state_machine/1.callbacks.c'
@@ -39,7 +39,7 @@ class TestFilterStateMachine < Test::Unit::TestCase
       }
     ]
 
-    @btx_connect = [ 'A:C', 'B:C', 'C:D' ]
+    @btx_connect = ['A:C', 'B:C', 'C:D']
   end
 end
 
@@ -52,7 +52,7 @@ class TestFilterStateMachinePushMessagesInitialize < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml'
       },
       {
         btx_component_type: 'FILTER',
@@ -75,7 +75,7 @@ class TestFilterStateMachinePushMessagesFinalize < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_filter_state_machine/1.A.btx_model.yaml'
       },
       {
         btx_component_type: 'FILTER',
