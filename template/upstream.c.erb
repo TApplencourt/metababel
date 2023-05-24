@@ -19,8 +19,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
-    (*p)((void *)common_data, common_data->usr_data,
-         <%= e.args.map{ |s| s.name }.join(", ") %>);
+    (*p)((void *)common_data, common_data->usr_data<%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
   }
 
   if (callbacks)
@@ -60,7 +59,7 @@ void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
   <% end %>
   <%= s.body %>
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
-  event_class_name = bt_event_class_get_name(event_class);
+  const char *event_class_name = bt_event_class_get_name(event_class);
 
   condition_to_callback_t **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
@@ -70,11 +69,13 @@ void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
         (<%= s.name_sanitized %>_conditioned_callback_f *)((*p)->callback);
 
     bool is_condition_met = false;
-    condition((void *)common_data, common_data->usr_data, &is_condition_met,
-              <%= s.args.map{ |a| a.name }.join(", ") %>);
+    condition((void *)common_data,
+              common_data->usr_data, event_class_name,
+              &is_condition_met<%= s.args.map{ |a| a.name }.join_with_prefix(", ") %>);
     if (is_condition_met) {
-      callback((void *)common_data, common_data->usr_data,
-               <%= s.args.map{ |a| a.name }.join(", ") %>);
+      callback((void *)common_data,
+               common_data->usr_data,
+               event_class_name<%= s.args.map{ |a| a.name }.join_with_prefix(", ") %>);
       *is_callback_called = true;
     }
   }
