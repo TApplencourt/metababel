@@ -5,7 +5,6 @@ require 'optparse'
 require 'erb'
 require 'metababel'
 require 'fileutils'
-require 'set'
 
 def validate_model(yaml)
   # Stream and event classes must have a 'name' as minimum requirement.
@@ -16,7 +15,13 @@ def validate_model(yaml)
                                        end
   # Event class name must be unique
   events = yaml[:stream_classes].flat_map { |sc|  sc[:event_classes] }.map { |e| e[:name] }
-  raise "Duplicated 'event' in model #{yaml}" unless events.length() == events.to_set.length()
+  raise "Duplicated 'event' in model #{yaml}" unless events.length() == events.uniq.length()
+end
+
+class Array
+  def join_with_prefix(sep)
+    self.empty? ? '' : "#{sep}#{self.join(sep)}"
+  end
 end
 
 class Hash
@@ -100,9 +105,6 @@ def wrote_event_dispatchers(folder, t)
       end
     end
 
-    # We need to provide at least one arg to avoid the code generation to leave a leading ','
-    # in the function signatures resulting in a compile error.
-    arg_variables.insert(0,GeneratedArg.new("const char*", "event_class_name"))
     StreamClassInfo.new(s.name, arg_variables, "\n" + body)
   end
 
