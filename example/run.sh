@@ -20,3 +20,8 @@ babeltrace2 --plugin-path=. --component=source.metababel_source.btx  --component
 ruby -I ../lib ../bin/metababel --downstream dust.yaml --component SOURCE -o btx_dust -p dust --params dust_params.yaml
 gcc -g -o btx_source.so btx_dust/*.c btx_dust/metababel/*.c -I btx_dust/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
 babeltrace2 --plugin-path=. --component=source.dust.btx  --params='path="./btx_dust/dust.txt"'
+
+# Filter timespamt
+ruby -I../lib ../bin/metababel --upstream dust.yaml  --downstream dust.yaml --component FILTER -p distill -c theone -o btx_filter_bt2 --params dust_params.yaml
+gcc -g -o btx_filter_distill.so btx_filter_distill/*.c btx_filter_distill/metababel/*.c -I btx_filter_distill/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
+babeltrace2 --plugin-path=. --component=source.dust.btx  --params='path="./btx_dust/dust.txt"' --component=filter.distill.theone --params='names="sched_switch,rcu_utilization,kmem_kfree"'

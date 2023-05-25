@@ -44,10 +44,16 @@ void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t
   timestamp += extra_us * UINT64_C(1000);
 
   /* Choose the correct event class, depending on the event name token */
-  if (strcmp(data->name_buffer, "send_msg") == 0)
+  if (strcmp(data->name_buffer, "send-msg") == 0)
     btx_push_message_send_msg(btx_handle, timestamp, data->msg_buffer);
-  else
+  else if (strcmp(data->name_buffer, "recv-msg") == 0)
     btx_push_message_recv_msg(btx_handle, timestamp, data->msg_buffer);
+  else if (strcmp(data->name_buffer, "sched_switch") == 0)
+    btx_push_message_sched_switch(btx_handle, timestamp, data->msg_buffer);
+  else if (strcmp(data->name_buffer, "rcu_utilization") == 0)
+    btx_push_message_rcu_utilization(btx_handle, timestamp, data->msg_buffer);
+  else
+    btx_push_message_kmem_kfree(btx_handle, timestamp, data->msg_buffer);
 
   *status = BTX_SOURCE_OK;
 }

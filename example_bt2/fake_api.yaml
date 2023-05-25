@@ -1,9 +1,0 @@
-:stream_classes:
-- :name: sc
-  :event_classes:
-  - :name: sched_switch
-  - :name: rcu_utilization
-  - :name: kmem_kfree
-  - :name: event_1
-  - :name: event_2
-  - :name: event_3

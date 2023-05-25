@@ -1,5 +1,5 @@
 :stream_classes:
-- :name: ze
+- :name: sc
   :default_clock_class: {}
   :event_classes:
   - :name: send_msg
@@ -10,6 +10,27 @@
           :field_class:
             :type: string 
   - :name: recv_msg
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: msg
+          :field_class:
+            :type: string
+  - :name: sched_switch
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: msg
+          :field_class:
+            :type: string
+  - :name: rcu_utilization
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: msg
+          :field_class:
+            :type: string
+  - :name: kmem_kfree
     :payload_field_class:
       :type: structure
       :members:
