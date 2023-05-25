@@ -1,6 +1,5 @@
 #include <metababel/metababel.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
