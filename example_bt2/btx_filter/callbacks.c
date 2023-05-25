@@ -32,9 +32,9 @@ static void btx_filter_condition(void *btx_handle, void *usr_data, const char* e
 
   strcpy(str, data->names_value);
 
-  char *ptr = strtok(str, ",");
   bool ocurrence = false;
 
+  char *ptr = strtok(str, ",");
   while(ptr != NULL && !ocurrence)
   {
     ocurrence = (strcmp(ptr,event_class_name) == 0);
@@ -54,8 +54,6 @@ static void btx_filter_callback(void *btx_handle, void *usr_data, const char* ev
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
   btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data);
-
   btx_register_callbacks_read_params(btx_handle, &btx_read_params);
-  
   btx_register_matching_callback_sc(btx_handle, &btx_filter_condition, &btx_filter_callback);
 }
