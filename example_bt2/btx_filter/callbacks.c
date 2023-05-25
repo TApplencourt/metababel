@@ -32,14 +32,14 @@ static void btx_filter_condition(void *btx_handle, void *usr_data, const char* e
 
   strcpy(str, data->names_value);
 
-	char *ptr = strtok(str, ",");
-	bool ocurrence = false;
+  char *ptr = strtok(str, ",");
+  bool ocurrence = false;
 
   while(ptr != NULL && !ocurrence)
-	{
+  {
     ocurrence = (strcmp(ptr,event_class_name) == 0);
-		ptr = strtok(NULL, ",");
-	}
+    ptr = strtok(NULL, ",");
+  }
 
   // If the event_class_name is found in 'data->names_value', the associated callback is called,
   // this resulting in the event being discared.
