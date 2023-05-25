@@ -4,28 +4,26 @@
 #include <stdio.h>
 #include <string.h>
 
-struct data_s {
+struct distill {
   const char *names_value;
 };
 
-typedef struct data_s data_t;
-
 void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
-  *usr_data = calloc(1, sizeof(data_t));
+  *usr_data = calloc(1, sizeof(struct distill));
 }
 
 void btx_read_params(void *btx_handle, void *usr_data, btx_params_t *usr_params) {
-  ((data_t *)usr_data)->names_value = usr_params->names;
+  ((struct distill *)usr_data)->names_value = usr_params->names;
 }
 
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
-  data_t *data = (data_t *)usr_data;
+  struct distill *data = (struct distill *)usr_data;
   free(data);
 }
 
 static void btx_filter_condition(void *btx_handle, void *usr_data, const char* event_class_name, bool *matched)
 {
-  data_t *data = (data_t *)usr_data;
+  struct distill *data = (struct distill *)usr_data;
 
   int str_size = strlen(data->names_value);
   char str[str_size];
