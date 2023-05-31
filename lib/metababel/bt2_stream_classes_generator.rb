@@ -600,7 +600,7 @@ module Babeltrace2Gen
             find_field_class(@length_field_path, element_field_class_variable_length)
           end
           pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, #{element_field_class_variable_length});"
-          pr "bt_field_class_put_ref(#{element_field_class_variable_length});";
+          pr "bt_field_class_put_ref(#{element_field_class_variable});"
         else
           pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, NULL);"
         end
