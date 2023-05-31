@@ -103,6 +103,7 @@ def wrote_event_dispatchers(folder, t)
     if s.event_common_context_field_class
       body = Babeltrace2Gen.context(indent: 1) do
         s.get_getter(event: event_name, arg_variables: arg_variables)
+        arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if s.default_clock_class
       end
     end
 

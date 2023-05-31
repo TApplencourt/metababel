@@ -85,6 +85,8 @@ typedef enum btx_source_status_e btx_source_status_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   name_to_dispatcher_t *name_to_matching_dispatcher;
+  /* Current event to be accessed in matching callbacks */
+  const bt_event *current_event;
   void *usr_data;
   const bt_value *params;
   btx_params_t *btx_params;
@@ -157,6 +159,9 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
 void btx_call_callbacks_<%= e.name_sanitized %>(
     common_data_t *common_data, <%= e.args.map{ |s| s.type }.join(", ") %>);
 <% end %>
+
+void btx_event_payload_field_integer_signed_get_value(
+    void *btx_handle, const char *name, int64_t *value, bool *succeed);
 
 #ifdef __cplusplus
 }
