@@ -1,6 +1,6 @@
 ---
 :stream_classes:
-- :name: scC
+- :name: scA
   :event_classes:
   - :name: event_1
     :payload_field_class:

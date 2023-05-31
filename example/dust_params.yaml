@@ -2,3 +2,5 @@
 :entries:
   - :name: path
     :type: string
+  - :name: names
+    :type: string

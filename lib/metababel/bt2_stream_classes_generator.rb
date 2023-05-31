@@ -127,7 +127,8 @@ module Babeltrace2Gen
     include BTPrinter
     include BTLocator
     extend BTFromH
-    attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class, :id, :name
+    attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
+                :id, :name, :get_getter
 
     def initialize(parent:, name: nil, packet_context_field_class: nil, event_common_context_field_class: nil,
                    event_classes: [], id: nil, assigns_automatic_event_class_id: nil, assigns_automatic_stream_id: nil,
@@ -218,6 +219,21 @@ module Babeltrace2Gen
       end
 
       pr "bt_stream_class_put_ref(#{variable});"
+    end
+
+    # The getters code generated from event_common_context_field_class do not include
+    # the event variable name used by the getters. As we do not know the variable
+    # name that should be generated, we can not put it directly in the template,
+    # since, if the code generation generates another name we must update the
+    # template in addition.
+    def get_getter(event:, arg_variables:)
+      if event_common_context_field_class
+        field = "#{event}_cc_f"
+        scope do
+          pr "const bt_field *#{field} = bt_event_borrow_common_context_field_const(#{event});"
+          event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
+        end
+      end
     end
   end
 

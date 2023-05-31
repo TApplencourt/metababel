@@ -59,11 +59,33 @@ sink_consume(bt_self_component_sink *self_component_sink) {
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
     /* Call dispatcher */
-    name_to_dispatcher_t *s = NULL;
+    bool is_callback_called = false;
     const char *class_name = bt_event_class_get_name(event_class);
-    HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
-    if (s)
-      (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event);
+
+    {
+      name_to_dispatcher_t *s = NULL;
+      HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
+      if (s) {
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event,
+                                              &is_callback_called);
+      }
+    }
+
+    {
+      const bt_stream_class *stream_class =
+          bt_event_class_borrow_stream_class_const(event_class);
+      const char *stream_class_name = bt_stream_class_get_name(stream_class);
+
+      name_to_dispatcher_t *s = NULL;
+      HASH_FIND_STR(common_data->name_to_matching_dispatcher, stream_class_name,
+                    s);
+      if (s) {
+        // is_callback_called will only be modified if at least one callback is
+        // called.
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event,
+                                              &is_callback_called);
+      }
+    }
 
     bt_message_put_ref(message);
   }
@@ -122,12 +144,8 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
   btx_call_callbacks_finalize_usr_data(common_data, common_data->usr_data);
 
   // Delete name_to_dispatcher
-  name_to_dispatcher_t *current, *tmp;
-  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
-    HASH_DEL(common_data->name_to_dispatcher, current);
-    utarray_free(current->callbacks);
-    free(current);
-  }
+  btx_delete_dispatchers(common_data);
+  btx_delete_matching_dispatchers(common_data);
 
   // We allocate it, we need to free it
   free(common_data->btx_params);

@@ -29,8 +29,8 @@ void btx_push_messages_stream_end(
 
 <% downstream_events.each do |e| %>
 void btx_push_message_<%= e.name_sanitized %>(
-    void *btx_handle,
-    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>);
+    void *
+        btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
 <% end %>
 #ifdef __cplusplus
 }

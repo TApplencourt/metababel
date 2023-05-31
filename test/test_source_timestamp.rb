@@ -10,7 +10,7 @@ class TestSourceTimestamp < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/cases_source_timestamp/1.btx_model.yaml',
-        btx_log_path: './test/cases_source_timestamp/1.btx_log.txt',
+        btx_log_path: './test/cases_source_timestamp/1.btx_log.txt'
       }
     ]
 

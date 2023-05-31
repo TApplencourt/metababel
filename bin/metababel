@@ -7,11 +7,22 @@ require 'metababel'
 require 'fileutils'
 
 def validate_model(yaml)
-  raise "Invalid Model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                         d.key?(:event_common_context_field_class) || d[:event_classes].all? do |d2|
-                                           d2.key?(:payload_field_class)
-                                         end
-                                       end
+  # Stream and event classes must have a 'name' as minimum requirement.
+  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                                        d.key?(:name) && d[:event_classes].all? do |d2|
+                                                          d2.key?(:name)
+                                                        end
+                                                      end
+
+  # Event class name must be unique
+  events = yaml[:stream_classes].flat_map { |sc|  sc[:event_classes] }.map { |e| e[:name] }
+  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
+end
+
+class Array
+  def join_with_prefix(sep)
+    empty? ? '' : "#{sep}#{join(sep)}"
+  end
 end
 
 class Hash
@@ -34,6 +45,12 @@ class Hash
 end
 
 EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class) do
+  def name_sanitized
+    name.gsub(/[^0-9A-Za-z-]/, '_')
+  end
+end
+
+StreamClassInfo = Struct.new(:name, :args, :body) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -71,17 +88,29 @@ end
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, t)
   event_name = 'event'
-  event_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = []
-    arg_variables << GeneratedArg.new("uint64_t", "timestamp") if default_clock_class
-
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
+    arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
   end
 
-  d = { event_dispatchers: event_dispatchers,
+  stream_classes_matching_dispatchers = t.stream_classes.map do |s|
+    arg_variables = []
+    body = ''
+    if s.event_common_context_field_class
+      body = Babeltrace2Gen.context(indent: 1) do
+        s.get_getter(event: event_name, arg_variables: arg_variables)
+      end
+    end
+
+    StreamClassInfo.new(s.name, arg_variables, "\n" + body)
+  end
+
+  d = { event_class_dispatchers: event_class_dispatchers,
+        stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
@@ -95,8 +124,7 @@ def wrote_creates(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    arg_variables.insert(0,GeneratedArg.new("uint64_t", "timestamp")) if default_clock_class
-
+    arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
@@ -187,8 +215,9 @@ OptionParser.new do |opts|
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
+
 options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
-options[:component_name] ||= "btx"
+options[:component_name] ||= 'btx'
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
@@ -208,10 +237,10 @@ if options.key?(:params)
   d[:params_declaration] = c.get_struct_definition('params')
   d[:params_definition] = body
 else
-  d[:params_declaration] = "char _dummy;"
+  d[:params_declaration] = 'char _dummy;'
 end
 
-erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: "main.c")
+erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 wrote_component(options, d, folder)

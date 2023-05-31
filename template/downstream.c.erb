@@ -108,14 +108,14 @@ void btx_push_messages_stream_end(
 
 <% downstream_events.each do |e| %>
 static void btx_set_message_<%= e.name_sanitized %>(
-    bt_event *<%= event_name %>,
-    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+    bt_event *
+        <%= event_name %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
   <%= e.body %>
 }
 
 void btx_push_message_<%= e.name_sanitized %>(
-    void *btx_handle,
-    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
+    void *
+        btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
 
   common_data_t *common_data = (common_data_t *)btx_handle;
 
@@ -135,7 +135,7 @@ void btx_push_message_<%= e.name_sanitized %>(
   bt_event *downstream_event = bt_message_event_borrow_event(message);
 
   btx_set_message_<%= e.name_sanitized %>(
-      downstream_event, <%= e.args.map{ |s| s.name }.join(", ") %>);
+      downstream_event<%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
 
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(common_data->self_message_iterator);
