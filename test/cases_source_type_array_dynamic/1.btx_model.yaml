@@ -1,0 +1,16 @@
+:stream_classes:
+- :name: ze
+  :event_classes:
+  - :name: GetPlatformIDs
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: num_entries_lenth
+          :field_class:
+            :type: integer_unsigned
+        - :name: num_entries
+          :field_class:
+            :type: array_dynamic
+            :element_field_class:
+              :type: integer_signed
+            :length_field_path: EVENT_PAYLOAD["num_entries_lenth"]

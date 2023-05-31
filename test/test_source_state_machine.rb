@@ -46,7 +46,7 @@ end
        {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/cases_source_state_machine/1.btx_model.yaml',
-         btx_file_usr_callbacks: './test/cases_source_state_machine/3.callbacks.c'
+        btx_file_usr_callbacks: './test/cases_source_state_machine/3.callbacks.c'
        }
      ]
 
