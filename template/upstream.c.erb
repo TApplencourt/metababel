@@ -26,7 +26,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   }
 
   <% e.args.each do |s| %>
-  <%= "free(#{s.name});" if s.type.include?("*") %>
+  <%= "free(#{s.name});" if s.type.include?("*") && !s.type.include?("const") %>
   <% end %>
 
   if (callbacks)
