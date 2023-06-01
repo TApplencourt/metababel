@@ -14,5 +14,7 @@ class TestSourceTypeArrayDynamicLengthFieldPath < Test::Unit::TestCase
         btx_file_usr_callbacks: './test/cases_source_type_array_dynamic/1.callbacks.c'
       }
     ]
+
+    @btx_output_validation = './test/cases_source_type_array_dynamic/1.btx_log.txt'
   end
 end

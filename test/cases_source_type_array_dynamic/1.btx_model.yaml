@@ -8,6 +8,9 @@
         - :name: num_entries_lenth
           :field_class:
             :type: integer_unsigned
+        - :name: dummy
+          :field_class:
+            :type: integer_unsigned
         - :name: num_entries
           :field_class:
             :type: array_dynamic
