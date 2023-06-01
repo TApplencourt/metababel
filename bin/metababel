@@ -50,7 +50,7 @@ EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_cl
   end
 end
 
-StreamClassInfo = Struct.new(:name, :args, :body) do
+StreamClassInfo = Struct.new(:name, :args, :body, :default_clock_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -94,7 +94,7 @@ def wrote_event_dispatchers(folder, t)
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
     arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
-    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
   stream_classes_matching_dispatchers = t.stream_classes.map do |s|
@@ -107,7 +107,7 @@ def wrote_event_dispatchers(folder, t)
       end
     end
 
-    StreamClassInfo.new(s.name, arg_variables, "\n" + body)
+    StreamClassInfo.new(s.name, arg_variables, "\n" + body, s.default_clock_class)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,

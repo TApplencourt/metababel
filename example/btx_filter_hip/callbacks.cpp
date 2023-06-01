@@ -44,8 +44,6 @@ static void btx_hip_entry_callback(void *btx_handle, void *usr_data, const char*
 {
   data_t *data = (data_t *)usr_data;
   data->dispatch[hpt_backend_t("host",vpid,vtid)] = timestamp;
-
-  printf("Start (timestamp): %d\n", timestamp);
 }
 
 static void btx_hip_exit_matcher(void *btx_handle, void *usr_data, const char* event_class_name, bool *matched,
@@ -74,7 +72,7 @@ static void btx_hip_exit_callback(void *btx_handle, void *usr_data, const char* 
   thread_id_t tid = std::get<2>(it->first);
   timestamp_t start = it->second;
   backend_t backend = 0;
-  printf("Start: %d\n", start);
+
   dur_t dur = timestamp - start;
   err_t err = hipResult != 0;
 

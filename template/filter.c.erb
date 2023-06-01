@@ -146,7 +146,7 @@ filter_message_iterator_next_processing_reading(
       name_to_dispatcher_t *s = NULL;
       HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
       if (s) {
-        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event,
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, upstream_message,
                                               &is_callback_called);
       }
     }
@@ -162,7 +162,7 @@ filter_message_iterator_next_processing_reading(
       if (s) {
         // is_callback_called will only be modified if at least one callback is
         // called.
-        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event,
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, upstream_message,
                                               &is_callback_called);
       }
     }

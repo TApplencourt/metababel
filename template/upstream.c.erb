@@ -9,12 +9,23 @@
 <% event_class_dispatchers.each do |e| %>
 static void btx_dispatch_<%= e.name_sanitized %>(
     UT_array *callbacks, common_data_t *common_data,
-    const bt_event *<%= event_name %>, bool *is_callback_called) {
+    const bt_message *upstream_message,
+    bool *is_callback_called) {
 
   <% e.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
   <% end %>
+
+  const bt_event *<%= event_name %> = bt_message_event_borrow_event_const(upstream_message);
+
+  <%# If e.default_clock_class timestamp variable will be rendered %>
   <%= e.body %>
+
+  <% if e.default_clock_class %>
+  const bt_clock_snapshot *clock_snapshot = bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
+  bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &timestamp);
+  <% end %>
+
   // Call all the callbacks who where registered
   // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
@@ -53,15 +64,24 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
 <% stream_classes_matching_dispatchers.each do |s| %>
 void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
                                                    common_data_t *common_data,
-                                                   const bt_event *event,
+                                                   const bt_message *upstream_message,
                                                    bool *is_callback_called) {
 
   <% s.args.each do |a| %>
   <%= a.type %> <%= a.name %>;
   <% end %>
-  <%= s.body %>
+
+  const bt_event *<%= event_name %> = bt_message_event_borrow_event_const(upstream_message);
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
   const char *event_class_name = bt_event_class_get_name(event_class);
+
+  <%# If s.default_clock_class timestamp variable will be rendered %>
+  <%= s.body %>
+
+  <% if s.default_clock_class %>
+  const bt_clock_snapshot *clock_snapshot = bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
+  bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &timestamp);
+  <% end %>
 
   condition_to_callback_t **p = NULL;
   while ((p = utarray_next(callbacks, p))) {
