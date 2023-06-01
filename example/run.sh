@@ -33,5 +33,10 @@ babeltrace2 --plugin-path=. --component=source.hip_sp.btx
 
 # Filter timestamp
 ruby -I../lib ../bin/metababel --upstream hip_model.yaml --downstream interval_model.yaml --component FILTER -p hip_fp -o btx_filter_hip
-gcc -g -o btx_filter_hip.so btx_filter_hip/*.c btx_filter_hip/metababel/*.c -I btx_filter_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
+gcc -g btx_filter_hip/*.c btx_filter_hip/metababel/*.c -I btx_filter_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic -c
+g++ -g btx_filter_hip/*.cpp -I btx_filter_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic -c
+g++ -g -o btx_filter_hip.so *.o -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
 babeltrace2 --plugin-path=. --component=source.hip_sp.btx --component=filter.hip_fp.btx
+
+# Clean
+rm *.o *.so
