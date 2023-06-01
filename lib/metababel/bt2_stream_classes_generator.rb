@@ -611,8 +611,9 @@ module Babeltrace2Gen
       if arg_variables.empty? || arg_variables.first.is_a?(GeneratedArg)
         variable = rec_menber_class.name
         type = @cast_type || @element_field_class.class.instance_variable_get(:@bt_type)
-        arg_variables << GeneratedArg.new("#{type}*", variable)
-        variable
+        v = GeneratedArg.new("#{type}*", variable)
+        arg_variables << v
+        v
       else
         arg_variables.shift
       end
@@ -623,12 +624,25 @@ module Babeltrace2Gen
       # I think should be `variable` and not name
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_.name});"
 
-      usr_var = bt_get_variable(arg_variables)
+      usr_var = bt_get_variable(arg_variables).name
       pr "for(uint64_t _i=0; _i < #{length_.name} ; _i++)"
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
         @element_field_class.get_setter(field: v, arg_variables: ["#{usr_var}[_i]"]);
+      end
+    end
+
+    def get_getter(field:, arg_variables:)
+      length = "#{field}_length"
+      pr "uint64_t #{length} = bt_field_array_get_length(#{field});"
+      usr_var = bt_get_variable(arg_variables)
+      pr "#{usr_var.name} = (#{usr_var.type}) malloc(#{length} * sizeof(#{usr_var.name}));"
+      pr "for(uint64_t _i=0; _i < #{length} ; _i++)"
+      scope do
+        v = "#{field}_e"
+        pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
+        @element_field_class.get_getter(field: v, arg_variables: ["#{usr_var.name}[_i]"]);
       end
     end
 
