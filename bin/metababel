@@ -44,7 +44,7 @@ class Hash
   end
 end
 
-EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class) do
+EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class, :args_to_free) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -94,7 +94,8 @@ def wrote_event_dispatchers(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class,
+                  arg_variables.fetch("outputs_allocated",[]))
   end
 
   stream_classes_matching_dispatchers = t.stream_classes.map do |s|
@@ -113,6 +114,7 @@ def wrote_event_dispatchers(folder, t)
         stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 
+  STDERR.puts(event_name)
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
 end

@@ -1,5 +1,12 @@
 require_relative 'bt2_generator_utils'
 
+class Hash
+  def fetch_append(key, item)
+    self[key] = self.fetch(key,[]) << item
+    item
+  end
+end
+
 module Babeltrace2Gen
   class GeneratedArg < Struct.new(:type, :name)
   end
@@ -386,36 +393,31 @@ module Babeltrace2Gen
       raise NotImplementedError, self.class
     end
 
-    def bt_get_variable(_field, arg_variables)
-      inputs = arg_variables.fetch("inputs", [])
-      outputs = arg_variables.fetch("outputs", [])
-      outputs_to_free = arg_variables.fetch("outputs_to_free", [])
+    def bt_get_variable(arg_variables, is_array: false)
       tmp = arg_variables.fetch("tmp", [])
-      if !tmp.empty?
-        return tmp.shift
-      elsif inputs.empty?
-        type = @cast_type || self.class.instance_variable_get(:@bt_type)
-        var = GeneratedArg.new(type, rec_menber_class.name)
-      else
-        var = inputs.shift
-        raise("input #{var} should have been of type GeneratedArg") unless input.is_a?(GeneratedArg)
-      end
+      return tmp.shift unless tmp.empty?
 
-      outputs << var
-      arg_variables["outputs"] = outputs
-      var.name
+      type = if is_array
+         "#{element_field_class.class.instance_variable_get(:@bt_type)}*"
+      else
+         self.class.instance_variable_get(:@bt_type)
+      end
+      var = GeneratedArg.new(@cast_type || type, rec_menber_class.name)
+
+      arg_variables.fetch_append("outputs_allocated", var) if is_array
+      arg_variables.fetch_append("outputs", var)
     end
 
     def get_getter(field:, arg_variables:)
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
-      variable = bt_get_variable(field, arg_variables)
+      variable = bt_get_variable(arg_variables).name
       cast_func = @cast_type ? "(#{@cast_type})" : ''
       pr "#{variable} = #{cast_func}#{bt_func_get}(#{field});"
     end
 
     def get_setter(field:, arg_variables:)
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'set'
-      variable = bt_get_variable(field, arg_variables)
+      variable = bt_get_variable(arg_variables).name
       cast_func = @cast_type ? "(#{self.class.instance_variable_get(:@bt_type)})" : ''
       pr "#{bt_func_get}(#{field}, #{variable});"
     end
@@ -616,35 +618,15 @@ module Babeltrace2Gen
       end
     end
 
-    def bt_get_variable(arg_variables)
-      inputs = arg_variables.fetch("inputs", [])
-      outputs = arg_variables.fetch("outputs", [])
-      outputs_to_free = arg_variables.fetch("outputs_to_free", [])
-
-      if inputs.empty?
-        type = @cast_type || element_field_class.class.instance_variable_get(:@bt_type)
-        var = GeneratedArg.new("#{type}*", rec_menber_class.name)
-      else
-        var = inputs.shift
-        raise("input #{var} should have been of type GeneratedArg") unless input.is_a?(GeneratedArg)
-      end
-
-      outputs << var
-      arg_variables["outputs"] = outputs
-      var
-    end
-
     def get_setter(field:, arg_variables:)
       length_ = find_path(@length_field_path)
-      # I think should be `variable` and not name
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_.name});"
-
-      usr_var = bt_get_variable(arg_variables)
+      usr_var = bt_get_variable(arg_variables, is_array: true)
       pr "for(uint64_t _i=0; _i < #{length_.name} ; _i++)"
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
-        arg_variables["tmp"] = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
+        arg_variables.fetch_append("tmp", GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_setter(field: v, arg_variables: arg_variables)
       end
     end
@@ -652,13 +634,13 @@ module Babeltrace2Gen
     def get_getter(field:, arg_variables:)
       length = "#{field}_length"
       pr "uint64_t #{length} = bt_field_array_get_length(#{field});"
-      usr_var = bt_get_variable(arg_variables)
+      usr_var = bt_get_variable(arg_variables, is_array: true)
       pr "#{usr_var.name} = (#{usr_var.type}) malloc(#{length} * sizeof(#{usr_var.name}));"
       pr "for(uint64_t _i=0; _i < #{length} ; _i++)"
       scope do
         v = "#{field}_e"
-        arg_variables["tmp"] = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
         pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
+        arg_variables.fetch_append("tmp", GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
     end

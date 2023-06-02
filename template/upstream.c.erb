@@ -25,8 +25,8 @@ static void btx_dispatch_<%= e.name_sanitized %>(
              ->usr_data<%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
   }
 
-  <% e.args.each do |s| %>
-  <%= "free(#{s.name});" if s.type.include?("*") && !s.type.include?("const") %>
+  <% e.args_to_free.each do |s| %>
+      <%= "free(#{s.name});" %>
   <% end %>
 
   if (callbacks)
