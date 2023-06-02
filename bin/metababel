@@ -137,6 +137,7 @@ def wrote_creates(folder, t)
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,
         event_name: event_name }
+
   erb_render_and_save(d, 'downstream.h', folder)
   erb_render_and_save(d, 'downstream.c', folder)
 end

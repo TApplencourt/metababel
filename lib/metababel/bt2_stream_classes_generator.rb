@@ -2,7 +2,7 @@ require_relative 'bt2_generator_utils'
 
 class Hash
   def fetch_append(key, item)
-    self[key] = self.fetch(key,[]) << item
+    self[key] = fetch(key, []) << item
     item
   end
 end
@@ -57,29 +57,29 @@ module Babeltrace2Gen
       pr "bt_field_class_structure_member *#{variable_sm};"
       m = path.match(/\A(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)(.*)/)
       path_variable = case m[1]
-      when 'PACKET_CONTEXT'
-        "#{rec_stream_class.packet_context_field_class.variable}"
-      when 'EVENT_COMMON_CONTEXT'
-        "#{rec_stream_class.event_common_context_field_class.variable}"
-      when 'EVENT_SPECIFIC_CONTEXT'
-        "#{rec_event_class.specific_context_field_class.variable}"
-      when 'EVENT_PAYLOAD'
-        "#{rec_event_class.payload_field_class.variable}"
-      else
-        raise "invalid path #{path}"
-      end
+                      when 'PACKET_CONTEXT'
+                        "#{rec_stream_class.packet_context_field_class.variable}"
+                      when 'EVENT_COMMON_CONTEXT'
+                        "#{rec_stream_class.event_common_context_field_class.variable}"
+                      when 'EVENT_SPECIFIC_CONTEXT'
+                        "#{rec_event_class.specific_context_field_class.variable}"
+                      when 'EVENT_PAYLOAD'
+                        "#{rec_event_class.payload_field_class.variable}"
+                      else
+                        raise "invalid path #{path}"
+                      end
       find_field_class_path(m[2], variable_sm, path_variable)
       pr "#{variable} = bt_field_class_structure_member_borrow_field_class(#{variable_sm});"
     end
 
     def find_path(path)
       root, id = path.match(/^(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)\["?(.+)?"\]/).captures
-      r =  case root
-      when 'EVENT_PAYLOAD'
-        rec_event_class.payload_field_class
-      else
-        raise "invalid path #{path}"
-      end
+      r = case root
+          when 'EVENT_PAYLOAD'
+            rec_event_class.payload_field_class
+          else
+            raise "invalid path #{path}"
+          end
       r[id]
     end
   end
@@ -234,12 +234,12 @@ module Babeltrace2Gen
     # since, if the code generation generates another name we must update the
     # template in addition.
     def get_getter(event:, arg_variables:)
-      if event_common_context_field_class
-        field = "#{event}_cc_f"
-        scope do
-          pr "const bt_field *#{field} = bt_event_borrow_common_context_field_const(#{event});"
-          event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
-        end
+      return unless event_common_context_field_class
+
+      field = "#{event}_cc_f"
+      scope do
+        pr "const bt_field *#{field} = bt_event_borrow_common_context_field_const(#{event});"
+        event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
       end
     end
   end
@@ -283,14 +283,14 @@ module Babeltrace2Gen
         end
       end
 
-      if @payload_field_class
-        var_name = "#{variable}_p_fc"
-        scope do
-          pr "bt_field_class *#{var_name};"
-          @payload_field_class.get_declarator(trace_class: trace_class, variable: var_name)
-          pr "bt_event_class_set_payload_field_class(#{variable}, #{var_name});"
-          pr "bt_field_class_put_ref(#{var_name});"
-        end
+      return unless @payload_field_class
+
+      var_name = "#{variable}_p_fc"
+      scope do
+        pr "bt_field_class *#{var_name};"
+        @payload_field_class.get_declarator(trace_class: trace_class, variable: var_name)
+        pr "bt_event_class_set_payload_field_class(#{variable}, #{var_name});"
+        pr "bt_field_class_put_ref(#{var_name});"
       end
     end
 
@@ -311,12 +311,12 @@ module Babeltrace2Gen
         end
       end
 
-      if @payload_field_class
-        field = "#{event}_p_f"
-        scope do
-          pr "bt_field *#{field} = bt_event_borrow_payload_field(#{event});"
-          @payload_field_class.get_setter(variable: field, arg_variables: arg_variables)
-        end
+      return unless @payload_field_class
+
+      field = "#{event}_p_f"
+      scope do
+        pr "bt_field *#{field} = bt_event_borrow_payload_field(#{event});"
+        @payload_field_class.get_setter(variable: field, arg_variables: arg_variables)
       end
     end
 
@@ -337,12 +337,12 @@ module Babeltrace2Gen
         end
       end
 
-      if @payload_field_class
-        field = "#{event}_p_f"
-        scope do
-          pr "const bt_field *#{field} = bt_event_borrow_payload_field_const(#{event});"
-          @payload_field_class.get_getter(variable: field, arg_variables: arg_variables)
-        end
+      return unless @payload_field_class
+
+      field = "#{event}_p_f"
+      scope do
+        pr "const bt_field *#{field} = bt_event_borrow_payload_field_const(#{event});"
+        @payload_field_class.get_getter(variable: field, arg_variables: arg_variables)
       end
     end
   end
@@ -394,18 +394,18 @@ module Babeltrace2Gen
     end
 
     def bt_get_variable(arg_variables, is_array: false)
-      tmp = arg_variables.fetch("tmp", [])
+      tmp = arg_variables.fetch('tmp', [])
       return tmp.shift unless tmp.empty?
 
       type = if is_array
-         "#{element_field_class.class.instance_variable_get(:@bt_type)}*"
-      else
-         self.class.instance_variable_get(:@bt_type)
-      end
+               "#{element_field_class.class.instance_variable_get(:@bt_type)}*"
+             else
+               self.class.instance_variable_get(:@bt_type)
+             end
       var = GeneratedArg.new(@cast_type || type, rec_menber_class.name)
 
-      arg_variables.fetch_append("outputs_allocated", var) if is_array
-      arg_variables.fetch_append("outputs", var)
+      arg_variables.fetch_append('outputs_allocated', var) if is_array
+      arg_variables.fetch_append('outputs', var)
     end
 
     def get_getter(field:, arg_variables:)
@@ -462,9 +462,9 @@ module Babeltrace2Gen
 
     def get_declarator(variable:)
       pr "bt_field_class_integer_set_field_value_range(#{variable}, #{@field_value_range});" if @field_value_range
-      if @preferred_display_base
-        pr "bt_field_class_integer_set_preferred_display_base(#{variable}, #{@preferred_display_base});"
-      end
+      return unless @preferred_display_base
+
+      pr "bt_field_class_integer_set_preferred_display_base(#{variable}, #{@preferred_display_base});"
     end
   end
 
@@ -593,10 +593,10 @@ module Babeltrace2Gen
 
     def initialize(parent:, element_field_class:, length_field_path: nil)
       super(parent: parent, element_field_class: element_field_class)
-      if length_field_path
-        extend(WithLengthField)
-        @length_field_path = length_field_path
-      end
+      return unless length_field_path
+
+      extend(WithLengthField)
+      @length_field_path = length_field_path
     end
 
     def get_declarator(trace_class:, variable:)
@@ -626,7 +626,7 @@ module Babeltrace2Gen
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
-        arg_variables.fetch_append("tmp", GeneratedArg.new('', "#{usr_var.name}[_i]"))
+        arg_variables.fetch_append('tmp', GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_setter(field: v, arg_variables: arg_variables)
       end
     end
@@ -640,11 +640,10 @@ module Babeltrace2Gen
       scope do
         v = "#{field}_e"
         pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
-        arg_variables.fetch_append("tmp", GeneratedArg.new('', "#{usr_var.name}[_i]"))
+        arg_variables.fetch_append('tmp', GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
     end
-
   end
 
   class BTMemberClass
