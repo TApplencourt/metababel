@@ -89,16 +89,16 @@ end
 def wrote_event_dispatchers(folder, t)
   event_name = 'event'
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
-    arg_variables = []
+    arg_variables = {}
+    arg_variables["outputs"] = [ GeneratedArg.new('uint64_t', 'timestamp') ] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
-    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class)
+    EventInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class)
   end
 
   stream_classes_matching_dispatchers = t.stream_classes.map do |s|
-    arg_variables = []
+    arg_variables = {}
     body = ''
     if s.event_common_context_field_class
       body = Babeltrace2Gen.context(indent: 1) do
@@ -106,7 +106,7 @@ def wrote_event_dispatchers(folder, t)
       end
     end
 
-    StreamClassInfo.new(s.name, arg_variables, "\n" + body)
+    StreamClassInfo.new(s.name, arg_variables.fetch("outputs",[]), "\n" + body)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,
@@ -120,12 +120,12 @@ end
 def wrote_creates(folder, t)
   event_name = 'event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
-    arg_variables = []
+    arg_variables = {}
+    arg_variables["outputs"] = [ GeneratedArg.new('uint64_t', 'timestamp') ] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
-    EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
+    EventInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
@@ -136,7 +136,6 @@ def wrote_creates(folder, t)
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,
         event_name: event_name }
-
   erb_render_and_save(d, 'downstream.h', folder)
   erb_render_and_save(d, 'downstream.c', folder)
 end

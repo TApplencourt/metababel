@@ -387,14 +387,23 @@ module Babeltrace2Gen
     end
 
     def bt_get_variable(_field, arg_variables)
-      if arg_variables.empty? || arg_variables.first.is_a?(GeneratedArg)
-        variable = rec_menber_class.name
+      inputs = arg_variables.fetch("inputs", [])
+      outputs = arg_variables.fetch("outputs", [])
+      outputs_to_free = arg_variables.fetch("outputs_to_free", [])
+      tmp = arg_variables.fetch("tmp", [])
+      if !tmp.empty?
+        return tmp.shift
+      elsif inputs.empty?
         type = @cast_type || self.class.instance_variable_get(:@bt_type)
-        arg_variables << GeneratedArg.new(type, variable)
-        variable
+        var = GeneratedArg.new(type, rec_menber_class.name)
       else
-        arg_variables.shift
+        var = inputs.shift
+        raise("input #{var} should have been of type GeneratedArg") unless input.is_a?(GeneratedArg)
       end
+
+      outputs << var
+      arg_variables["outputs"] = outputs
+      var.name
     end
 
     def get_getter(field:, arg_variables:)
@@ -608,15 +617,21 @@ module Babeltrace2Gen
     end
 
     def bt_get_variable(arg_variables)
-      if arg_variables.empty? || arg_variables.first.is_a?(GeneratedArg)
-        variable = rec_menber_class.name
-        type = @cast_type || @element_field_class.class.instance_variable_get(:@bt_type)
-        v = GeneratedArg.new("#{type}*", variable)
-        arg_variables << v
-        v
+      inputs = arg_variables.fetch("inputs", [])
+      outputs = arg_variables.fetch("outputs", [])
+      outputs_to_free = arg_variables.fetch("outputs_to_free", [])
+
+      if inputs.empty?
+        type = @cast_type || element_field_class.class.instance_variable_get(:@bt_type)
+        var = GeneratedArg.new("#{type}*", rec_menber_class.name)
       else
-        arg_variables.shift
+        var = inputs.shift
+        raise("input #{var} should have been of type GeneratedArg") unless input.is_a?(GeneratedArg)
       end
+
+      outputs << var
+      arg_variables["outputs"] = outputs
+      var
     end
 
     def get_setter(field:, arg_variables:)
@@ -624,12 +639,14 @@ module Babeltrace2Gen
       # I think should be `variable` and not name
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_.name});"
 
-      usr_var = bt_get_variable(arg_variables).name
+      usr_var = bt_get_variable(arg_variables)
       pr "for(uint64_t _i=0; _i < #{length_.name} ; _i++)"
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
-        @element_field_class.get_setter(field: v, arg_variables: ["#{usr_var}[_i]"]);
+        tmp = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
+        arg_variables["tmp"] = tmp
+        @element_field_class.get_setter(field: v, arg_variables: arg_variables)
       end
     end
 
@@ -641,8 +658,10 @@ module Babeltrace2Gen
       pr "for(uint64_t _i=0; _i < #{length} ; _i++)"
       scope do
         v = "#{field}_e"
+        tmp = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
+        arg_variables["tmp"] = tmp
         pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
-        @element_field_class.get_getter(field: v, arg_variables: ["#{usr_var.name}[_i]"]);
+        @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
     end
 
