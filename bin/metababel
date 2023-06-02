@@ -114,7 +114,6 @@ def wrote_event_dispatchers(folder, t)
         stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 
-  STDERR.puts(event_name)
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
 end
