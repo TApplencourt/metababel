@@ -4,6 +4,7 @@
 
 struct data_s {
   uint64_t condition_calls_count;
+  uint64_t callback_calls_count;
 };
 
 typedef struct data_s data_t;
@@ -14,23 +15,28 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
 
 void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   data_t *data = (data_t *)usr_data;
-
-  assert(data->condition_calls_count == 4);
-
+  assert(data->condition_calls_count == 8);
+  assert(data->callback_calls_count == 4);
   free(data);
 }
 
 static void btx_condition(void *btx_handle, void *usr_data,
-                          const char *event_class_name, bool *matched) {
+                          const char *stream_class_name,
+                          const char *event_class_name, 
+                          bool *matched) {
   data_t *data = (data_t *)usr_data;
+  assert(strcmp(stream_class_name, "scA") == 0);
   *matched = (0 == strcmp(event_class_name, "event_1"));
-  if (*matched)
-    data->condition_calls_count += 1;
+  data->condition_calls_count += 1;
 }
 
 static void btx_callback(void *btx_handle, void *usr_data,
+                         const char *stream_class_name,
                          const char *event_class_name) {
-  assert(0 == strcmp(event_class_name, "event_1"));
+  data_t *data = (data_t *)usr_data;
+  assert(strcmp(stream_class_name, "scA") == 0);
+  assert(strcmp(event_class_name, "event_1") == 0);
+  data->callback_calls_count =+ 1;
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {

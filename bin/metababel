@@ -93,7 +93,7 @@ def wrote_event_dispatchers(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
+    arg_variables.insert(0, GeneratedArg.new('int64_t', 'timestamp')) if default_clock_class
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
@@ -103,10 +103,9 @@ def wrote_event_dispatchers(folder, t)
     if s.event_common_context_field_class
       body = Babeltrace2Gen.context(indent: 1) do
         s.get_getter(event: event_name, arg_variables: arg_variables)
-        arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if s.default_clock_class
       end
     end
-
+    arg_variables.insert(0, GeneratedArg.new('int64_t', 'timestamp')) if s.default_clock_class
     StreamClassInfo.new(s.name, arg_variables, "\n" + body, s.default_clock_class)
   end
 
@@ -125,7 +124,7 @@ def wrote_creates(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    arg_variables.insert(0, GeneratedArg.new('uint64_t', 'timestamp')) if default_clock_class
+    arg_variables.insert(0, GeneratedArg.new('int64_t', 'timestamp')) if default_clock_class
     EventInfo.new(e.name, arg_variables, "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 

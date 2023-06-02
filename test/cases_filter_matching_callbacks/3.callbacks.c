@@ -27,13 +27,16 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
 }
 
 static void btx_condition(void *btx_handle, void *usr_data,
-                          const char *event_class_name, bool *matched) {
+                          const char *stream_class_name,
+                          const char *event_class_name, 
+                          bool *matched) {
   data_t *data = (data_t *)usr_data;
   data->condition_calls_count += 1;
   *matched = true;
 }
 
 static void btx_callback(void *btx_handle, void *usr_data,
+                         const char *stream_class_name,
                          const char *event_class_name) {
   data_t *data = (data_t *)usr_data;
   data->callback_calls_count += 1;
