@@ -644,8 +644,7 @@ module Babeltrace2Gen
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
-        tmp = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
-        arg_variables["tmp"] = tmp
+        arg_variables["tmp"] = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
         @element_field_class.get_setter(field: v, arg_variables: arg_variables)
       end
     end
@@ -658,8 +657,7 @@ module Babeltrace2Gen
       pr "for(uint64_t _i=0; _i < #{length} ; _i++)"
       scope do
         v = "#{field}_e"
-        tmp = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
-        arg_variables["tmp"] = tmp
+        arg_variables["tmp"] = arg_variables.fetch(["tmp"],[]) << "#{usr_var.name}[_i]"
         pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
