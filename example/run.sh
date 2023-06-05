@@ -36,6 +36,3 @@ gcc -g btx_filter_hip/*.c btx_filter_hip/metababel/*.c -I btx_filter_hip/ -I ../
 g++ -g btx_filter_hip/*.cpp -I btx_filter_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic -c
 g++ -g -o btx_filter_hip.so *.o -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
 babeltrace2 --plugin-path=. --component=source.hip_sp.btx --component=filter.hip_fp.btx
-
-# Clean
-rm *.o *.so

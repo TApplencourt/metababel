@@ -1,5 +1,5 @@
-#include <assert.h>
 #include <metababel/metababel.h>
+#include <assert.h>
 
 #include "callbacks.hpp"
 

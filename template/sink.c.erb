@@ -48,14 +48,14 @@ sink_consume(bt_self_component_sink *self_component_sink) {
   }
   /* For each consumed message */
   for (uint64_t i = 0; i < message_count; i++) {
-    const bt_message *message = messages[i];
-    if (bt_message_get_type(message) != BT_MESSAGE_TYPE_EVENT) {
-      bt_message_put_ref(message);
+    const bt_message *upstream_message = messages[i];
+    if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
+      bt_message_put_ref(upstream_message);
       continue;
     }
 
     /* Borrow the event message's event and its class */
-    const bt_event *event = bt_message_event_borrow_event_const(message);
+    const bt_event *event = bt_message_event_borrow_event_const(upstream_message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
     /* Call dispatcher */
@@ -66,7 +66,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
       name_to_dispatcher_t *s = NULL;
       HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
       if (s) {
-        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, message,
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, upstream_message,
                                               &is_callback_called);
       }
     }
@@ -82,12 +82,12 @@ sink_consume(bt_self_component_sink *self_component_sink) {
       if (s) {
         // is_callback_called will only be modified if at least one callback is
         // called.
-        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, message,
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, upstream_message,
                                               &is_callback_called);
       }
     }
 
-    bt_message_put_ref(message);
+    bt_message_put_ref(upstream_message);
   }
 end:
   return status;

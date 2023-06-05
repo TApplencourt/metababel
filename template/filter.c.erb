@@ -135,7 +135,7 @@ filter_message_iterator_next_processing_reading(
         bt_message_event_borrow_event_const(upstream_message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
-    /* Encapsulate current event */
+    /* Preserve current event for matching callbacks */
     common_data->current_event = event;
 
     /* Call dispatcher or forward message downstream */
