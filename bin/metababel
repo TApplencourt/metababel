@@ -44,7 +44,8 @@ class Hash
   end
 end
 
-EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class, :args_to_free) do
+EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class,
+                            :args_to_free) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -90,12 +91,12 @@ def wrote_event_dispatchers(folder, t)
   event_name = 'event'
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
-    arg_variables["outputs"] = [ GeneratedArg.new('uint64_t', 'timestamp') ] if default_clock_class
+    arg_variables['outputs'] = [GeneratedArg.new('uint64_t', 'timestamp')] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventClassInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class,
-                  arg_variables.fetch("outputs_allocated",[]))
+    EventClassInfo.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class, default_clock_class,
+                       arg_variables.fetch('outputs_allocated', []))
   end
 
   stream_classes_matching_dispatchers = t.stream_classes.map do |s|
@@ -107,7 +108,7 @@ def wrote_event_dispatchers(folder, t)
       end
     end
 
-    StreamClassInfo.new(s.name, arg_variables.fetch("outputs",[]), "\n" + body)
+    StreamClassInfo.new(s.name, arg_variables.fetch('outputs', []), "\n" + body)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,
@@ -122,11 +123,12 @@ def wrote_creates(folder, t)
   event_name = 'event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
-    arg_variables["outputs"] = [ GeneratedArg.new('uint64_t', 'timestamp') ] if default_clock_class
+    arg_variables['outputs'] = [GeneratedArg.new('uint64_t', 'timestamp')] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    EventClassInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class)
+    EventClassInfo.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
+                       default_clock_class)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
@@ -144,17 +146,17 @@ end
 
 def wrote_component(options, d, folder)
   component_dispatchers = [EventClassInfo.new('initialize_usr_data',
-                                         [GeneratedArg.new('void **', 'usr_data_p')]),
+                                              [GeneratedArg.new('void **', 'usr_data_p')]),
                            EventClassInfo.new('finalize_usr_data',
-                                         [GeneratedArg.new('void *', 'usr_data')]),
+                                              [GeneratedArg.new('void *', 'usr_data')]),
                            EventClassInfo.new('read_params',
-                                         [GeneratedArg.new('void *', 'usr_data'),
-                                          GeneratedArg.new('btx_params_t *', 'usr_params')])]
+                                              [GeneratedArg.new('void *', 'usr_data'),
+                                               GeneratedArg.new('btx_params_t *', 'usr_params')])]
 
   if options[:component_type] == 'SOURCE'
     component_dispatchers << EventClassInfo.new('push_usr_messages',
-                                           [GeneratedArg.new('void *', 'usr_data'),
-                                            GeneratedArg.new('btx_source_status_t*', 'status')])
+                                                [GeneratedArg.new('void *', 'usr_data'),
+                                                 GeneratedArg.new('btx_source_status_t*', 'status')])
   end
 
   d2 = { component_dispatchers: component_dispatchers,
