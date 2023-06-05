@@ -1,5 +1,5 @@
-#include <metababel/metababel.h>
 #include <assert.h>
+#include <metababel/metababel.h>
 
 #include "callbacks.hpp"
 
@@ -14,10 +14,10 @@ typedef std::string thapi_function_name_t;
 typedef uint64_t dur_t;
 typedef bt_bool err_t;
 
-typedef std::tuple<hostname_t,process_id_t,thread_id_t> hpt_backend_t;
+typedef std::tuple<hostname_t, process_id_t, thread_id_t> hpt_backend_t;
 
 struct data_s {
-  std::map<hpt_backend_t,timestamp_t> dispatch;
+  std::map<hpt_backend_t, timestamp_t> dispatch;
 };
 
 typedef struct data_s data_t;
@@ -32,34 +32,38 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   delete data;
 }
 
-static void btx_hip_entry_matcher(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, bool *matched, int64_t timestamp, int64_t vpid, uint64_t vtid)
-{
+static void btx_hip_entry_matcher(void *btx_handle, void *usr_data, const char *stream_class_name,
+                                  const char *event_class_name, bool *matched, int64_t timestamp,
+                                  int64_t vpid, uint64_t vtid) {
   data_t *data = (data_t *)usr_data;
   *matched = strstr(event_class_name, "_entry") != NULL;
 }
 
-static void btx_hip_entry_callback(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, int64_t timestamp, int64_t vpid, uint64_t vtid) 
-{
+static void btx_hip_entry_callback(void *btx_handle, void *usr_data, const char *stream_class_name,
+                                   const char *event_class_name, int64_t timestamp, int64_t vpid,
+                                   uint64_t vtid) {
   data_t *data = (data_t *)usr_data;
-  data->dispatch[hpt_backend_t("host",vpid,vtid)] = timestamp;
+  data->dispatch[hpt_backend_t("host", vpid, vtid)] = timestamp;
 }
 
-static void btx_hip_exit_matcher(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, bool *matched, int64_t timestamp, int64_t vpid, uint64_t vtid)
-{
+static void btx_hip_exit_matcher(void *btx_handle, void *usr_data, const char *stream_class_name,
+                                 const char *event_class_name, bool *matched, int64_t timestamp,
+                                 int64_t vpid, uint64_t vtid) {
   data_t *data = (data_t *)usr_data;
   *matched = strstr(event_class_name, "_exit") != NULL;
 }
 
-static void btx_hip_exit_callback(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, int64_t timestamp, int64_t vpid, uint64_t vtid) 
-{
+static void btx_hip_exit_callback(void *btx_handle, void *usr_data, const char *stream_class_name,
+                                  const char *event_class_name, int64_t timestamp, int64_t vpid,
+                                  uint64_t vtid) {
   data_t *data = (data_t *)usr_data;
 
   int64_t hipResult;
   bool succeed = false;
-  btx_event_payload_field_integer_signed_get_value(btx_handle,"hipResult",&hipResult,&succeed);
+  btx_event_payload_field_integer_signed_get_value(btx_handle, "hipResult", &hipResult, &succeed);
   assert(("Member not found 'hipResult'.", succeed));
 
-  auto lookup = hpt_backend_t("host",vpid,vtid);
+  auto lookup = hpt_backend_t("host", vpid, vtid);
   auto it = data->dispatch.find(lookup);
   assert(("Exit reached but not previous entry", it != data->dispatch.end()));
 
@@ -72,12 +76,13 @@ static void btx_hip_exit_callback(void *btx_handle, void *usr_data, const char *
   dur_t dur = timestamp - start;
   err_t err = hipResult != 0;
 
-  thapi_function_name_t event_name(event_class_name); 
+  thapi_function_name_t event_name(event_class_name);
   std::size_t i = event_name.find(":");
   std::size_t j = event_name.rfind("_exit");
-  std::string sanitized_name = event_name.substr(i+1,((j-1) - i));
+  std::string sanitized_name = event_name.substr(i + 1, ((j - 1) - i));
 
-  btx_push_message_lttng_host(btx_handle,hostname,vpid,vtid,start,backend,sanitized_name.c_str(),dur,err);
+  btx_push_message_lttng_host(btx_handle, hostname, vpid, vtid, start, backend,
+                              sanitized_name.c_str(), dur, err);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
