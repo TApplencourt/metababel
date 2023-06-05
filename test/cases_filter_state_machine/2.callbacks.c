@@ -8,6 +8,5 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_initialize_usr_data(btx_handle,
-                                             &btx_initialize_usr_data);
+  btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
 }

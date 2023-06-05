@@ -22,13 +22,15 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   free(data);
 }
 
-static void btx_condition(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, bool *matched, int64_t timestamp) {
+static void btx_condition(void *btx_handle, void *usr_data, const char *stream_class_name,
+                          const char *event_class_name, bool *matched, int64_t timestamp) {
   data_t *data = (data_t *)usr_data;
   data->condition_calls_count += 1;
   *matched = timestamp == 1686003037154215000;
 }
 
-static void btx_callback(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, int64_t timestamp) {
+static void btx_callback(void *btx_handle, void *usr_data, const char *stream_class_name,
+                         const char *event_class_name, int64_t timestamp) {
   data_t *data = (data_t *)usr_data;
   data->callback_calls_count += 1;
   assert(timestamp == 1686003037154215000);

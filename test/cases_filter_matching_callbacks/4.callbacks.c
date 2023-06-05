@@ -20,13 +20,15 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   free(data);
 }
 
-static void btx_condition(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, bool *matched) {
+static void btx_condition(void *btx_handle, void *usr_data, const char *stream_class_name,
+                          const char *event_class_name, bool *matched) {
   data_t *data = (data_t *)usr_data;
   *matched = (strcmp(event_class_name, "event_1") == 0) && (strcmp(stream_class_name, "scA") == 0);
   data->condition_calls_count += 1;
 }
 
-static void btx_callback(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name) {
+static void btx_callback(void *btx_handle, void *usr_data, const char *stream_class_name,
+                         const char *event_class_name) {
   data_t *data = (data_t *)usr_data;
   assert(strcmp(stream_class_name, "scA") == 0);
   assert(strcmp(event_class_name, "event_1") == 0);

@@ -1,7 +1,8 @@
-#include <metababel/metababel.h>
 #include <assert.h>
+#include <metababel/metababel.h>
 
-static void event_1_0(void *btx_handle, void *usr_data, int64_t timestamp, uint64_t payload_timestamp) {
+static void event_1_0(void *btx_handle, void *usr_data, int64_t timestamp,
+                      uint64_t payload_timestamp) {
   assert(timestamp == payload_timestamp);
 }
 
