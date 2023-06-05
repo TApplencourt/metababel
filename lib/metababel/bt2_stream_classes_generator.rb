@@ -38,51 +38,22 @@ module Babeltrace2Gen
       is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_menber_class
     end
 
-    def find_field_class_path(path, variable_sm, variable)
-      # 'variable_sm` is a `bt_field_class_structure_member`
-      # `variable` is a `bt_field_class`
-      path.scan(/\["(\w+)"\]|\[(\d+)\]/).each do |m|
-        # String
-        if m.first
-          pr "#{variable_sm} = bt_field_class_structure_borrow_member_by_name(#{variable}, \"#{m.first}\");"
-        else
-          pr "#{variable_sm} = bt_field_class_structure_borrow_member_by_index(#{variable}, #{m.last});"
-        end
-      end
-    end
-
-    def find_field_class(path, variable)
-      # variable is a  `bt_field_class`
-      variable_sm = "#{variable}_sm"
-      pr "bt_field_class_structure_member *#{variable_sm};"
-      m = path.match(/\A(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)(.*)/)
-      path_variable =
-        case m[1]
-        when 'PACKET_CONTEXT'
-          "#{rec_stream_class.packet_context_field_class.variable}"
-        when 'EVENT_COMMON_CONTEXT'
-          "#{rec_stream_class.event_common_context_field_class.variable}"
-        when 'EVENT_SPECIFIC_CONTEXT'
-          "#{rec_event_class.specific_context_field_class.variable}"
-        when 'EVENT_PAYLOAD'
-          "#{rec_event_class.payload_field_class.variable}"
-        else
-          raise "invalid path #{path}"
-        end
-      find_field_class_path(m[2], variable_sm, path_variable)
-      pr "#{variable} = bt_field_class_structure_member_borrow_field_class(#{variable_sm});"
-    end
-
-    def find_path(path)
+    def resolve_path(path)
       root, id = path.match(/^(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)\["?(.+)?"\]/).captures
-      r =
+      field_class =
         case root
+        when 'PACKET_CONTEXT'
+          rec_stream_class.packet_context_field_class
+        when 'EVENT_COMMON_CONTEXT'
+          rec_stream_class.event_common_context_field_class
+        when 'EVENT_SPECIFIC_CONTEXT'
+          rec_event_class.specific_context_field_class
         when 'EVENT_PAYLOAD'
           rec_event_class.payload_field_class
         else
           raise "invalid path #{path}"
         end
-      r[id]
+      [field_class, id]
     end
   end
 
@@ -611,7 +582,19 @@ module Babeltrace2Gen
           element_field_class_variable_length = "#{element_field_class_variable}_length"
           pr "bt_field_class *#{element_field_class_variable_length};"
           scope do
-            find_field_class(@length_field_path, element_field_class_variable_length)
+            # variable is a  `bt_field_class`
+            element_field_class_variable_length_sm = "#{element_field_class_variable_length}_sm"
+            pr "bt_field_class_structure_member *#{element_field_class_variable_length_sm};"
+            field_class, id = resolve_path(@length_field_path)
+            id.scan(/(\w+)|(\d+)/).each do |name, index|
+              # String
+              if name
+                pr "#{element_field_class_variable_length_sm} = bt_field_class_structure_borrow_member_by_name(#{field_class.variable}, \"#{name}\");"
+              else
+                pr "#{element_field_class_variable_length_sm} = bt_field_class_structure_borrow_member_by_index(#{field_class.variable}, #{index});"
+              end
+            end
+            pr "#{element_field_class_variable_length} = bt_field_class_structure_member_borrow_field_class(#{element_field_class_variable_length_sm});"
           end
           pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, #{element_field_class_variable_length});"
           pr "bt_field_class_put_ref(#{element_field_class_variable});"
@@ -622,10 +605,11 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      length_ = find_path(@length_field_path)
-      pr "bt_field_array_dynamic_set_length(#{field}, #{length_.name});"
+      field_class, id = resolve_path(@length_field_path)
+      length_field = field_class[id]
+      pr "bt_field_array_dynamic_set_length(#{field}, #{length_field.name});"
       usr_var = bt_get_variable(arg_variables, is_array: true)
-      pr "for(uint64_t _i=0; _i < #{length_.name} ; _i++)"
+      pr "for(uint64_t _i=0; _i < #{length_field.name} ; _i++)"
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
