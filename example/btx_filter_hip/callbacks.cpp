@@ -32,29 +32,25 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   delete data;
 }
 
-static void btx_hip_entry_matcher(void *btx_handle, void *usr_data, const char* event_class_name,
-                                  bool *matched, uint64_t timestamp, int64_t vpid, uint64_t vtid)
+static void btx_hip_entry_matcher(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, bool *matched, int64_t timestamp, int64_t vpid, uint64_t vtid)
 {
   data_t *data = (data_t *)usr_data;
   *matched = strstr(event_class_name, "_entry") != NULL;
 }
 
-static void btx_hip_entry_callback(void *btx_handle, void *usr_data, const char* event_class_name,
-                                   uint64_t timestamp, int64_t vpid, uint64_t vtid) 
+static void btx_hip_entry_callback(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, int64_t timestamp, int64_t vpid, uint64_t vtid) 
 {
   data_t *data = (data_t *)usr_data;
   data->dispatch[hpt_backend_t("host",vpid,vtid)] = timestamp;
 }
 
-static void btx_hip_exit_matcher(void *btx_handle, void *usr_data, const char* event_class_name, bool *matched,
-                                 uint64_t timestamp, int64_t vpid, uint64_t vtid)
+static void btx_hip_exit_matcher(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, bool *matched, int64_t timestamp, int64_t vpid, uint64_t vtid)
 {
   data_t *data = (data_t *)usr_data;
   *matched = strstr(event_class_name, "_exit") != NULL;
 }
 
-static void btx_hip_exit_callback(void *btx_handle, void *usr_data, const char* event_class_name, 
-                                  uint64_t timestamp, int64_t vpid, uint64_t vtid) 
+static void btx_hip_exit_callback(void *btx_handle, void *usr_data, const char *stream_class_name, const char *event_class_name, int64_t timestamp, int64_t vpid, uint64_t vtid) 
 {
   data_t *data = (data_t *)usr_data;
 
