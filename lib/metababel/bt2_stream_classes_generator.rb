@@ -1,9 +1,11 @@
 require_relative 'bt2_generator_utils'
 
-class Hash
-  def fetch_append(key, item)
-    self[key] = fetch(key, []) << item
-    item
+module HashRefinements
+  refine Hash do
+    def fetch_append(key, item)
+      self[key] = fetch(key, []) << item
+      item
+    end
   end
 end
 
@@ -323,6 +325,7 @@ module Babeltrace2Gen
   class BTFieldClass
     include BTLocator
     include BTPrinter
+    using HashRefinements
 
     attr_accessor :cast_type
 
@@ -564,6 +567,7 @@ module Babeltrace2Gen
     module WithLengthField
       attr_reader :length_field_path
     end
+    using HashRefinements
 
     def initialize(parent:, element_field_class:, length_field_path: nil)
       super(parent: parent, element_field_class: element_field_class)
@@ -582,7 +586,6 @@ module Babeltrace2Gen
           element_field_class_variable_length = "#{element_field_class_variable}_length"
           pr "bt_field_class *#{element_field_class_variable_length};"
           scope do
-            # variable is a  `bt_field_class`
             element_field_class_variable_length_sm = "#{element_field_class_variable_length}_sm"
             pr "bt_field_class_structure_member *#{element_field_class_variable_length_sm};"
             field_class, id = resolve_path(@length_field_path)
