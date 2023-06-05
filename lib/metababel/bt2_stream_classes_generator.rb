@@ -56,30 +56,32 @@ module Babeltrace2Gen
       variable_sm = "#{variable}_sm"
       pr "bt_field_class_structure_member *#{variable_sm};"
       m = path.match(/\A(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)(.*)/)
-      path_variable = case m[1]
-                      when 'PACKET_CONTEXT'
-                        "#{rec_stream_class.packet_context_field_class.variable}"
-                      when 'EVENT_COMMON_CONTEXT'
-                        "#{rec_stream_class.event_common_context_field_class.variable}"
-                      when 'EVENT_SPECIFIC_CONTEXT'
-                        "#{rec_event_class.specific_context_field_class.variable}"
-                      when 'EVENT_PAYLOAD'
-                        "#{rec_event_class.payload_field_class.variable}"
-                      else
-                        raise "invalid path #{path}"
-                      end
+      path_variable =
+        case m[1]
+        when 'PACKET_CONTEXT'
+          "#{rec_stream_class.packet_context_field_class.variable}"
+        when 'EVENT_COMMON_CONTEXT'
+          "#{rec_stream_class.event_common_context_field_class.variable}"
+        when 'EVENT_SPECIFIC_CONTEXT'
+          "#{rec_event_class.specific_context_field_class.variable}"
+        when 'EVENT_PAYLOAD'
+          "#{rec_event_class.payload_field_class.variable}"
+        else
+          raise "invalid path #{path}"
+        end
       find_field_class_path(m[2], variable_sm, path_variable)
       pr "#{variable} = bt_field_class_structure_member_borrow_field_class(#{variable_sm});"
     end
 
     def find_path(path)
       root, id = path.match(/^(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)\["?(.+)?"\]/).captures
-      r = case root
-          when 'EVENT_PAYLOAD'
-            rec_event_class.payload_field_class
-          else
-            raise "invalid path #{path}"
-          end
+      r =
+        case root
+        when 'EVENT_PAYLOAD'
+          rec_event_class.payload_field_class
+        else
+          raise "invalid path #{path}"
+        end
       r[id]
     end
   end
@@ -397,11 +399,12 @@ module Babeltrace2Gen
       tmp = arg_variables.fetch('tmp', [])
       return tmp.shift unless tmp.empty?
 
-      type = if is_array
-               "#{element_field_class.class.instance_variable_get(:@bt_type)}*"
-             else
-               self.class.instance_variable_get(:@bt_type)
-             end
+      type =
+        if is_array
+          "#{element_field_class.class.instance_variable_get(:@bt_type)}*"
+        else
+          self.class.instance_variable_get(:@bt_type)
+        end
       var = GeneratedArg.new(@cast_type || type, rec_menber_class.name)
 
       arg_variables.fetch_append('outputs_allocated', var) if is_array
