@@ -370,8 +370,8 @@ module Babeltrace2Gen
     end
 
     def bt_get_variable(arg_variables, is_array: false)
-      tmp = arg_variables.fetch('tmp', [])
-      return tmp.shift unless tmp.empty?
+      internal = arg_variables.fetch('internal', [])
+      return internal.shift unless internal.empty?
 
       type =
         if is_array
@@ -616,7 +616,7 @@ module Babeltrace2Gen
       scope do
         v = "#{field}_e"
         pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
-        arg_variables.fetch_append('tmp', GeneratedArg.new('', "#{usr_var.name}[_i]"))
+        arg_variables.fetch_append('internal', GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_setter(field: v, arg_variables: arg_variables)
       end
     end
@@ -630,7 +630,7 @@ module Babeltrace2Gen
       scope do
         v = "#{field}_e"
         pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
-        arg_variables.fetch_append('tmp', GeneratedArg.new('', "#{usr_var.name}[_i]"))
+        arg_variables.fetch_append('internal', GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
     end
