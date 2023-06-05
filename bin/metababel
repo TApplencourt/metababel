@@ -44,7 +44,7 @@ class Hash
   end
 end
 
-EventInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class, :args_to_free) do
+EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class, :args_to_free) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -94,7 +94,7 @@ def wrote_event_dispatchers(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class,
+    EventClassInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class,
                   arg_variables.fetch("outputs_allocated",[]))
   end
 
@@ -126,7 +126,7 @@ def wrote_creates(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    EventInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class)
+    EventClassInfo.new(e.name, arg_variables.fetch("outputs",[]), "\n" + body, index_stream_class, index_event_class, default_clock_class)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
@@ -143,16 +143,16 @@ def wrote_creates(folder, t)
 end
 
 def wrote_component(options, d, folder)
-  component_dispatchers = [EventInfo.new('initialize_usr_data',
+  component_dispatchers = [EventClassInfo.new('initialize_usr_data',
                                          [GeneratedArg.new('void **', 'usr_data_p')]),
-                           EventInfo.new('finalize_usr_data',
+                           EventClassInfo.new('finalize_usr_data',
                                          [GeneratedArg.new('void *', 'usr_data')]),
-                           EventInfo.new('read_params',
+                           EventClassInfo.new('read_params',
                                          [GeneratedArg.new('void *', 'usr_data'),
                                           GeneratedArg.new('btx_params_t *', 'usr_params')])]
 
   if options[:component_type] == 'SOURCE'
-    component_dispatchers << EventInfo.new('push_usr_messages',
+    component_dispatchers << EventClassInfo.new('push_usr_messages',
                                            [GeneratedArg.new('void *', 'usr_data'),
                                             GeneratedArg.new('btx_source_status_t*', 'status')])
   end
