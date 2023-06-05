@@ -1,7 +1,7 @@
 :stream_classes:
 - :name: ze
   :event_classes:
-  - :name: array_dynamic
+  - :name: e_array_dynamic
     :payload_field_class:
       :type: structure
       :members:
