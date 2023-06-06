@@ -24,15 +24,3 @@ babeltrace2 --plugin-path=. --component=source.dust.btx  --params='path="./btx_d
 ruby -I../lib ../bin/metababel --upstream dust.yaml  --downstream dust.yaml --component FILTER -p distill -c theone -o btx_filter_distill --params dust_params.yaml
 gcc -g -o btx_filter_distill.so btx_filter_distill/*.c btx_filter_distill/metababel/*.c -I btx_filter_distill/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
 babeltrace2 --plugin-path=. --component=source.dust.btx  --params='path="./btx_dust/dust.txt"' --component=filter.distill.theone --params='names="sched_switch,rcu_utilization,kmem_kfree"'
-
-# Source timestamp
-ruby -I ../lib ../bin/metababel --downstream hip_model.yaml --component SOURCE -o btx_source_hip -p hip_sp
-gcc -g -o btx_source_hip.so btx_source_hip/*.c btx_source_hip/metababel/*.c -I btx_source_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
-babeltrace2 --plugin-path=. --component=source.hip_sp.btx
-
-# Filter timestamp
-ruby -I../lib ../bin/metababel --upstream hip_model.yaml --downstream interval_model.yaml --component FILTER -p hip_fp -o btx_filter_hip
-gcc -g btx_filter_hip/*.c btx_filter_hip/metababel/*.c -I btx_filter_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic -c
-g++ -g btx_filter_hip/*.cpp -I btx_filter_hip/ -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic -c
-g++ -g -o btx_filter_hip.so *.o -I ../include/ $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2) -fpic --shared
-babeltrace2 --plugin-path=. --component=source.hip_sp.btx --component=filter.hip_fp.btx
