@@ -135,6 +135,9 @@ filter_message_iterator_next_processing_reading(
         bt_message_event_borrow_event_const(upstream_message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
+    /* Preserve current event for matching callbacks */
+    common_data->current_event = event;
+
     /* Call dispatcher or forward message downstream */
     bool is_callback_called = false;
     const char *class_name = bt_event_class_get_name(event_class);
@@ -143,7 +146,7 @@ filter_message_iterator_next_processing_reading(
       name_to_dispatcher_t *s = NULL;
       HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
       if (s) {
-        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event,
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, upstream_message,
                                               &is_callback_called);
       }
     }
@@ -159,7 +162,7 @@ filter_message_iterator_next_processing_reading(
       if (s) {
         // is_callback_called will only be modified if at least one callback is
         // called.
-        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, event,
+        (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data, upstream_message,
                                               &is_callback_called);
       }
     }
@@ -171,6 +174,9 @@ filter_message_iterator_next_processing_reading(
       btx_downstream_push_message(message_iterator_private_data,
                                   upstream_message);
     }
+
+    /* At this point current_event is not valid any more. */
+    common_data->current_event = NULL;
   }
 
   /* Round Robin between Upstream MessageIterator */

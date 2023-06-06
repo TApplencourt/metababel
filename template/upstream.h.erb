@@ -6,7 +6,7 @@ extern "C" {
 
 // Dispatcher
 typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
-                           const bt_event *message, bool *is_callback_called);
+                           const bt_message *upstream_message, bool *is_callback_called);
 
 <% event_class_dispatchers.each do |e| %>
 <%# The signature type of callbacks %>
@@ -31,12 +31,13 @@ typedef struct condition_to_callback_s condition_to_callback_t;
 <% stream_classes_matching_dispatchers.each do |s| %>
 <%# The signature type of condition callbacks %>
 typedef void <%= s.name_sanitized %>_callback_condition_f(
-    void *btx_handle, void *usr_data, const char *event_class_name,
+    void *btx_handle, void *usr_data, const char *stream_class_name,
+    const char *event_class_name,
     bool *matched<%= s.args.map{ |a| a.type }.join_with_prefix(", ") %>);
 
 <%# The signature type of callbacks to be called if the condition is met %>
 typedef void <%= s.name_sanitized %>_conditioned_callback_f(
-    void *btx_handle, void *usr_data,
+    void *btx_handle, void *usr_data, const char *stream_class_name,
     const char *
         event_class_name<%= s.args.map{ |a| a.type }.join_with_prefix(", ") %>);
 

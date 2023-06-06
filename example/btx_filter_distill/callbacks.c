@@ -19,8 +19,8 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   free(data);
 }
 
-static void btx_filter_condition(void *btx_handle, void *usr_data, const char* event_class_name, bool *matched)
-{
+static void btx_filter_condition(void *btx_handle, void *usr_data, const char *stream_class_name,
+                                 const char *event_class_name, bool *matched, int64_t timestamp) {
   struct distill *data = (struct distill *)usr_data;
 
   int str_size = strlen(data->names_value);
@@ -31,9 +31,8 @@ static void btx_filter_condition(void *btx_handle, void *usr_data, const char* e
   bool ocurrence = false;
 
   char *ptr = strtok(str, ",");
-  while(ptr != NULL && !ocurrence)
-  {
-    ocurrence = (strcmp(ptr,event_class_name) == 0);
+  while (ptr != NULL && !ocurrence) {
+    ocurrence = (strcmp(ptr, event_class_name) == 0);
     ptr = strtok(NULL, ",");
   }
 
@@ -42,7 +41,8 @@ static void btx_filter_condition(void *btx_handle, void *usr_data, const char* e
   *matched = ocurrence;
 }
 
-static void btx_filter_callback(void *btx_handle, void *usr_data, const char* event_class_name) {}
+static void btx_filter_callback(void *btx_handle, void *usr_data, const char *stream_class_name,
+                                const char *event_class_name, int64_t timestamp) {}
 
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
