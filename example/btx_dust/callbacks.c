@@ -22,7 +22,7 @@ void btx_read_params(void *btx_handle, void *usr_data, btx_params_t *usr_params)
 
 void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t *status) {
   usr_data_t *data = (usr_data_t *)usr_data;
-  uint64_t timestamp;
+  int64_t timestamp;
   uint64_t extra_us;
   /* Try to read a line from the input file into individual tokens */
   int count = fscanf(data->file, "%" PRIu64 " %" PRIu64 " %s %[^\n]", &timestamp, &extra_us,
@@ -38,10 +38,10 @@ void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t
    * Multiply it by 1,000,000,000 to get nanoseconds since the Unix
    * epoch because the stream's clock's frequency is 1 GHz.
    */
-  timestamp *= UINT64_C(1000000000);
+  timestamp *= INT64_C(1000000000);
 
   /* Add the extra microseconds (as nanoseconds) to `timestamp` */
-  timestamp += extra_us * UINT64_C(1000);
+  timestamp += extra_us * INT64_C(1000);
 
   /* Choose the correct event class, depending on the event name token */
   if (strcmp(data->name_buffer, "send-msg") == 0)
