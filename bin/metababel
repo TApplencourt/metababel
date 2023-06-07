@@ -51,7 +51,7 @@ EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_eve
   end
 end
 
-StreamClassInfo = Struct.new(:name, :args, :body) do
+StreamClassInfo = Struct.new(:name, :args, :body, :default_clock_class) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -91,7 +91,6 @@ def wrote_event_dispatchers(folder, t)
   event_name = 'event'
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
-    arg_variables['outputs'] = [GeneratedArg.new('int64_t', 'timestamp')] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
@@ -108,7 +107,7 @@ def wrote_event_dispatchers(folder, t)
       end
     end
 
-    StreamClassInfo.new(s.name, arg_variables.fetch('outputs', []), "\n" + body)
+    StreamClassInfo.new(s.name, arg_variables.fetch('outputs', []), "\n" + body, s.default_clock_class)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,
@@ -123,7 +122,7 @@ def wrote_creates(folder, t)
   event_name = 'event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
-    arg_variables['outputs'] = [GeneratedArg.new('int64_t', 'timestamp')] if default_clock_class
+    # arg_variables['outputs'] = [GeneratedArg.new('int64_t', 'timestamp')] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
