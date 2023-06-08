@@ -1,0 +1,6 @@
+---
+:stream_classes:
+- :name: sc1
+  :default_clock_class: {}
+  :event_classes:
+  - :name: event_1

@@ -94,7 +94,7 @@ def wrote_event_dispatchers(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventClassInfo.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class, default_clock_class,
+    EventClassInfo.new(e.name, arg_variables.fetch('outputs', []), body, index_stream_class, index_event_class, default_clock_class,
                        arg_variables.fetch('outputs_allocated', []))
   end
 
@@ -106,8 +106,7 @@ def wrote_event_dispatchers(folder, t)
         s.get_getter(event: event_name, arg_variables: arg_variables)
       end
     end
-
-    StreamClassInfo.new(s.name, arg_variables.fetch('outputs', []), "\n" + body, s.default_clock_class)
+    StreamClassInfo.new(s.name, arg_variables.fetch('outputs', []), body, s.default_clock_class)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,
