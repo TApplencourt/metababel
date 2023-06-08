@@ -19,6 +19,8 @@ class TestFilterTimestampRegularDispacther < Test::Unit::TestCase
         btx_file_usr_callbacks: './test/cases_filter_timestamp/1.callbacks.c'
       }
     ]
+
+    @btx_output_validation = './test/cases_filter_timestamp/1.btx_log.txt'
   end
 end
 
@@ -41,5 +43,7 @@ class TestFilterTimestampMatchingDispacther < Test::Unit::TestCase
         btx_file_usr_callbacks: './test/cases_filter_timestamp/2.callbacks.c'
       }
     ]
+
+    @btx_output_validation = './test/cases_filter_timestamp/1.btx_log.txt'
   end
 end

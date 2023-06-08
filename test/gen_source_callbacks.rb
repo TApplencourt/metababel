@@ -56,7 +56,7 @@ def parse_log(input_path, yaml_path = nil)
 
   File.open(input_path, 'r') do |file|
     file.each_line.map do |line|
-      match = ( line.match(/(\S+): {(.*)/) or line.match(/(\S+):$/) )
+      match = ( line.match(/(\S+): {(.*)/) or line.match(/(\S+): $/) )
       raise "Unsupported format for '#{line}'." unless match
       head, tail = match.captures()
       field_values_ts = line.match(/^\[(\S+)\]/) do |m|
@@ -65,7 +65,7 @@ def parse_log(input_path, yaml_path = nil)
         t.to_i * 1_000_000_000 + t.nsec
       end
       # TODO: Can add an assert so that the stream class have a default clock
-      field_values = tail.nil? ? [] : tail.scan(REGEXT_PRETTY).flatten 
+      field_values = tail.nil? ? [] : tail.scan(REGEXT_PRETTY).flatten
       data = {
         name: head.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
         field_values: [field_values_ts,
