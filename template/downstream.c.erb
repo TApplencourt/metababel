@@ -115,7 +115,7 @@ static void btx_set_message_<%= e.name_sanitized %>(
 
 void btx_push_message_<%= e.name_sanitized %>(
     void *
-        btx_handle<%= e.default_clock_class ? ', int64_t _timestamp' : '' %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
+        btx_handle<%= ', int64_t _timestamp'  if e.default_clock_class %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
 
   common_data_t *common_data = (common_data_t *)btx_handle;
 

@@ -32,13 +32,13 @@ typedef struct condition_to_callback_s condition_to_callback_t;
 <%# The signature type of condition callbacks %>
 typedef void <%= s.name_sanitized %>_callback_condition_f(
     void *btx_handle, void *usr_data, const char *event_class_name,
-    bool *matched<%= s.default_clock_class ? ', int64_t _timestamp' : '' %><%= s.args.map{ |a| a.type }.join_with_prefix(", ") %>);
+    bool *matched<%= ', int64_t _timestamp'  if s.default_clock_class %><%= s.args.map{ |a| a.type }.join_with_prefix(", ") %>);
 
 <%# The signature type of callbacks to be called if the condition is met %>
 typedef void <%= s.name_sanitized %>_conditioned_callback_f(
     void *btx_handle, void *usr_data,
     const char *
-        event_class_name<%= s.default_clock_class ? ', int64_t _timestamp' : '' %><%= s.args.map{ |a| a.type }.join_with_prefix(", ") %>);
+        event_class_name<%= ', int64_t _timestamp'  if s.default_clock_class %><%= s.args.map{ |a| a.type }.join_with_prefix(", ") %>);
 
 void btx_register_matching_callback_<%= s.name_sanitized %>(
     void *btx_handle, <%= s.name_sanitized %>_callback_condition_f *condition,
