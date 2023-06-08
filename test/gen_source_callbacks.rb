@@ -56,12 +56,9 @@ def parse_log(input_path, yaml_path = nil)
 
   File.open(input_path, 'r') do |file|
     file.each_line.map do |line|
-      # Line format support checks
-      match = line.match(REGEXT_PRETTY)
-
-      head, tail = line.match(/(\S+): {(.*)/).captures if line.match?(/(\S+): {(.*)/)
-      head, tail = line.match(/(\S+):$/).captures if line.match?(/(\S+):$/)
-
+      match = ( line.match(/(\S+): {(.*)/) or line.match(/(\S+):$/) )
+      raise "Unsupported format for '#{line}'." unless match
+      head, tail = match.captures()
       field_values_ts = line.match(/^\[(\S+)\]/) do |m|
         t = Time.parse(m.to_s)
         # Need to convert in nasosecond

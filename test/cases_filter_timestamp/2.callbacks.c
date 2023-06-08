@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <metababel/metababel.h>
 #include <stdbool.h>
 

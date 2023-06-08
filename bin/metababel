@@ -121,7 +121,6 @@ def wrote_creates(folder, t)
   event_name = 'event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
-    # arg_variables['outputs'] = [GeneratedArg.new('int64_t', 'timestamp')] if default_clock_class
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end

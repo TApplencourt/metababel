@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <metababel/metababel.h>
 
 static void event_1_0(void *btx_handle, void *usr_data, int64_t timestamp) {
