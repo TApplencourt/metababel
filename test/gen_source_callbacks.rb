@@ -56,13 +56,14 @@ def parse_log(input_path, yaml_path = nil)
 
   File.open(input_path, 'r') do |file|
     file.each_line.map do |line|
-      match = ( line.match(/(\S+): {(.*)/) or line.match(/(\S+): $/) )
+      match = line.match(/(?:\[(\S+)\] \(\S+\) )?(\S+): (?:{(.*)})?/)
       raise "Unsupported format for '#{line}'." unless match
-      head, tail = match.captures()
-      field_values_ts = line.match(/^\[(\S+)\]/) do |m|
-        t = Time.parse(m.to_s)
+      timestamp, head, tail = match.captures()
+      field_values_ts = nil
+      if timestamp
+        t = Time.parse(timestamp)
         # Need to convert in nasosecond
-        t.to_i * 1_000_000_000 + t.nsec
+        field_values_ts = t.to_i * 1_000_000_000 + t.nsec
       end
       # TODO: Can add an assert so that the stream class have a default clock
       field_values = tail.nil? ? [] : tail.scan(REGEXT_PRETTY).flatten

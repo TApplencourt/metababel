@@ -12,7 +12,7 @@ typedef void(dispatcher_t)(UT_array *callbacks, common_data_t *common_data,
 <%# The signature type of callbacks %>
 typedef void <%= e.name_sanitized %>_callback_f(
     void *btx_handle,
-    void *usr_data<%= e.default_clock_class ? ', int64_t _timestamp' : '' %><%= e.args.map{ |s| s.type }.join_with_prefix(", ") %>);
+    void *usr_data<%= ', int64_t _timestamp'  if e.default_clock_class %><%= e.args.map{ |s| s.type }.join_with_prefix(", ") %>);
 <%# The Function who register the callbacks to the dispatcher %>
 void btx_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
