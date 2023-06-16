@@ -115,7 +115,7 @@ static void btx_set_message_<%= e.name_sanitized %>(
 
 void btx_push_message_<%= e.name_sanitized %>(
     void *
-        btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
+        btx_handle<%= ', int64_t _timestamp' if e.default_clock_class %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
 
   common_data_t *common_data = (common_data_t *)btx_handle;
 
@@ -129,7 +129,7 @@ void btx_push_message_<%= e.name_sanitized %>(
       common_data->self_message_iterator, event_class, stream);
   <% else %>
   bt_message *message = bt_message_event_create_with_default_clock_snapshot(
-      common_data->self_message_iterator, event_class, stream, timestamp);
+      common_data->self_message_iterator, event_class, stream, _timestamp);
   <% end %>
 
   bt_event *downstream_event = bt_message_event_borrow_event(message);
