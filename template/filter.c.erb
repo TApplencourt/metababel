@@ -127,8 +127,10 @@ filter_message_iterator_next_processing_reading(
     const bt_message *upstream_message = upstream_messages[upstream_i];
     /* Move as is if it's not an event message */
     if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
-      bt_message_put_ref(upstream_message);
+      btx_downstream_push_message(message_iterator_private_data,
+                                  upstream_message);
       continue;
+
     }
     /* Borrow the event message's event and its class */
     const bt_event *event =
