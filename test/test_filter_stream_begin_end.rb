@@ -41,7 +41,7 @@ class TestFilterOneMessageOneCallback < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/case_filter_stream_begin_end/1.btx_model.yaml',
-        btx_log_path: './test/case_filter_stream_begin_end/2.btx_log.txt'
+        btx_log_path: './test/case_filter_stream_begin_end/1.btx_log.txt'
       },
       {
         btx_component_type: 'FILTER',
@@ -57,6 +57,6 @@ class TestFilterOneMessageOneCallback < Test::Unit::TestCase
         btx_compile: false
       }
     ]
-    @btx_output_validation = './test/case_filter_stream_begin_end/2.btx_out.txt'
+    @btx_output_validation = './test/case_filter_stream_begin_end/1.btx_out.txt'
   end
 end
