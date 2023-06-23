@@ -1,0 +1,5 @@
+---
+:stream_classes:
+- :name: sc_1
+  :event_classes:
+  - :name: event_1
