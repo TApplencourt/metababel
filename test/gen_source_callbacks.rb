@@ -30,7 +30,7 @@ SOURCE_TEMPLATE = <<~TEXT
   void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t *status) {
       <%- data.each do | entry | -%>
       <%- entry.fetch(:times,1).times do -%>
-      btx_push_message_<%= entry[:name] %>(btx_handle, <%= entry[:field_values].join(", ") %>);
+      btx_push_message_<%= entry[:name] %>(btx_handle<%= ', ' if not entry[:field_values].empty? %><%= entry[:field_values].join(", ") %>);
       <%- end -%>
       <%- end -%>
       *status = BTX_SOURCE_END;
