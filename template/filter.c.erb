@@ -133,7 +133,7 @@ filter_message_iterator_next_processing_reading(
        upstream_i++) {
     /* Current message */
     const bt_message *upstream_message = upstream_messages[upstream_i];
-    /* Move as is if it's not an event message */
+    /* Forward all non event-messages downstream */
     if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
       btx_downstream_push_message(message_iterator_private_data,
                                   upstream_message);
