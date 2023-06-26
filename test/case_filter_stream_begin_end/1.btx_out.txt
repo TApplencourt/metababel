@@ -1,0 +1,9 @@
+              2 Event messages
+              2 Stream beginning messages
+              2 Stream end messages
+              0 Packet beginning messages
+              0 Packet end messages
+              0 Discarded event messages
+              0 Discarded packet messages
+              0 Message iterator inactivity messages
+              6 messages (TOTAL)

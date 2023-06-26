@@ -24,9 +24,14 @@ static inline bt_message_iterator_class_next_method_status
 filter_message_iterator_next_initializing(
     bt_self_message_iterator *self_message_iterator,
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
+
+  /* Begining of Stream */
+  btx_push_messages_stream_beginning(self_message_iterator,
+      message_iterator_private_data);
 
   /* Call Initialize user callback */
   btx_call_callbacks_initialize_usr_data(
@@ -100,6 +105,9 @@ filter_message_iterator_next_processing_reading(
       btx_call_callbacks_finalize_usr_data(
           message_iterator_private_data->common_data,
           message_iterator_private_data->common_data->usr_data);
+      /* End of Stream */
+      btx_push_messages_stream_end(self_message_iterator,
+                                   message_iterator_private_data);
       message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
       message_iterator_private_data->processing_state =
           BTX_FILTER_PROCESSING_STATE_FINISHED;
@@ -125,7 +133,7 @@ filter_message_iterator_next_processing_reading(
        upstream_i++) {
     /* Current message */
     const bt_message *upstream_message = upstream_messages[upstream_i];
-    /* Move as is if it's not an event message */
+    /* Forward all non event-messages downstream */
     if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
       btx_downstream_push_message(message_iterator_private_data,
                                   upstream_message);
