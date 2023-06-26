@@ -3,3 +3,4 @@
 - :name: sc_1
   :event_classes:
   - :name: event_1
+  - :name: event_2
