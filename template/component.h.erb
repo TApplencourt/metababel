@@ -97,8 +97,9 @@ struct common_data_s {
 
 enum btx_filter_state_e {
   BTX_FILTER_STATE_INITIALIZING,
-  BTX_FILTER_STATE_READING,
-  BTX_FILTER_STATE_ENDING,
+  BTX_FILTER_STATE_PROCESSING,
+  BTX_FILTER_STATE_FINALIZING,
+  BTX_FILTER_STATE_FINISHED,
   BTX_FILTER_STATE_ERROR,
 };
 typedef enum btx_filter_state_e btx_filter_state_t;

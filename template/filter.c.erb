@@ -45,6 +45,7 @@ filter_message_iterator_next_ending(
       bt_self_message_iterator_get_data(self_message_iterator);
 
   if (!message_iterator_private_data->queue) {
+    message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
 
@@ -53,20 +54,18 @@ filter_message_iterator_next_ending(
   return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
 }
 
-void btx_call_dispatchers(
-    const bt_message *upstream_message,
-    btx_message_iterator_t *message_iterator_private_data) {
+static inline void
+btx_call_dispatchers(const bt_message *upstream_message,
+                     btx_message_iterator_t *message_iterator_private_data) {
 
   common_data_t *common_data = message_iterator_private_data->common_data;
   /* Borrow the event message's event and its class */
   const bt_event *event = bt_message_event_borrow_event_const(upstream_message);
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
-
+  // Lazied Modified
   bool is_callback_called = false;
-
-  /* Call dispatcher or forward message downstream */
-  const char *class_name = bt_event_class_get_name(event_class);
   {
+    const char *class_name = bt_event_class_get_name(event_class);
     name_to_dispatcher_t *s = NULL;
     HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
     if (s)
@@ -82,9 +81,6 @@ void btx_call_dispatchers(
     name_to_dispatcher_t *s = NULL;
     HASH_FIND_STR(common_data->name_to_matching_dispatcher, stream_class_name,
                   s);
-    // is_callback_called will only be modified if at least one callback is
-    // called.
-
     if (s)
       (*((dispatcher_t(*))(s->dispatcher)))(
           s->callbacks, common_data, upstream_message, &is_callback_called);
@@ -99,27 +95,65 @@ void btx_call_dispatchers(
   }
 }
 
-static inline
-bool btx_closing_port(btx_message_iterator_t *message_iterator_private_data) 
-{
-      bt_message_iterator_put_ref(
-          message_iterator_private_data->head_mi->message_iterator);
-      struct el_mi *tmp = message_iterator_private_data->head_mi;
-      CDL_DELETE(message_iterator_private_data->head_mi, tmp);
-      free(tmp);
+static inline void
+btx_consume_messages(btx_message_iterator_t *message_iterator_private_data,
+                     uint64_t upstream_message_count,
+                     bt_message_array_const upstream_messages) {
 
-      return message_iterator_private_data->head_mi;
+  for (uint64_t upstream_i = 0; upstream_i < upstream_message_count;
+       upstream_i++) {
+    /* Current message */
+    const bt_message *upstream_message = upstream_messages[upstream_i];
+    /* Forward all non event-messages downstream */
+    if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
+      btx_downstream_push_message(message_iterator_private_data,
+                                  upstream_message);
+    } else {
+      btx_call_dispatchers(upstream_message, message_iterator_private_data);
+    }
+  }
+}
+
+static inline bool
+btx_closing_port(btx_message_iterator_t *message_iterator_private_data) {
+  bt_message_iterator_put_ref(
+      message_iterator_private_data->head_mi->message_iterator);
+  struct el_mi *tmp = message_iterator_private_data->head_mi;
+  CDL_DELETE(message_iterator_private_data->head_mi, tmp);
+  free(tmp);
+
+  return message_iterator_private_data->head_mi;
+}
+
+static inline bt_message_iterator_class_next_method_status
+filter_message_iterator_transition_from_reading_to_ending(
+    bt_self_message_iterator *self_message_iterator,
+    btx_message_iterator_t *message_iterator_private_data,
+    bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+  btx_call_callbacks_finalize_usr_data(
+      message_iterator_private_data->common_data,
+      message_iterator_private_data->common_data->usr_data);
+  /* End of Stream */
+  btx_push_messages_stream_end(self_message_iterator,
+                               message_iterator_private_data);
+  message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
+  return filter_message_iterator_next_ending(self_message_iterator, messages,
+                                             capacity, count);
 }
 
 static inline bt_message_iterator_class_next_method_status
 filter_message_iterator_next_reading(
     bt_self_message_iterator *self_message_iterator,
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
+
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
-  while (true) {
+  /* Read until we get a message to send downstream */
+  /* This bound the size of our downstream queue */
+
+  while (!message_iterator_private_data->queue) {
     /* Consume a batch of messages from the upstream message iterator */
     uint64_t upstream_message_count;
     bt_message_array_const upstream_messages;
@@ -128,25 +162,15 @@ filter_message_iterator_next_reading(
         message_iterator_private_data->head_mi->message_iterator,
         &upstream_messages, &upstream_message_count);
 
-    /* We cannot have any message left in the downstream queue
-     * Hence it's safe to pass any error messages downstream.
-     */
+    /* Message iterator status: Error, Exiting, or keep on Reading */
     switch (next_status) {
     case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
-      
       if (btx_closing_port(message_iterator_private_data)) {
         continue;
       } else {
-        /* Call Finalize user callback */
-        btx_call_callbacks_finalize_usr_data(
-            message_iterator_private_data->common_data,
-            message_iterator_private_data->common_data->usr_data);
-        /* End of Stream */
-        btx_push_messages_stream_end(self_message_iterator,
-                                     message_iterator_private_data);
-        message_iterator_private_data->state = BTX_FILTER_STATE_ENDING;
-        return filter_message_iterator_next_ending(self_message_iterator,
-                                                   messages, capacity, count);
+        return filter_message_iterator_transition_from_reading_to_ending(
+            self_message_iterator, message_iterator_private_data, messages,
+            capacity, count);
       }
     case BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN:
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
@@ -163,29 +187,15 @@ filter_message_iterator_next_reading(
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
     }
 
-    /* For each consumed message */
-    for (uint64_t upstream_i = 0; upstream_i < upstream_message_count;
-         upstream_i++) {
-      /* Current message */
-      const bt_message *upstream_message = upstream_messages[upstream_i];
-      /* Forward all non event-messages downstream */
-      if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
-        btx_downstream_push_message(message_iterator_private_data,
-                                    upstream_message);
-      } else {
-        btx_call_dispatchers(upstream_message, message_iterator_private_data);
-      }
-    }
+    btx_consume_messages(message_iterator_private_data, upstream_message_count,
+                         upstream_messages);
 
     /* Round Robin between Upstream MessageIterator */
     message_iterator_private_data->head_mi =
         message_iterator_private_data->head_mi->next;
-
-    if (message_iterator_private_data->queue)
-      return filter_message_iterator_next_sending(self_message_iterator,
-                                                  messages, capacity, count);
   }
-  // Never go there
+  return filter_message_iterator_next_sending(self_message_iterator, messages,
+                                              capacity, count);
 }
 
 static inline bt_message_iterator_class_next_method_status
@@ -212,7 +222,7 @@ filter_message_iterator_next_initializing(
       message_iterator_private_data->common_data->btx_params);
 
   // We need to transition in the procesing state
-  message_iterator_private_data->state = BTX_FILTER_STATE_READING;
+  message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
   return filter_message_iterator_next_reading(self_message_iterator, messages,
                                               capacity, count);
 }
@@ -230,10 +240,10 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
   case BTX_FILTER_STATE_INITIALIZING:
     return filter_message_iterator_next_initializing(self_message_iterator,
                                                      messages, capacity, count);
-  case BTX_FILTER_STATE_READING:
+  case BTX_FILTER_STATE_PROCESSING:
     return filter_message_iterator_next_reading(self_message_iterator, messages,
                                                 capacity, count);
-  case BTX_FILTER_STATE_ENDING:
+  case BTX_FILTER_STATE_FINALIZING:
     return filter_message_iterator_next_ending(self_message_iterator, messages,
                                                capacity, count);
   default:
