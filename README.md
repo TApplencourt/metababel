@@ -18,7 +18,6 @@ Link with a object file who export the symbol `btx_push_usr_messages(struct xpro
 	
 In the callbacks, and in the `btx_push_usr_messages`, you have access to `btx_push_message_{stream_class_name}_#{event_class_name}(struct xprof_common_data *common_data, ...)`.
 
-
 # Source Description
 
 ## State Machine
@@ -42,11 +41,9 @@ stateDiagram-v2
     BTX_SOURCE_STATE_INITIALIZING --> BTX_FILTER_PROCESSING
     state BTX_FILTER_PROCESSING {
         [*] --> BTX_FILTER_PROCESSING_STATE_READING
-        [*] --> BTX_FILTER_PROCESSING_STATE_SENDING
-	BTX_FILTER_PROCESSING_STATE_SENDING --> BTX_FILTER_PROCESSING_STATE_READING
+	    BTX_FILTER_PROCESSING_STATE_SENDING --> BTX_FILTER_PROCESSING_STATE_READING
     	BTX_FILTER_PROCESSING_STATE_READING --> BTX_FILTER_PROCESSING_STATE_SENDING
-	BTX_FILTER_PROCESSING_STATE_READING --> BTX_FILTER_PROCESSING_STATE_FINISHED
-	BTX_FILTER_PROCESSING_STATE_FINISHED --> [*]
+	    BTX_FILTER_PROCESSING_STATE_READING --> [*]
     }
     BTX_FILTER_PROCESSING --> BTX_FILTER_STATE_FINALIZING
     BTX_FILTER_STATE_FINALIZING --> BTX_FILTER_STATE_FINISHED
