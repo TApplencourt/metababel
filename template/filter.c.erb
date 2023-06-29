@@ -27,9 +27,9 @@ filter_message_iterator_next_processing_sending(
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
 
-  if (!message_iterator_private_data->queue) {
+  // This should not append, just to be safe
+  if (!message_iterator_private_data->queue)
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
-  }
 
   btx_downstream_move_messages(message_iterator_private_data, messages,
                                capacity, count);
@@ -62,7 +62,7 @@ btx_call_dispatchers(const bt_message *upstream_message,
   /* Borrow the event message's event and its class */
   const bt_event *event = bt_message_event_borrow_event_const(upstream_message);
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
-  // Lazied Modified
+  // Lazy modified variable
   bool is_callback_called = false;
   {
     const char *class_name = bt_event_class_get_name(event_class);
@@ -87,7 +87,7 @@ btx_call_dispatchers(const bt_message *upstream_message,
   }
 
   if (is_callback_called) {
-    /* The message have been consumed, we can discard it */
+    /* The message has been consumed; we can discard it */
     bt_message_put_ref(upstream_message);
   } else {
     btx_downstream_push_message(message_iterator_private_data,
@@ -104,7 +104,7 @@ btx_consume_messages(btx_message_iterator_t *message_iterator_private_data,
        upstream_i++) {
     /* Current message */
     const bt_message *upstream_message = upstream_messages[upstream_i];
-    /* Forward all non event-messages downstream */
+    /* Forward all non-event-messages downstream */
     if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
       btx_downstream_push_message(message_iterator_private_data,
                                   upstream_message);
@@ -162,11 +162,18 @@ filter_message_iterator_next_processing_reading(
         message_iterator_private_data->head_mi->message_iterator,
         &upstream_messages, &upstream_message_count);
 
-    /* Message iterator status: Error, Exiting, or keep on Reading */
+    /* Message iterator status: keep on reading, Exiting, Errors */
     switch (next_status) {
+    case BT_MESSAGE_ITERATOR_NEXT_STATUS_OK:
+      btx_consume_messages(message_iterator_private_data, upstream_message_count,
+                          upstream_messages);
+      /* Round Robin between Upstream MessageIterator */
+      message_iterator_private_data->head_mi =
+          message_iterator_private_data->head_mi->next;
+      break;
     case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
       if (unregister_current_message_iterator(message_iterator_private_data)) {
-        continue;
+        break;
       } else {
         return filter_message_iterator_transition_from_reading_to_finalizing(
             self_message_iterator, message_iterator_private_data, messages,
@@ -180,19 +187,10 @@ filter_message_iterator_next_processing_reading(
     case BT_MESSAGE_ITERATOR_NEXT_STATUS_ERROR:
       message_iterator_private_data->state = BTX_FILTER_STATE_ERROR;
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
-    case BT_MESSAGE_ITERATOR_NEXT_STATUS_OK:
-      break;
     default:
       message_iterator_private_data->state = BTX_FILTER_STATE_ERROR;
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
     }
-
-    btx_consume_messages(message_iterator_private_data, upstream_message_count,
-                         upstream_messages);
-
-    /* Round Robin between Upstream MessageIterator */
-    message_iterator_private_data->head_mi =
-        message_iterator_private_data->head_mi->next;
   }
   return filter_message_iterator_next_processing_sending(
       self_message_iterator, messages, capacity, count);
@@ -221,7 +219,7 @@ filter_message_iterator_next_initializing(
       message_iterator_private_data->common_data->usr_data,
       message_iterator_private_data->common_data->btx_params);
 
-  // We need to transition in the procesing state
+  // We transition into the processing state
   message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
   return filter_message_iterator_next_processing_reading(
       self_message_iterator, messages, capacity, count);
@@ -247,7 +245,7 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
     return filter_message_iterator_next_finalizing(self_message_iterator,
                                                    messages, capacity, count);
   case BTX_FILTER_STATE_FINISHED:
-    // We should never been in this state and called
+    // We should never be in this state and called
     // `filter_message_iterator_next`
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
   default:
