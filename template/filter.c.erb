@@ -15,8 +15,6 @@
 //   `--. \ __/ _` | __/ _ \ | |\/| |/ _` |/ __| '_ \| | '_ \ / _ \/ __|
 //  /\__/ / || (_| | ||  __/ | |  | | (_| | (__| | | | | | | |  __/\__ \
 //  \____/ \__\__,_|\__\___| \_|  |_/\__,_|\___|_| |_|_|_| |_|\___||___/
-//
-//
  */
 
 //    _
@@ -82,7 +80,6 @@ filter_message_iterator_next_processing_sending(
 //   |_) ._ _   _  _   _  _ o ._   _    |_)  _   _.  _| o ._   _
 //   |   | (_) (_ (/_ _> _> | | | (_|   | \ (/_ (_| (_| | | | (_|
 //                                 _|                          _|
-
 static inline bool _btx_unregister_current_message_iterator(
     btx_message_iterator_t *message_iterator_private_data) {
 
@@ -337,7 +334,6 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 //   \____/\___/|_| |_| |_| .__/ \___/|_| |_|\___|_| |_|\__|
 //                        | |
 //                        |_|
-
 static char *_btx_get_port_name(uint64_t current) {
   int num_len = snprintf(NULL, 0, "in%ld", current);
   char *result = (char *)malloc(num_len + 1);
