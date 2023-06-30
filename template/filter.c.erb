@@ -287,7 +287,7 @@ filter_message_iterator_next_initializing(
       message_iterator_private_data->common_data->usr_data,
       message_iterator_private_data->common_data->btx_params);
 
-  /* We need to transition in the procesing state*/
+  /* We need to transition to the procesing state*/
   message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
   if (message_iterator_private_data->queue) {
     message_iterator_private_data->processing_state =
