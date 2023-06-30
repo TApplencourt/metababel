@@ -8,7 +8,7 @@
 /* Loosely inspired by
  * https://babeltrace.org/docs/v2.0/libbabeltrace2/example-simple-flt-cmp-cls.html
  */
-
+/*: Avoid : error: multi-line comment
 //   _____ _        _        ___  ___           _     _
 //  /  ___| |      | |       |  \/  |          | |   (_)
 //  \ `--.| |_ __ _| |_ ___  | .  . | __ _  ___| |__  _ _ __   ___  ___
@@ -17,6 +17,7 @@
 //  \____/ \__\__,_|\__\___| \_|  |_/\__,_|\___|_| |_|_|_| |_|\___||___/
 //
 //
+ */
 
 //    _
 //   |_ o ._   _. | o _   _
@@ -484,14 +485,14 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
       bt_self_component_filter_as_self_component(self_component_filter));
 
   btx_streams_put_ref(common_data->downstream_trace); // ??
-  // We allocate it, we need to put ref
+  /* We allocate it, we need to put ref */
   bt_trace_put_ref(common_data->downstream_trace);
 
-  // Delete name_to_dispatchers
+  /* Delete name_to_dispatchers */
   btx_delete_dispatchers(common_data);
   btx_delete_matching_dispatchers(common_data);
 
-  // We allocate it, we need to free it
+  /* We allocate it, we need to free it */
   free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
   free(common_data);
