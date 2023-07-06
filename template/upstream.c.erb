@@ -9,7 +9,7 @@
 
 <% event_class_dispatchers.each do |e| %>
 static void btx_dispatch_<%= e.name_sanitized %>(
-    UT_array *callbacks, common_data_t *common_data,
+    callbacks_t *callbacks, common_data_t *common_data,
     const bt_message *upstream_message, bool *is_callback_called) {
 
   <% e.args.each do |s| %>
@@ -30,7 +30,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   // Call all the callbacks who where registered
   // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ((p = utarray_next(callbacks, p))) {
+  while ((p = utarray_next(callbacks->event_callbacks, p))) {
     (*p)((void *)common_data,
          common_data
              ->usr_data<%= ', _timestamp' if e.default_clock_class %><%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
@@ -40,7 +40,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   <%= "free(#{s.name});" %>
   <% end %>
 
-  if (callbacks)
+  if (callbacks->event_callbacks)
     *is_callback_called = true;
 }
 
@@ -57,17 +57,18 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
     s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
     s->name = "<%= e.name %>";
     s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
-    utarray_new(s->callbacks, &ut_ptr_icd);
+    s->callbacks = calloc(1, sizeof(callbacks_t));
+    utarray_new(s->callbacks->event_callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
   }
   // Add the callbacks to the array
-  utarray_push_back(s->callbacks, &callback);
+  utarray_push_back(s->callbacks->event_callbacks, &callback);
 }
 <% end %>
 
 <% stream_classes_matching_dispatchers.each do |s| %>
-void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
+void btx_matching_dispatch_<%= s.name_sanitized %>(callbacks_t *callbacks,
                                                    common_data_t *common_data,
                                                    const bt_message *upstream_message,
                                                    bool *is_callback_called) {
@@ -81,7 +82,7 @@ void btx_matching_dispatch_<%= s.name_sanitized %>(UT_array *callbacks,
   const char *event_class_name = bt_event_class_get_name(event_class);
 
   condition_to_callback_t **p = NULL;
-  while ((p = utarray_next(callbacks, p))) {
+  while ((p = utarray_next(callbacks->event_callbacks, p))) {
     <%= s.name_sanitized %>_callback_condition_f *condition =
         (<%= s.name_sanitized %>_callback_condition_f *)((*p)->condition);
     <%= s.name_sanitized %>_conditioned_callback_f *callback =
@@ -118,7 +119,8 @@ void btx_register_matching_callback_<%= s.name_sanitized %>(
     s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
     s->name = "<%= s.name_sanitized %>";
     s->dispatcher = (void *)&btx_matching_dispatch_<%= s.name_sanitized %>;
-    utarray_new(s->callbacks, &ut_ptr_icd);
+    s->callbacks = calloc(1, sizeof(callbacks_t));
+    utarray_new(s->callbacks->event_callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_matching_dispatcher, s->name, strlen(s->name),
                     s);
@@ -128,7 +130,7 @@ void btx_register_matching_callback_<%= s.name_sanitized %>(
       (condition_to_callback_t *)malloc(sizeof(condition_to_callback_t));
   m->condition = (void *)condition;
   m->callback = (void *)callback;
-  utarray_push_back(s->callbacks, &m);
+  utarray_push_back(s->callbacks->event_callbacks, &m);
 }
 <% end %>
 
@@ -136,7 +138,8 @@ void btx_delete_dispatchers(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
-    utarray_free(current->callbacks);
+    utarray_free(current->callbacks->event_callbacks);
+    free(current->callbacks);
     free(current);
   }
 }
@@ -148,10 +151,11 @@ void btx_delete_matching_dispatchers(common_data_t *common_data) {
     HASH_DEL(common_data->name_to_matching_dispatcher, current);
     // Deletes every condition, callback pair.
     condition_to_callback_t **p = NULL;
-    while ((p = utarray_next(current->callbacks, p))) {
+    while ((p = utarray_next(current->callbacks->event_callbacks, p))) {
       free(*p);
     }
-    utarray_free(current->callbacks);
+    utarray_free(current->callbacks->event_callbacks);
+    free(current->callbacks);
     free(current);
   }
 }
