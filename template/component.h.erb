@@ -14,8 +14,13 @@ struct common_data_s;
 typedef struct common_data_s common_data_t;
 
 // Params
+// Avoid icx error: empty struct has size 0 in C, size 1 in C++ [-Werror,-Wextern-c-compat]
 struct btx_params_s {
+<% if params_declaration %>
   <%= params_declaration %>
+<% else %>
+  int dummy;
+<% end %>
 
 }; <%# Need empty line for nice code gen %>
 typedef struct btx_params_s btx_params_t;
