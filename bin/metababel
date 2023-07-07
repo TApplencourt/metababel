@@ -57,16 +57,6 @@ StreamClassInfo = Struct.new(:name, :args, :body, :default_clock_class) do
   end
 end
 
-MatchingCallbackInfo = Struct.new(:name, :args, :regex) do
-  def name_sanitized
-    name.gsub(/[^0-9A-Za-z-]/, '_')
-  end
-
-  def match?(str)
-    str =~ Regexp.new(regex)
-  end
-end
-
 def erb_render_and_save(vars,
                         basename, out_folder, out_name: nil, prefix: 'btx_')
   template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
@@ -97,7 +87,7 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, t, m)
+def wrote_event_dispatchers(folder, t)
   event_name = 'event'
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
@@ -120,7 +110,6 @@ def wrote_event_dispatchers(folder, t, m)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,
-        matching_dispatchers: m,
         stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
         event_name: event_name }
 
@@ -216,10 +205,6 @@ OptionParser.new do |opts|
     options[:params] = p
   end
 
-  opts.on('--callbacks PATH', '[Optional] Name of YAML matching callbacks.') do |p|
-    options[:callbacks] = p
-  end
-
   opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
     options[:folder] = p
   end
@@ -258,15 +243,7 @@ end
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
-callbacks = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
-matching_callbacks = callbacks.map do |d|
-  MatchingCallbackInfo.new(d[:name], d[:args].map{ | a | GeneratedArg.new(a[:type], a[:name]) }, d[:regex])
-end
-
-d[:matching_callbacks] = matching_callbacks
-
 wrote_component(options, d, folder)
-
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 
@@ -285,5 +262,5 @@ if %w[FILTER SINK].include?(options[:component_type])
   end
   validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, t, matching_callbacks)
+  wrote_event_dispatchers(folder, t)
 end
