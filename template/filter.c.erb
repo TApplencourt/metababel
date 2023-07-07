@@ -104,35 +104,18 @@ static inline void filter_message_iterator_next_call_dispatchers(
   /* Borrow the event message's event and its class */
   const bt_event *event = bt_message_event_borrow_event_const(upstream_message);
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
-  /* Lazy modified variable */
-  bool is_callback_called = false;
+  
   /* Event dispatcher */
-  {
-    const char *class_name = bt_event_class_get_name(event_class);
-    name_to_dispatcher_t *s = NULL;
-    HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
-    if (s)
-      (*((dispatcher_t(*))(s->dispatcher)))(
-          s->callbacks, common_data, upstream_message, &is_callback_called);
-  }
-  /* Matching Dispacher */
-  {
-    const bt_stream_class *stream_class =
-        bt_event_class_borrow_stream_class_const(event_class);
-    const char *stream_class_name = bt_stream_class_get_name(stream_class);
-
-    name_to_dispatcher_t *s = NULL;
-    if (stream_class_name)
-      HASH_FIND_STR(common_data->name_to_matching_dispatcher,
-                    stream_class_name, s);
-    if (s)
-      (*((dispatcher_t(*))(s->dispatcher)))(
-          s->callbacks, common_data, upstream_message, &is_callback_called);
-  }
-  /* Drop or push upstream message*/
-  if (is_callback_called) {
+  const char *class_name = bt_event_class_get_name(event_class);
+  name_to_dispatcher_t *s = NULL;
+  HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
+  if (s) {
+    (*((dispatcher_t(*))(s->dispatcher)))(
+        s->callbacks, common_data, upstream_message);
+    /* Drop message */
     bt_message_put_ref(upstream_message);
   } else {
+    /* Push upstream message to downstream */
     btx_downstream_push_message(message_iterator_private_data,
                                 upstream_message);
   }
@@ -490,7 +473,6 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
 
   /* Delete name_to_dispatchers */
   btx_delete_dispatchers(common_data);
-  btx_delete_matching_dispatchers(common_data);
 
   /* We allocate it, we need to free it */
   free(common_data->btx_params);
