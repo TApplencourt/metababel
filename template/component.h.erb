@@ -28,6 +28,9 @@ void btx_populate_params(common_data_t *common_data_t);
 
 struct callbacks_s {
   UT_array *event_callbacks;
+  <% matching_dispatchers.each do |m| %>
+  UT_array *<%= m.name_sanitized %>_callbacks;
+  <% end %>
 };
 typedef struct callbacks_s callbacks_t;
 

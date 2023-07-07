@@ -7,6 +7,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+/*
+ *      _                  _                          
+ *     |_     _  ._ _|_   /   _. | | |_   _.  _ |   _ 
+ *     |_ \/ (/_ | | |_   \_ (_| | | |_) (_| (_ |< _> 
+ *                                                    
+ */
+
 <% event_class_dispatchers.each do |e| %>
 static void btx_dispatch_<%= e.name_sanitized %>(
     callbacks_t *callbacks, common_data_t *common_data,
@@ -27,14 +34,31 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   const bt_clock_snapshot *clock_snapshot = bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
-  // Call all the callbacks who where registered
+
+  /* Call registered event callbacks */
   // Their type are declared in 'upstream.h'
-  <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ((p = utarray_next(callbacks->event_callbacks, p))) {
-    (*p)((void *)common_data,
-         common_data
-             ->usr_data<%= ', _timestamp' if e.default_clock_class %><%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
+  {
+    <%= e.name_sanitized %>_callback_f **p = NULL;
+    while ((p = utarray_next(callbacks->event_callbacks, p))) {
+      (*p)((void *)common_data,
+          common_data
+              ->usr_data<%= ', _timestamp' if e.default_clock_class %><%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
+    }
   }
+
+  /* Call registered matching callbacks */
+  // Their type are declared in 'upstream.h'
+  <% matching_dispatchers.each do |m| %>
+  {
+    <%= m.name_sanitized %>_callback_f **p = NULL;
+    while ((p = utarray_next(callbacks-><%= m.name_sanitized %>_callbacks, p))) {
+      (*p)((void *)common_data,
+           common_data
+               ->usr_data<%= m.args.map{ |s| s.name }.join_with_prefix(", ") %>);
+    }
+  }
+
+  <% end %>
 
   <% e.args_to_free.each do |s| %>
   <%= "free(#{s.name});" %>
@@ -62,8 +86,8 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
   // Add the callbacks to the array
   utarray_push_back(s->callbacks->event_callbacks, &callback);
 }
-<% end %>
 
+<% end %>
 void btx_delete_dispatchers(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
@@ -73,3 +97,46 @@ void btx_delete_dispatchers(common_data_t *common_data) {
     free(current);
   }
 }
+
+/*
+ *                                      _                          
+ *     |\/|  _. _|_  _ |_  o ._   _    /   _. | | |_   _.  _ |   _ 
+ *     |  | (_|  |_ (_ | | | | | (_|   \_ (_| | | |_) (_| (_ |< _> 
+ *                                _|                               
+ */
+
+<% matching_dispatchers.each do |m| %>
+<% event_class_dispatchers.each do |e| %>
+void btx_register_callbacks_<%= e.name_sanitized %>_<%= m.name_sanitized %>(
+    void *btx_handle, <%= m.name_sanitized %>_callback_f *callback) {
+  // Look-up our dispatcher
+  name_to_dispatcher_t *s = NULL;
+  name_to_dispatcher_t **name_to_dispatcher =
+      &((common_data_t *)btx_handle)->name_to_dispatcher;
+  HASH_FIND_STR(*name_to_dispatcher, name, s);
+  if (!s) {
+    // We didn't find the dispatcher, so we need to:
+    // 1. Create it
+    s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
+    s->name = "<%= e.name_sanitized %>";
+    s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
+    s->callbacks = calloc(1, sizeof(callbacks_t));
+    utarray_new(s->callbacks-><%= m.name_sanitized %>_callbacks, &ut_ptr_icd);
+    // 2. Register it
+    HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
+  }
+  // Add the callbacks to the array
+  utarray_push_back(s->callbacks->event_callbacks, &callback);
+}
+
+<% end %>
+<% end %>
+<% matching_dispatchers.each do |m| %>
+void btx_register_matching_callbacks_<%= m.name_sanitized %>(
+  btx_handle, <%= m.name_sanitized %>_callback_f *callback){
+  <% event_class_dispatchers.each do |e| %>
+  void btx_register_callbacks_<%= e.name_sanitized %>_<%= m.name_sanitized %>(btx_handle, callback);
+  <% end %>
+}
+
+<% end %>
