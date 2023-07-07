@@ -26,10 +26,15 @@ void btx_populate_params(common_data_t *common_data_t);
 #include "<%= options[:usr_data_header] %>"
 <% end %>
 
+struct callbacks_s {
+  UT_array *event_callbacks;
+};
+typedef struct callbacks_s callbacks_t;
+
 struct name_to_dispatcher_s {
   const char *name;
   void *dispatcher;
-  UT_array *callbacks;
+  callbacks_t *callbacks;
   UT_hash_handle hh;
 };
 typedef struct name_to_dispatcher_s name_to_dispatcher_t;

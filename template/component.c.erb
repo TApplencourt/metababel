@@ -17,17 +17,17 @@ void btx_populate_params(common_data_t *common_data) {
 <% component_dispatchers.each do |e| %>
 
 typedef void btx_dispatch_<%= e.name_sanitized %>_f(
-    UT_array *callbacks, common_data_t *common_data,
+    callbacks_t *callbacks, common_data_t *common_data,
     <%= e.args.map{ |s| s.type }.join(", ") %>);
 
 static void btx_dispatch_<%= e.name_sanitized %>(
-    UT_array *callbacks, common_data_t *common_data,
+    callbacks_t *callbacks, common_data_t *common_data,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
 
   // Call all the callbacks who where registered
   // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ((p = utarray_next(callbacks, p))) {
+  while ((p = utarray_next(callbacks->event_callbacks, p))) {
     (*p)((void *)common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
@@ -45,11 +45,12 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
     s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
     s->name = "<%= e.name %>";
     s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
-    utarray_new(s->callbacks, &ut_ptr_icd);
+    s->callbacks = calloc(1, sizeof(callbacks_t));
+    utarray_new(s->callbacks->event_callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
     // 3. Add the callbacks to the array
-    utarray_push_back(s->callbacks, &callback);
+    utarray_push_back(s->callbacks->event_callbacks, &callback);
   } else {
     assert(false && "Only one callbacks for <%= e.name_sanitized %>");
   }
