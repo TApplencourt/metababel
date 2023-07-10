@@ -27,14 +27,14 @@ void btx_delete_dispatchers(common_data_t *common_data);
 typedef void (<%= m.name_sanitized %>_callback_f)(<%= m.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>);
 <% end %>
 
-// Register matching callbacks
-// NOTE: Every matching callback must be registered in 
-// all the events' name_to_dispacther
 <% matching_dispatchers.each do |m| %>
-<% event_class_dispatchers.each do |e| %>
-void btx_register_callbacks_<%= e.name_sanitized %>_<%= m.name_sanitized %>(
-    void *btx_handle, <%= m.name_sanitized %>_callback_f *callback);
+void btx_register_matching_callbacks_<%= m.name_sanitized %>(
+    btx_handle, <%= m.name_sanitized %>_callback_f *callback);    
 <% end %>
+
+<% event_class_dispatchers.each do |e| %>
+void _btx_register_callbacks_<%= e.name_sanitized %>(
+    void *btx_handle, const char *callback_type, void *callback);
 <% end %>
 
 #ifdef __cplusplus
