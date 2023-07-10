@@ -1,0 +1,8 @@
+event_1: { cf_1 = "test", pf_1 = 0 }
+event_1: { cf_1 = "test", pf_1 = 1 }
+event_1: { cf_1 = "test", pf_1 = 2 }
+event_1: { cf_1 = "test", pf_1 = 3 }
+event_2: { cf_1 = "test", pf_1 = 0 }
+event_2: { cf_1 = "test", pf_1 = 1 }
+event_2: { cf_1 = "test", pf_1 = 2 }
+event_2: { cf_1 = "test", pf_1 = 3 }

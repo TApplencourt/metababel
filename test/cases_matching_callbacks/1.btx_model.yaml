@@ -1,0 +1,25 @@
+:stream_classes:
+- :name: sc
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+      - :name: cf_1
+        :field_class:
+          :type: string
+  :event_classes:
+  - :name: event_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+  - :name: event_2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
