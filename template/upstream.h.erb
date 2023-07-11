@@ -20,9 +20,15 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
 
 void btx_delete_dispatchers(common_data_t *common_data);
 
-/* Matching callbacks */
+// Generic register callbacks
 
-// User matching callbacks signatures
+<% event_class_dispatchers.each do |e| %>
+void _btx_register_callbacks_<%= e.name_sanitized %>(
+    void *btx_handle, const char *callback_type, void *callback);
+<% end %>
+
+// Matching callbacks
+
 <% matching_dispatchers.each do |m| %>
 typedef void (<%= m.name_sanitized %>_callback_f)(
     void *btx_handle,
@@ -32,11 +38,6 @@ typedef void (<%= m.name_sanitized %>_callback_f)(
 <% matching_dispatchers.each do |m| %>
 void btx_register_matching_callbacks_<%= m.name_sanitized %>(
     void *btx_handle, <%= m.name_sanitized %>_callback_f *callback);    
-<% end %>
-
-<% event_class_dispatchers.each do |e| %>
-void _btx_register_callbacks_<%= e.name_sanitized %>(
-    void *btx_handle, const char *callback_type, void *callback);
 <% end %>
 
 #ifdef __cplusplus

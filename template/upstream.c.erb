@@ -31,7 +31,8 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   /* Call registered event callbacks */
   {
     // The callbacks array is allocated if the user register a callback for it.
-    // If not callback was registered we can not iterate over the array. 
+    // If no callback was registered, we can not iterate over the array, since 
+    // it is a null pointer. 
     if (callbacks->event_callbacks) {
       void **p = NULL;
       while ((p = utarray_next(callbacks->event_callbacks, p))) {
@@ -87,12 +88,12 @@ void _btx_register_callbacks_<%= e.name_sanitized %>(
   name_to_dispatcher_t *s = NULL;
   name_to_dispatcher_t **name_to_dispatcher =
       &((common_data_t *)btx_handle)->name_to_dispatcher;
-  HASH_FIND_STR(*name_to_dispatcher, "<%= e.name_sanitized %>", s);
+  HASH_FIND_STR(*name_to_dispatcher, "<%= e.name %>", s);
   if (!s) {
     // We didn't find the dispatcher, so we need to:
     // 1. Create it
     s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
-    s->name = "<%= e.name_sanitized %>";
+    s->name = "<%= e.name %>";
     s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
     s->callbacks = calloc(1, sizeof(callbacks_t));
     // 2. Register it
