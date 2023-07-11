@@ -1,6 +1,10 @@
 require 'base_test'
 
 class TestFilterMatchingCallbacksCalled < Test::Unit::TestCase
+  # Validate the proper calling of both regular and matching callbacks.
+  # Regular callbacks dispatch event_1 while matching callbacks dispatch
+  # event_2. 
+
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -24,6 +28,10 @@ class TestFilterMatchingCallbacksCalled < Test::Unit::TestCase
 end
 
 class TestFilterMatchingCallbacksCalledWithTimeStamp < Test::Unit::TestCase
+  # Validate the _timestamp is passed properly in matching callbacks.
+  # Since this validates downstream.c we not need to perform the same 
+  # test for sink components. 
+
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -43,5 +51,7 @@ class TestFilterMatchingCallbacksCalledWithTimeStamp < Test::Unit::TestCase
         btx_file_usr_callbacks: './test/cases_matching_callbacks/2.callbacks.c'
       }
     ]
+
+    @btx_output_validation = './test/cases_matching_callbacks/2.btx_log.txt'
   end
 end

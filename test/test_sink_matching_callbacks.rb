@@ -1,6 +1,10 @@
 require 'base_test'
 
 class TestSinkMatchingCallbacksCalled < Test::Unit::TestCase
+  # Validate the proper calling of both regular and matching callbacks.
+  # Regular callbacks dispatch event_1 while matching callbacks dispatch
+  # event_2.
+
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
