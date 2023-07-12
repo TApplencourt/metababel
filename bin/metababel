@@ -44,8 +44,17 @@ class Hash
   end
 end
 
+EventDispatcher = Struct.new(:name, :args, :callback) do 
+  def name_sanitized
+    name.gsub(/[^0-9A-Za-z-]/, '_')
+  end
+  def callback_sanitized
+    callback.gsub(/[^0-9A-Za-z-]/, '_')
+  end
+end
+
 EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class,
-                            :args_to_free) do
+                            :args_to_free, :dispatchers) do
   def name_sanitized
     name.gsub(/[^0-9A-Za-z-]/, '_')
   end
@@ -104,8 +113,19 @@ def wrote_event_dispatchers(folder, t, m)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    EventClassInfo.new(e.name, arg_variables.fetch('outputs', []), body, index_stream_class, index_event_class, default_clock_class,
-                       arg_variables.fetch('outputs_allocated', []))
+    evt_args = arg_variables.fetch('outputs', [])
+    evt_args = [GeneratedArg.new('int64_t', '_timestamp')] + evt_args if default_clock_class
+    event_dispatcher = EventDispatcher.new(e.name, evt_args, 'event')
+    match_dispatchers = m.filter_map do |md|
+      EventDispatcher.new(md.name, md.args, md.name) if Regexp.new(md.regex).match?(e.name)
+    end
+
+    EventClassInfo.new(
+      e.name, arg_variables.fetch('outputs', []), 
+      body, index_stream_class, index_event_class, default_clock_class,
+      arg_variables.fetch('outputs_allocated', []),
+      [event_dispatcher] + match_dispatchers
+    )
   end
 
   stream_classes_matching_dispatchers = t.stream_classes.map do |s|

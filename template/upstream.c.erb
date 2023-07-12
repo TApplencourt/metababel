@@ -28,36 +28,19 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
 
-  /* Call registered event callbacks */
-  {
-    // The callbacks array is allocated if the user register a callback for it.
-    // If no callback was registered, we can not iterate over the array, since 
-    // it is a null pointer. 
-    if (callbacks->event_callbacks) {
-      void **p = NULL;
-      while ((p = utarray_next(callbacks->event_callbacks, p))) {
-        (*((<%= e.name_sanitized %>_callback_f **)(p)))((void *)common_data,
-            common_data
-                ->usr_data<%= ', _timestamp' if e.default_clock_class %><%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
-      }
-    }
-  }
-
   /* Call registered matching callbacks */
-  <% matching_dispatchers.each do |m| %>
-  <% if m.match?(e.name) %>
+  <% e.dispatchers.each do |d| %>
   {
-      if (callbacks-><%= m.name_sanitized %>_callbacks) {
+      if (callbacks-><%= d.callback_sanitized %>_callbacks) {
       void **p = NULL;
-      while ((p = utarray_next(callbacks-><%= m.name_sanitized %>_callbacks, p))) {
-        (*((<%= m.name_sanitized %>_callback_f **)(p)))((void *)common_data,
+      while ((p = utarray_next(callbacks-><%= d.callback_sanitized %>_callbacks, p))) {
+        (*((<%= d.name_sanitized %>_callback_f **)(p)))((void *)common_data,
             common_data
-                ->usr_data<%= m.args.map{ |s| s.name }.join_with_prefix(", ") %>);
+                ->usr_data<%= d.args.map{ |a| a.name }.join_with_prefix(", ") %>);
       }
     }
   }
 
-  <% end %>
   <% end %>
 
   <% e.args_to_free.each do |s| %>
@@ -65,23 +48,6 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   <% end %>
 }
 
-<% end %>
-void btx_delete_dispatchers(common_data_t *common_data) {
-  name_to_dispatcher_t *current, *tmp;
-  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
-    HASH_DEL(common_data->name_to_dispatcher, current);
-    if(current->callbacks->event_callbacks)
-      utarray_free(current->callbacks->event_callbacks);
-    <% matching_dispatchers.each do |m| %>
-    if(current->callbacks-><%= m.name_sanitized %>_callbacks)
-      utarray_free(current->callbacks-><%= m.name_sanitized %>_callbacks);
-    <% end %>
-    free(current->callbacks);
-    free(current);
-  }
-}
-
-<% event_class_dispatchers.each do |e| %>
 void _btx_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, const char *callback_type, void *callback) {
   // Look-up our dispatcher
@@ -119,14 +85,13 @@ void _btx_register_callbacks_<%= e.name_sanitized %>(
   <% end %>
 }
 
-<% end %>
-<% event_class_dispatchers.each do |e| %>
 void btx_register_callbacks_<%= e.name_sanitized %>(
   void *btx_handle, <%= e.name_sanitized %>_callback_f *callback) {
   _btx_register_callbacks_<%= e.name_sanitized %>(btx_handle, "event_callbacks", (void *)callback);
 }
 
 <% end %>
+
 <% matching_dispatchers.each do |m| %>
 void btx_register_matching_callbacks_<%= m.name_sanitized %>(
   void *btx_handle, <%= m.name_sanitized %>_callback_f *callback){
@@ -136,3 +101,18 @@ void btx_register_matching_callbacks_<%= m.name_sanitized %>(
 }
 
 <% end %>
+
+void btx_delete_dispatchers(common_data_t *common_data) {
+  name_to_dispatcher_t *current, *tmp;
+  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
+    HASH_DEL(common_data->name_to_dispatcher, current);
+    if(current->callbacks->event_callbacks)
+      utarray_free(current->callbacks->event_callbacks);
+    <% matching_dispatchers.each do |m| %>
+    if(current->callbacks-><%= m.name_sanitized %>_callbacks)
+      utarray_free(current->callbacks-><%= m.name_sanitized %>_callbacks);
+    <% end %>
+    free(current->callbacks);
+    free(current);
+  }
+}
