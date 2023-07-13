@@ -111,7 +111,7 @@ def wrote_event_dispatchers(folder, t, m, callback_types)
     
     dispatcher_args = []
     dispatcher_args += [GeneratedArg.new('int64_t', '_timestamp')] if clock
-    dispatcher_args += args.fetch('outputs',[]).filter_map { |a| a if !md[:args].include?(a.name) }
+    dispatcher_args += args.fetch('outputs',[]).filter_map { |a| a if md[:args].include?(a.name) }
     raise "Matching callback argument not present in model." unless dispatcher_args.length == md[:args].length
 
     DispatcherInfo.new(md[:name], dispatcher_args, md[:name], Regexp.new(md[:regex]))

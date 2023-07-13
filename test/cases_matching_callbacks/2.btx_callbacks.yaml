@@ -1,9 +1,6 @@
 - :name: usr
   :regex: \S*_1
   :args:
-  - :name: _timestamp
-    :type: int64_t
-  - :name: cf_1
-    :type: const char *
-  - :name: pf_1
-    :type: uint64_t
+  - _timestamp
+  - cf_1
+  - pf_1
