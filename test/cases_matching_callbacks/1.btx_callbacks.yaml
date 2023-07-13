@@ -1,4 +1,4 @@
-- :name: usr
+- :name: foo
   :regex: \S*_1
   :args:
   - cf_1
