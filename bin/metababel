@@ -19,6 +19,10 @@ def validate_model(yaml)
   raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
 end
 
+def sanitize(str)
+  str.gsub(/[^0-9A-Za-z-]/, '_')
+end 
+
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -44,35 +48,17 @@ class Hash
   end
 end
 
-EventDispatcher = Struct.new(:name, :args, :callback) do 
+DispatcherInfo = Struct.new(:name, :args, :type, :regex) do 
   def name_sanitized
-    name.gsub(/[^0-9A-Za-z-]/, '_')
-  end
-  def callback_sanitized
-    callback.gsub(/[^0-9A-Za-z-]/, '_')
+    sanitize(name)
   end
 end
 
-EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, :index_event_class, :default_clock_class,
+EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, 
+                            :index_event_class, :default_clock_class,
                             :args_to_free, :dispatchers) do
   def name_sanitized
-    name.gsub(/[^0-9A-Za-z-]/, '_')
-  end
-end
-
-StreamClassInfo = Struct.new(:name, :args, :body, :default_clock_class) do
-  def name_sanitized
-    name.gsub(/[^0-9A-Za-z-]/, '_')
-  end
-end
-
-MatchingCallbackInfo = Struct.new(:name, :args, :regex) do
-  def name_sanitized
-    name.gsub(/[^0-9A-Za-z-]/, '_')
-  end
-
-  def match?(str)
-    str =~ Regexp.new(regex)
+    sanitize(name)
   end
 end
 
@@ -97,6 +83,13 @@ class Babeltrace2Gen::BTTraceClass
       end
     end.flatten
   end
+  def find_event_class
+    @stream_classes.each.with_index do |s, index_stream_class|
+      s.event_classes.each.with_index do |e, index_event_class|
+        return [e, s.default_clock_class] if yield(e)
+      end
+    end
+  end
 end
 
 class GeneratedArg < Struct.new(:type, :name)
@@ -106,42 +99,51 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, t, m)
+def wrote_event_dispatchers(folder, t, m, callback_types)
   event_name = 'event'
+
+  matching_dispatchers = m.map do |md|
+    event, clock = t.find_event_class { |e| Regexp.new(md[:regex]).match?(e.name) }
+    raise "Matching callback #{md[:name]} does not match any event in model." unless event
+
+    args = {}
+    event.get_getter(event: '', arg_variables: args)
+    
+    dispatcher_args = []
+    dispatcher_args += [GeneratedArg.new('int64_t', '_timestamp')] if clock
+    dispatcher_args += args.fetch('outputs',[]).filter_map { |a| a if !md[:args].include?(a.name) }
+    raise "Matching callback argument not present in model." unless dispatcher_args.length == md[:args].length
+
+    DispatcherInfo.new(md[:name], dispatcher_args, md[:name], Regexp.new(md[:regex]))
+  end 
+
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
-    evt_args = arg_variables.fetch('outputs', [])
-    evt_args = [GeneratedArg.new('int64_t', '_timestamp')] + evt_args if default_clock_class
-    event_dispatcher = EventDispatcher.new(e.name, evt_args, 'event')
-    match_dispatchers = m.filter_map do |md|
-      EventDispatcher.new(md.name, md.args, md.name) if Regexp.new(md.regex).match?(e.name)
-    end
+
+    # Event dispatcher
+    evt_args = []
+    evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
+    evt_args += arg_variables.fetch('outputs',[])
+    dispatchers = [DispatcherInfo.new(e.name, evt_args, 'event')]
+
+    # Matching dispatchers
+    dispatchers += matching_dispatchers.filter_map { |md| md if md.regex.match?(e.name) }
 
     EventClassInfo.new(
       e.name, arg_variables.fetch('outputs', []), 
-      body, index_stream_class, index_event_class, default_clock_class,
+      body, index_stream_class, index_event_class, 
+      default_clock_class,
       arg_variables.fetch('outputs_allocated', []),
-      [event_dispatcher] + match_dispatchers
+      dispatchers
     )
   end
 
-  stream_classes_matching_dispatchers = t.stream_classes.map do |s|
-    arg_variables = {}
-    body = ''
-    if s.event_common_context_field_class
-      body = Babeltrace2Gen.context(indent: 1) do
-        s.get_getter(event: event_name, arg_variables: arg_variables)
-      end
-    end
-    StreamClassInfo.new(s.name, arg_variables.fetch('outputs', []), body, s.default_clock_class)
-  end
-
   d = { event_class_dispatchers: event_class_dispatchers,
-        matching_dispatchers: m,
-        stream_classes_matching_dispatchers: stream_classes_matching_dispatchers,
+        matching_dispatchers: matching_dispatchers,
+        callback_types: callback_types,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
@@ -278,13 +280,9 @@ end
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
-# Matching callbacks
-c = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
-m = c.map do |d|
-  MatchingCallbackInfo.new(d[:name], d[:args].map{ | a | GeneratedArg.new(a[:type], a[:name]) }, d[:regex])
-end
-
-d[:matching_dispatchers] = m
+m = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
+callback_types = m.map { |c| sanitize(c[:name]) }.prepend('event')
+d[:callback_types] = callback_types
 
 wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
@@ -305,5 +303,5 @@ if %w[FILTER SINK].include?(options[:component_type])
   end
   validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, t, m)
+  wrote_event_dispatchers(folder, t, m, callback_types)
 end
