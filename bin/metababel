@@ -118,12 +118,6 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
       raise "Matching callback #{a} argument not present in model." unless arg
       arg
     end
-    
-    args.fetch('outputs',[]).filter_map do  |a| 
-      ar = md[:args].find(a.name)
-      raise "Matching callback #{a.name} argument not present in model." unless md[:args].find(a.name)
-      a
-    end
 
     raise "Matching callback argument not present in model." unless dispatcher_args.length == md[:args].length
 
