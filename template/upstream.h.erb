@@ -16,8 +16,6 @@ typedef void <%= e.name_sanitized %>_callback_f(
 <%# The Function who register the callbacks to the dispatcher %>
 void btx_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
-void _btx_register_callbacks_<%= e.name_sanitized %>(
-    void *btx_handle, const char *callback_type, void *callback);
 
 <% end %>
 void btx_delete_dispatchers(common_data_t *common_data);

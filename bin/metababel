@@ -83,9 +83,9 @@ class Babeltrace2Gen::BTTraceClass
       end
     end.flatten
   end
-  def find_event_class
-    @stream_classes.each.with_index do |s, index_stream_class|
-      s.event_classes.each.with_index do |e, index_event_class|
+  def find_event_class_and_clock
+    @stream_classes.each do |s|
+      s.event_classes.each do |e|
         return [e, s.default_clock_class] if yield(e)
       end
     end
@@ -99,22 +99,35 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, t, m, callback_types)
+def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
   event_name = 'event'
 
-  matching_dispatchers = m.map do |md|
-    event, clock = t.find_event_class { |e| Regexp.new(md[:regex]).match?(e.name) }
+  matching_dispatchers = matching_dispatch_data.map do |md|
+    event, clock = t.find_event_class_and_clock { |e| md[:regex].match?(e.name) }
     raise "Matching callback #{md[:name]} does not match any event in model." unless event
 
     args = {}
     event.get_getter(event: '', arg_variables: args)
     
+    outputs = args.fetch('outputs',[])
+    outputs += [GeneratedArg.new('int64_t', '_timestamp')] if clock
+
     dispatcher_args = []
-    dispatcher_args += [GeneratedArg.new('int64_t', '_timestamp')] if clock
-    dispatcher_args += args.fetch('outputs',[]).filter_map { |a| a if md[:args].include?(a.name) }
+    dispatcher_args += md[:args].map do |a|
+      arg = outputs.find { |o| o.name == a }
+      raise "Matching callback #{a} argument not present in model." unless arg
+      arg
+    end
+    
+    args.fetch('outputs',[]).filter_map do  |a| 
+      ar = md[:args].find(a.name)
+      raise "Matching callback #{a.name} argument not present in model." unless md[:args].find(a.name)
+      a
+    end
+
     raise "Matching callback argument not present in model." unless dispatcher_args.length == md[:args].length
 
-    DispatcherInfo.new(md[:name], dispatcher_args, md[:name], Regexp.new(md[:regex]))
+    DispatcherInfo.new(md[:name], dispatcher_args, md[:name], md[:regex])
   end 
 
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
@@ -280,8 +293,10 @@ end
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
-m = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
-callback_types = m.map { |c| sanitize(c[:name]) }.prepend('event')
+matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
+matching_dispatch_data.each { |m| m[:regex] = Regexp.new(m[:regex]) }
+
+callback_types = matching_dispatch_data.map { |c| sanitize(c[:name]) }.prepend('event')
 d[:callback_types] = callback_types
 
 wrote_component(options, d, folder)
@@ -303,5 +318,5 @@ if %w[FILTER SINK].include?(options[:component_type])
   end
   validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, t, m, callback_types)
+  wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
 end

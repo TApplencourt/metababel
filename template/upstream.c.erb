@@ -28,7 +28,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
 
-  /* Call registered matching callbacks */
+  // Call registered matching callbacks
   <% e.dispatchers.each do |d| %>
   {
       if (callbacks-><%= d.type %>) {
@@ -48,7 +48,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   <% end %>
 }
 
-void _btx_register_callbacks_<%= e.name_sanitized %>(
+void btx_generic_register_callbacks_<%= e.name_sanitized %>(
     void *btx_handle, const char *callback_type, void *callback) {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
@@ -79,7 +79,7 @@ void _btx_register_callbacks_<%= e.name_sanitized %>(
 
 void btx_register_callbacks_<%= e.name_sanitized %>(
   void *btx_handle, <%= e.name_sanitized %>_callback_f *callback) {
-  _btx_register_callbacks_<%= e.name_sanitized %>(btx_handle, "event", (void *)callback);
+  btx_generic_register_callbacks_<%= e.name_sanitized %>(btx_handle, "event", (void *)callback);
 }
 
 <% end %>
@@ -88,7 +88,7 @@ void btx_register_matching_callbacks_<%= m.name_sanitized %>(
   void *btx_handle, <%= m.name_sanitized %>_callback_f *callback){
   <% event_class_dispatchers.each do |e| %>
   <% if e.dispatchers.any? { |d| d.name == m.name } %>
-  _btx_register_callbacks_<%= e.name_sanitized %>(btx_handle, "<%= m.name %>", (void *)callback);
+  btx_generic_register_callbacks_<%= e.name_sanitized %>(btx_handle, "<%= m.name %>", (void *)callback);
   <% end %>
   <% end %>
 }
