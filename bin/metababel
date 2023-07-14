@@ -112,14 +112,11 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     outputs = args.fetch('outputs',[])
     outputs += [GeneratedArg.new('int64_t', '_timestamp')] if clock
 
-    dispatcher_args = []
-    dispatcher_args += md[:args].map do |a|
-      arg = outputs.find { |o| o.name == a }
-      raise "Matching callback #{a} argument not present in model." unless arg
-      arg
+    dispatcher_args = md[:args].map do |dispatcher_arg_name|
+      dispatcher_arg = outputs.find { |arg| arg.name == dispatcher_arg_name }
+      raise "Matching callback #{dispatcher_arg_name} argument not present in model." unless dispatcher_arg
+      dispatcher_arg
     end
-
-    raise "Matching callback argument not present in model." unless dispatcher_args.length == md[:args].length
 
     DispatcherInfo.new(md[:name], dispatcher_args, md[:name], md[:regex])
   end 
@@ -147,6 +144,8 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
       dispatchers
     )
   end
+
+
 
   d = { event_class_dispatchers: event_class_dispatchers,
         matching_dispatchers: matching_dispatchers,
