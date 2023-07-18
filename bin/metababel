@@ -143,7 +143,7 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
       dispatcher.name, dispatcher.args, 'event', [dispatcher.name_sanitized])
   end
 
-  # Obtain the list of events per user_event.
+  # List of event names macthing every user event
   data = {}
   event_class_dispatchers.each do |event|
     event.dispatchers.filter { |d| d.type != 'event' }.each do |d|
