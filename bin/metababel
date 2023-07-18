@@ -115,7 +115,7 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
 
     # User event dispatchers
     dispatchers += matching_dispatch_data.filter {|md| md[:name] if md[:regex].match?(e.name) }.map do |md|
-      dispatcher_evt_args = md[:args].map do |arg|
+      dispatcher_evt_args = md.fetch(:args,[]).map do |arg|
         dispatcher_evt_arg = evt_args.find{ |e| e.name == arg } 
         raise "User event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
         dispatcher_evt_arg
@@ -136,10 +136,12 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
   register_callbacks = event_class_dispatchers.map do |event|
     dispatcher = event.dispatchers.find { |d| d.type == 'event' }
     RegisterInfo.new(
-      # The disptcher holds the event_name, event_args, 
-      # event_type ('event', <user_event_name_1> ,...,), 
+      # The dispatcher holds event_name, event_args, 
+      # event_type ('event' | <user_event_name_1> | ... |  <user_event_name_n>) 
       # and registers. Registers is a list of event names
       # whose a give callback must be registered to.
+      # automatic events are registered to the unique event,
+      # user events are registered into multiple events.
       dispatcher.name, dispatcher.args, 'event', [dispatcher.name_sanitized])
   end
 
