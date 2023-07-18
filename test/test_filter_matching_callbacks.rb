@@ -51,7 +51,7 @@ class TestFilterTwoMatchingCallbackNonOverlapingMembers < Test::Unit::TestCase
 end
 
 class TestFilterTwoMatchingCallbackOverlapingMembers < Test::Unit::TestCase
-  # 2 matching, where each matching extract 2 different non-overlaping member
+  # 2 matching, where each matching extract 2 different overlaping member
 
   include GenericTest
   extend VariableAccessor
