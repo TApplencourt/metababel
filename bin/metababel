@@ -48,7 +48,13 @@ class Hash
   end
 end
 
-DispatcherInfo = Struct.new(:name, :args, :type, :regex) do 
+RegisterInfo = Struct.new(:name, :args, :type, :registers) do 
+  def name_sanitized
+    sanitize(name)
+  end
+end
+
+DispatcherInfo = Struct.new(:name, :args, :type) do 
   def name_sanitized
     sanitize(name)
   end
@@ -102,25 +108,6 @@ end
 def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
   event_name = 'event'
 
-  matching_dispatchers = matching_dispatch_data.map do |md|
-    event, clock = t.find_event_class_and_clock { |e| md[:regex].match?(e.name) }
-    raise "Matching callback #{md[:name]} does not match any event in model." unless event
-
-    args = {}
-    event.get_getter(event: '', arg_variables: args)
-    
-    outputs = args.fetch('outputs',[])
-    outputs += [GeneratedArg.new('int64_t', '_timestamp')] if clock
-
-    dispatcher_args = md[:args].map do |dispatcher_arg_name|
-      dispatcher_arg = outputs.find { |arg| arg.name == dispatcher_arg_name }
-      raise "Matching callback #{dispatcher_arg_name} argument not present in model." unless dispatcher_arg
-      dispatcher_arg
-    end
-
-    DispatcherInfo.new(md[:name], dispatcher_args, md[:name], md[:regex])
-  end 
-
   event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
@@ -134,7 +121,15 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     dispatchers = [DispatcherInfo.new(e.name, evt_args, 'event')]
 
     # Matching dispatchers
-    dispatchers += matching_dispatchers.filter_map { |md| md if md.regex.match?(e.name) }
+    dispatchers += matching_dispatch_data.filter {|md| md[:name] if md[:regex].match?(e.name) }.map do |md|
+      # May do the find, if we want to keep the order of the matching
+      dispatcher_evt_args = md[:args].map do |arg|
+        dispatcher_evt_arg = evt_args.find{ |e| e.name == arg } 
+        raise "Matching event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
+        dispatcher_evt_arg
+      end
+      DispatcherInfo.new(md[:name], dispatcher_evt_args, md[:name])
+    end
 
     EventClassInfo.new(
       e.name, arg_variables.fetch('outputs', []), 
@@ -145,10 +140,29 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     )
   end
 
+  # Registers for automatic events
+  register_callbacks = event_class_dispatchers.map do |auto_event|
+    dispatcher = auto_event.dispatchers.find { |d| d.type == 'event' }
+    RegisterInfo.new(
+      dispatcher.name, dispatcher.args, 'event', [dispatcher.name])
+  end
 
+  # Registers for user events
+  data = {}
+  event_class_dispatchers.each do |auto_event|
+    auto_event.dispatchers.filter { |d| d.type != 'event' }.each do |d|
+      data[d] = [] if not data.key?(d)
+      data[d] << auto_event.name_sanitized
+    end
+  end
+
+  data.each do |user_event,registers|
+    register_callbacks << RegisterInfo.new(
+      user_event.name,user_event.args,user_event.type,registers)
+  end
 
   d = { event_class_dispatchers: event_class_dispatchers,
-        matching_dispatchers: matching_dispatchers,
+        register_callbacks: register_callbacks,
         callback_types: callback_types,
         event_name: event_name }
 

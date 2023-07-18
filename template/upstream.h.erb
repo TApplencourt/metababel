@@ -8,28 +8,18 @@ extern "C" {
 typedef void(dispatcher_t)(callbacks_t *callbacks, common_data_t *common_data,
                            const bt_message *upstream_message);
 
-<% event_class_dispatchers.each do |e| %>
-<%# The signature type of callbacks %>
-typedef void <%= e.name_sanitized %>_callback_f(
-    void *btx_handle,
-    void *usr_data<%= ', int64_t _timestamp' if e.default_clock_class %><%= e.args.map{ |s| s.type }.join_with_prefix(", ") %>);
 <%# The Function who register the callbacks to the dispatcher %>
-void btx_register_callbacks_<%= e.name_sanitized %>(
-    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
+<% register_callbacks.each do |event| %>
+typedef void <%= event.name_sanitized %>_callback_f(
+    void *btx_handle,
+    void *usr_data<%= event.args.map{ |s| s.type }.join_with_prefix(', ') %>);
+
+void btx_register_callbacks_<%= event.name_sanitized %>(
+    void *btx_handle, <%= event.name_sanitized %>_callback_f *callback);
 
 <% end %>
 void btx_delete_dispatchers(common_data_t *common_data);
 
-// Matching callbacks
-
-<% matching_dispatchers.each do |m| %>
-typedef void (<%= m.name_sanitized %>_callback_f)(
-    void *btx_handle,
-    void *usr_data<%= m.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
-void btx_register_matching_callbacks_<%= m.name_sanitized %>(
-    void *btx_handle, <%= m.name_sanitized %>_callback_f *callback);    
-
-<% end %>
 #ifdef __cplusplus
 }
 #endif
