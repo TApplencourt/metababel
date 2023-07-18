@@ -89,13 +89,6 @@ class Babeltrace2Gen::BTTraceClass
       end
     end.flatten
   end
-  def find_event_class_and_clock
-    @stream_classes.each do |s|
-      s.event_classes.each do |e|
-        return [e, s.default_clock_class] if yield(e)
-      end
-    end
-  end
 end
 
 class GeneratedArg < Struct.new(:type, :name)

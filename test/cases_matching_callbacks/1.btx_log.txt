@@ -1,8 +1,4 @@
-event_1: { cf_1 = "test", pf_1 = 0 }
-event_1: { cf_1 = "test", pf_1 = 1 }
-event_1: { cf_1 = "test", pf_1 = 2 }
-event_1: { cf_1 = "test", pf_1 = 3 }
-event_2: { cf_1 = "test", pf_1 = 0 }
-event_2: { cf_1 = "test", pf_1 = 1 }
-event_2: { cf_1 = "test", pf_1 = 2 }
-event_2: { cf_1 = "test", pf_1 = 3 }
+event_1: { cf_1 = "Lorem ipsum", pf_1 = 0, pf_2 = true }
+event_1: { cf_1 = "Lorem ipsum", pf_1 = 1, pf_2 = true }
+event_1: { cf_1 = "Lorem ipsum", pf_1 = 2, pf_2 = true }
+event_1: { cf_1 = "Lorem ipsum", pf_1 = 3, pf_2 = true }
