@@ -257,7 +257,7 @@ OptionParser.new do |opts|
     options[:params] = p
   end
 
-  opts.on('--callbacks PATH', '[Optional] Name of YAML matching callbacks.') do |p|
+  opts.on('--callbacks PATH', '[Optional] Name of YAML defining matching callbacks.') do |p|
     options[:callbacks] = p
   end
 
