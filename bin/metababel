@@ -154,7 +154,7 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     end
   end
 
-  # Registers for user events
+  # Add registers for user events
   data.each do |user_event,registers|
     register_callbacks << RegisterInfo.new(
       user_event.name,user_event.args,user_event.type,registers)
