@@ -114,18 +114,17 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
 
-    # Event dispatcher
+    # Automatic event dispatcher
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs',[])
     dispatchers = [DispatcherInfo.new(e.name, evt_args, 'event')]
 
-    # Matching dispatchers
+    # User event dispatchers
     dispatchers += matching_dispatch_data.filter {|md| md[:name] if md[:regex].match?(e.name) }.map do |md|
-      # May do the find, if we want to keep the order of the matching
       dispatcher_evt_args = md[:args].map do |arg|
         dispatcher_evt_arg = evt_args.find{ |e| e.name == arg } 
-        raise "Matching event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
+        raise "User event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
         dispatcher_evt_arg
       end
       DispatcherInfo.new(md[:name], dispatcher_evt_args, md[:name])
@@ -141,21 +140,26 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
   end
 
   # Registers for automatic events
-  register_callbacks = event_class_dispatchers.map do |auto_event|
-    dispatcher = auto_event.dispatchers.find { |d| d.type == 'event' }
+  register_callbacks = event_class_dispatchers.map do |event|
+    dispatcher = event.dispatchers.find { |d| d.type == 'event' }
     RegisterInfo.new(
-      dispatcher.name, dispatcher.args, 'event', [dispatcher.name])
+      # The disptcher holds the event_name, event_args, 
+      # event_type ('event', <user_event_name_1> ,...,), 
+      # and registers. Registers is a list of event names
+      # whose a give callback must be registered to.
+      dispatcher.name, dispatcher.args, 'event', [dispatcher.name_sanitized])
   end
 
-  # Registers for user events
+  # Obtain the list of events per user_event.
   data = {}
-  event_class_dispatchers.each do |auto_event|
-    auto_event.dispatchers.filter { |d| d.type != 'event' }.each do |d|
+  event_class_dispatchers.each do |event|
+    event.dispatchers.filter { |d| d.type != 'event' }.each do |d|
       data[d] = [] if not data.key?(d)
-      data[d] << auto_event.name_sanitized
+      data[d] << event.name_sanitized
     end
   end
 
+  # Registers for user events
   data.each do |user_event,registers|
     register_callbacks << RegisterInfo.new(
       user_event.name,user_event.args,user_event.type,registers)
