@@ -1,10 +1,4 @@
 - :name: foo
   :regex: \S*_1
-  :args:
-  - cf_1
-  - pf_1
 - :name: bar
   :regex: \S*_1
-  :args:
-  - cf_2
-  - pf_2

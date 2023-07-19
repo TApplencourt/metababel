@@ -1,4 +1,0 @@
-event_1: { cf_1 = "Lorem ipsum", cf_2 = -1, pf_1 = 1, pf_2 = true }
-event_1: { cf_1 = "Lorem ipsum", cf_2 = -2, pf_1 = 2, pf_2 = false }
-event_1: { cf_1 = "Lorem ipsum", cf_2 = -3, pf_1 = 3, pf_2 = true }
-event_1: { cf_1 = "Lorem ipsum", cf_2 = -4, pf_1 = 4, pf_2 = false }

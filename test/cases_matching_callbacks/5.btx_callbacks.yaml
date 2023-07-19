@@ -1,5 +1,3 @@
 - :name: foo
-  :regex: \S*_1
-  :args:
-  - cf_1
-  - pf_1
+  :regex: \S*_[1-2]
+
