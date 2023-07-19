@@ -27,7 +27,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   // Call all the callbacks who where registered
   // Their type are declared in 'upstream.h'
   <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ((p = utarray_next(callbacks->event_callbacks, p))) {
+  while ((p = utarray_next(callbacks->generic, p))) {
     (*p)((void *)common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
   }
 }
@@ -46,11 +46,11 @@ void btx_register_callbacks_<%= e.name_sanitized %>(
     s->name = "<%= e.name %>";
     s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
     s->callbacks = calloc(1, sizeof(callbacks_t));
-    utarray_new(s->callbacks->event_callbacks, &ut_ptr_icd);
+    utarray_new(s->callbacks->generic, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
     // 3. Add the callbacks to the array
-    utarray_push_back(s->callbacks->event_callbacks, &callback);
+    utarray_push_back(s->callbacks->generic, &callback);
   } else {
     assert(false && "Only one callbacks for <%= e.name_sanitized %>");
   }

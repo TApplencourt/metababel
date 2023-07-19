@@ -32,7 +32,9 @@ void btx_populate_params(common_data_t *common_data_t);
 <% end %>
 
 struct callbacks_s {
-  UT_array *event_callbacks;
+  <% callback_types.each do |c| %>
+  UT_array *<%= c %>;
+  <% end %>
 };
 typedef struct callbacks_s callbacks_t;
 

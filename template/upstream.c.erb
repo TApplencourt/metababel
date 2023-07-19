@@ -7,68 +7,98 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-<% event_class_dispatchers.each do |e| %>
-static void btx_dispatch_<%= e.name_sanitized %>(
+<% dispatchers.each do |dispatcher| %>
+static void btx_dispatch_<%= dispatcher.name_sanitized %>(
     callbacks_t *callbacks, common_data_t *common_data,
     const bt_message *upstream_message) {
 
-  <% e.args.each do |s| %>
+  <% dispatcher.args.each do |s| %>
   <%= s.type %> <%= s.name %>;
   <% end %>
 
   <%# Since now event is a variable, we need to check if the body will render variables that accesses it.  %>
-  <% if not e.body.empty? %>
-  const bt_event *<%= event_name %> = bt_message_event_borrow_event_const(upstream_message);
-  <%= "\n" + e.body %>
+  <% if not dispatcher.body.empty? %>
+  const bt_event *<%= event_name %> =
+      bt_message_event_borrow_event_const(upstream_message);
+  <%= "\n" + dispatcher.body %>
   <% end %>
-
-  <% if e.default_clock_class %>
+  <% if dispatcher.default_clock_class %>
   int64_t _timestamp;
-  const bt_clock_snapshot *clock_snapshot = bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
+  const bt_clock_snapshot *clock_snapshot =
+      bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
-  // Call all the callbacks who where registered
-  // Their type are declared in 'upstream.h'
-  <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ((p = utarray_next(callbacks->event_callbacks, p))) {
-    (*p)((void *)common_data,
-         common_data
-             ->usr_data<%= ', _timestamp' if e.default_clock_class %><%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
+
+  // Call registered matching callbacks
+  <% dispatcher.dispatch_types.each do |dispatch_type| %>
+  {
+    if (callbacks-><%= dispatch_type.id %>) {
+      void **p = NULL;
+      while ((p = utarray_next(callbacks-><%= dispatch_type.id %>, p))) {
+        (*((<%= dispatch_type.name_sanitized %>_callback_f **)(p)))(
+            (void *)common_data,
+            common_data
+                ->usr_data<%= dispatch_type.args.map{ |a| a.name }.join_with_prefix(", ") %>);
+      }
+    }
   }
 
-  <% e.args_to_free.each do |s| %>
+  <% end %>
+  <% dispatcher.args_to_free.each do |s| %>
   <%= "free(#{s.name});" %>
   <% end %>
 }
 
-void btx_register_callbacks_<%= e.name_sanitized %>(
-    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback) {
+<% end %>
+<% dispatchers.each do |dispatcher| %>
+void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
+    void *btx_handle, const char *id, void *callback) {
   // Look-up our dispatcher
   name_to_dispatcher_t *s = NULL;
   name_to_dispatcher_t **name_to_dispatcher =
       &((common_data_t *)btx_handle)->name_to_dispatcher;
-  HASH_FIND_STR(*name_to_dispatcher, "<%= e.name %>", s);
+  HASH_FIND_STR(*name_to_dispatcher, "<%= dispatcher.name %>", s);
   if (!s) {
-    // We didn't find the dispatcher, so we need to:
-    // 1. Create it
+    // We didn't find the dispatcher, so we need to create it.
     s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
-    s->name = "<%= e.name %>";
-    s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
+    s->name = "<%= dispatcher.name %>";
+    s->dispatcher = (void *)&btx_dispatch_<%= dispatcher.name_sanitized %>;
     s->callbacks = calloc(1, sizeof(callbacks_t));
-    utarray_new(s->callbacks->event_callbacks, &ut_ptr_icd);
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
   }
-  // Add the callbacks to the array
-  utarray_push_back(s->callbacks->event_callbacks, &callback);
-}
-<% end %>
 
+  <% dispatcher.dispatch_types.each do |dispatch_type| %>
+  if (strcmp("<%= dispatch_type.id %>", id) == 0) {
+    // Add the callbacks to the array
+    if (!s->callbacks-><%= dispatch_type.id %>)
+      utarray_new(s->callbacks-><%= dispatch_type.id %>, &ut_ptr_icd);
+    utarray_push_back(s->callbacks-><%= dispatch_type.id %>, &callback);
+  }
+
+  <% end %>
+}
+
+<% end %>
+<% dispatcher_types_to_dispatchers.each do |dispatch_type, dispatchers| %>
+void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
+    void *btx_handle,
+    <%= dispatch_type.name_sanitized %>_callback_f *callback) {
+  <% dispatchers.each do |dispatcher| %>
+  btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
+      btx_handle, "<%= dispatch_type.id %>", (void *)callback);
+  <% end %>
+}
+
+<% end %>
 void btx_delete_dispatchers(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
-    utarray_free(current->callbacks->event_callbacks);
+    <% callback_types.each do |name| %>
+    if (current->callbacks-><%= name %>)
+      utarray_free(current->callbacks-><%= name %>);
+    <% end %>
     free(current->callbacks);
     free(current);
   }

@@ -104,14 +104,14 @@ static inline void filter_message_iterator_next_call_dispatchers(
   /* Borrow the event message's event and its class */
   const bt_event *event = bt_message_event_borrow_event_const(upstream_message);
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
-  
+
   /* Event dispatcher */
   const char *class_name = bt_event_class_get_name(event_class);
   name_to_dispatcher_t *s = NULL;
   HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
   if (s) {
-    (*((dispatcher_t(*))(s->dispatcher)))(
-        s->callbacks, common_data, upstream_message);
+    (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data,
+                                          upstream_message);
     /* Drop message */
     bt_message_put_ref(upstream_message);
   } else {
@@ -384,7 +384,8 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Create message classes that will be used by the filter */
   bt_self_component *self_component =
       bt_self_component_filter_as_self_component(self_component_filter);
-  /* Create a `trace_class` and all the children's classes (stream and events) */
+  /* Create a `trace_class` and all the children's classes (stream and events)
+   */
   bt_trace_class *trace_class =
       btx_downstream_trace_class_create_rec(self_component);
   /* Instantiate a `downstream_trace` of `trace_class` and all the children
