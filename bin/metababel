@@ -132,32 +132,17 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     )
   end
 
-  # Registers for automatic events
-  register_callbacks = event_class_dispatchers.map do |event|
-    dispatcher = event.dispatchers.find { |d| d.type == 'event' }
-    RegisterInfo.new(
-      # The dispatcher holds event_name, event_args, 
-      # event_type ('event' | <user_event_name_1> | ... |  <user_event_name_n>) 
-      # and registers. Registers is a list of event names
-      # whose a give callback must be registered to.
-      # automatic events are registered to the unique event,
-      # user events are registered into multiple events.
-      dispatcher.name, dispatcher.args, 'event', [dispatcher.name_sanitized])
-  end
-
-  # List of event names macthing every user event
-  data = {}
+  data = Hash.new { |h,k| h[k] = [] }
   event_class_dispatchers.each do |event|
-    event.dispatchers.filter { |d| d.type != 'event' }.each do |d|
-      data[d] = [] if not data.key?(d)
+    event.dispatchers.each do |d|
       data[d] << event.name_sanitized
     end
   end
 
-  # Add registers for user events
-  data.each do |user_event,registers|
+  register_callbacks = []
+  data.each do |event,registers|
     register_callbacks << RegisterInfo.new(
-      user_event.name,user_event.args,user_event.type,registers)
+      event.name, event.args, event.type, registers)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,

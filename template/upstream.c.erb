@@ -30,7 +30,7 @@ static void btx_dispatch_<%= e.name_sanitized %>(
   // Call registered matching callbacks
   <% e.dispatchers.each do |d| %>
   {
-      if (callbacks-><%= d.type %>) {
+    if (callbacks-><%= d.type %>) {
       void **p = NULL;
       while ((p = utarray_next(callbacks-><%= d.type %>, p))) {
         (*((<%= d.name_sanitized %>_callback_f **)(p)))((void *)common_data,
