@@ -15,13 +15,13 @@ def validate_model(yaml)
                                                       end
 
   # Event class name must be unique
-  events = yaml[:stream_classes].flat_map { |sc|  sc[:event_classes] }.map { |e| e[:name] }
+  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
   raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
 end
 
 def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
-end 
+end
 
 class Array
   def join_with_prefix(sep)
@@ -48,15 +48,15 @@ class Hash
   end
 end
 
-DispatchType = Struct.new(:name, :args, :id) do 
+DispatchType = Struct.new(:name, :args, :id) do
   def name_sanitized
     sanitize(name)
   end
 end
 
-Dispacther = Struct.new(:name, :args, :body, :index_stream_class, 
-                            :index_event_class, :default_clock_class,
-                            :args_to_free, :dispatch_types) do
+Dispacther = Struct.new(:name, :args, :body, :index_stream_class,
+                        :index_event_class, :default_clock_class,
+                        :args_to_free, :dispatch_types) do
   def name_sanitized
     sanitize(name)
   end
@@ -104,29 +104,30 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     # Automatic event dispatcher
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
-    evt_args += arg_variables.fetch('outputs',[])
+    evt_args += arg_variables.fetch('outputs', [])
     dispatch_types = [DispatchType.new(e.name, evt_args, 'generic')]
 
     # User event dispatchers
-    dispatch_types += matching_dispatch_data.filter {|md| md[:name] if md[:regex].match?(e.name) }.map do |md|
-      dispatcher_evt_args = md.fetch(:args,[]).map do |arg|
-        dispatcher_evt_arg = evt_args.find{ |e| e.name == arg } 
+    dispatch_types += matching_dispatch_data.filter { |md| md[:name] if md[:regex].match?(e.name) }.map do |md|
+      dispatcher_evt_args = md.fetch(:args, []).map do |arg|
+        dispatcher_evt_arg = evt_args.find { |e| e.name == arg }
         raise "User event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
+
         dispatcher_evt_arg
       end
       DispatchType.new(md[:name], dispatcher_evt_args, "matching_#{sanitize(md[:name])}")
     end
 
     Dispacther.new(
-      e.name, arg_variables.fetch('outputs', []), 
-      body, index_stream_class, index_event_class, 
+      e.name, arg_variables.fetch('outputs', []),
+      body, index_stream_class, index_event_class,
       default_clock_class,
       arg_variables.fetch('outputs_allocated', []),
       dispatch_types
     )
   end
 
-  dispatcher_types_to_dispatchers = Hash.new { |h,k| h[k] = [] }
+  dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }
   dispatchers.each do |dispatch|
     dispatch.dispatch_types.each do |dispatch_type|
       dispatcher_types_to_dispatchers[dispatch_type] << dispatch
@@ -150,7 +151,7 @@ def wrote_creates(folder, t)
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
     Dispacther.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
-                       default_clock_class)
+                   default_clock_class)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
@@ -168,17 +169,17 @@ end
 
 def wrote_component(options, d, folder)
   component_dispatchers = [Dispacther.new('initialize_usr_data',
-                                              [GeneratedArg.new('void **', 'usr_data_p')]),
+                                          [GeneratedArg.new('void **', 'usr_data_p')]),
                            Dispacther.new('finalize_usr_data',
-                                              [GeneratedArg.new('void *', 'usr_data')]),
+                                          [GeneratedArg.new('void *', 'usr_data')]),
                            Dispacther.new('read_params',
-                                              [GeneratedArg.new('void *', 'usr_data'),
-                                               GeneratedArg.new('btx_params_t *', 'usr_params')])]
+                                          [GeneratedArg.new('void *', 'usr_data'),
+                                           GeneratedArg.new('btx_params_t *', 'usr_params')])]
 
   if options[:component_type] == 'SOURCE'
     component_dispatchers << Dispacther.new('push_usr_messages',
-                                                [GeneratedArg.new('void *', 'usr_data'),
-                                                 GeneratedArg.new('btx_source_status_t*', 'status')])
+                                            [GeneratedArg.new('void *', 'usr_data'),
+                                             GeneratedArg.new('btx_source_status_t*', 'status')])
   end
 
   d2 = { component_dispatchers: component_dispatchers,

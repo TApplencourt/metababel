@@ -35,27 +35,27 @@ class TestFilterMatchingCallbackCallingOrder < Test::Unit::TestCase
   include VariableClassAccessor
 
   def self.startup
-      @btx_components = [
-        {
-            btx_component_type: 'SOURCE',
-            btx_component_downstream_model: './test/cases_matching_callbacks/2.btx_model.yaml',
-            btx_log_path: './test/cases_matching_callbacks/2.btx_log.in'
-        },
-        {
-            btx_component_type: 'FILTER',
-            btx_component_upstream_model: './test/cases_matching_callbacks/2.btx_model.yaml',
-            btx_component_downstream_model: './test/cases_matching_callbacks/2.btx_model.yaml',
-            btx_component_callbacks: './test/cases_matching_callbacks/2.btx_callbacks.yaml',
-            btx_file_usr_callbacks: './test/cases_matching_callbacks/2.callbacks.c'
-        }
-      ]
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_matching_callbacks/2.btx_model.yaml',
+        btx_log_path: './test/cases_matching_callbacks/2.btx_log.in'
+      },
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/cases_matching_callbacks/2.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_matching_callbacks/2.btx_model.yaml',
+        btx_component_callbacks: './test/cases_matching_callbacks/2.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/cases_matching_callbacks/2.callbacks.c'
+      }
+    ]
 
-      @btx_output_validation = './test/cases_matching_callbacks/2.btx_log.out'
+    @btx_output_validation = './test/cases_matching_callbacks/2.btx_log.out'
   end
 end
 
 class TestFilterMatchingAndRegularEventCallbacksDispatchDifferentEvents < Test::Unit::TestCase
-  # Regular callbacks dispatch event_1 while matching callbacks dispatch event_2. 
+  # Regular callbacks dispatch event_1 while matching callbacks dispatch event_2.
 
   include GenericTest
   extend VariableAccessor

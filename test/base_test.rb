@@ -7,9 +7,7 @@ module Assertions
   end
 
   def run_command(cmd, refute: false)
-    if ENV['METABABEL_VERBOSE']
-      puts(cmd)
-    end
+    puts(cmd) if ENV['METABABEL_VERBOSE']
     stdout_str, stderr_str, exit_code = Open3.capture3(cmd)
     # Sorry, it's a little too smart....
     assert((exit_code == 0) != refute, "cmd:#{cmd}\nstderr_str:#{stderr_str}")

@@ -67,7 +67,8 @@ def parse_log(input_path, yaml_path = nil)
     file.each_line.map do |line|
       match = line.match(REGEXT_EVENT)
       raise "Unsupported format for '#{line}'." unless match
-      timestamp, head, tail = match.captures()
+
+      timestamp, head, tail = match.captures
       field_values_ts = nil
       if timestamp
         t = Time.parse(timestamp)

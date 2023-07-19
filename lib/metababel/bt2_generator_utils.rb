@@ -28,7 +28,7 @@ module Babeltrace2Gen
     def name_sanitized
       raise unless @name
 
-      @name.gsub(/[^0-9A-Za-z\-]/, '_')
+      @name.gsub(/[^0-9A-Za-z-]/, '_')
     end
   end
 

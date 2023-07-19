@@ -2,7 +2,7 @@ require 'base_test'
 
 class TestSinkMatchingAndRegularEventCallbacksDispatchDifferentEvents < Test::Unit::TestCase
   # Regular callbacks dispatch event_1 while matching callbacks dispatch event_2.
-  # This is the same test performed for Filter, we used it here to test the 
+  # This is the same test performed for Filter, we used it here to test the
   # sink state machine when having automatic and user events
 
   include GenericTest
