@@ -77,7 +77,7 @@ void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
 }
 
 <% end %>
-<% register_callbacks.each do |dispatch_type, dispatchers| %>
+<% dispatcher_types_to_dispatchers.each do |dispatch_type, dispatchers| %>
 void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
   void *btx_handle, <%= dispatch_type.name_sanitized %>_callback_f *callback){
   <% dispatchers.each do |dispatcher| %>

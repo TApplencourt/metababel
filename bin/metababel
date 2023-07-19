@@ -126,15 +126,15 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     )
   end
 
-  register_callbacks = Hash.new { |h,k| h[k] = [] }
+  dispatcher_types_to_dispatchers = Hash.new { |h,k| h[k] = [] }
   dispatchers.each do |dispatch|
     dispatch.dispatch_types.each do |dispatch_type|
-      register_callbacks[dispatch_type] << dispatch
+      dispatcher_types_to_dispatchers[dispatch_type] << dispatch
     end
   end
 
   d = { dispatchers: dispatchers,
-        register_callbacks: register_callbacks,
+        dispatcher_types_to_dispatchers: dispatcher_types_to_dispatchers,
         callback_types: callback_types,
         event_name: event_name }
 
