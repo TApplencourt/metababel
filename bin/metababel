@@ -48,21 +48,15 @@ class Hash
   end
 end
 
-RegisterInfo = Struct.new(:name, :args, :type, :registers) do 
+DispatchType = Struct.new(:name, :args, :id) do 
   def name_sanitized
     sanitize(name)
   end
 end
 
-DispatcherInfo = Struct.new(:name, :args, :type) do 
-  def name_sanitized
-    sanitize(name)
-  end
-end
-
-EventClassInfo = Struct.new(:name, :args, :body, :index_stream_class, 
+Dispacther = Struct.new(:name, :args, :body, :index_stream_class, 
                             :index_event_class, :default_clock_class,
-                            :args_to_free, :dispatchers) do
+                            :args_to_free, :dispatch_types) do
   def name_sanitized
     sanitize(name)
   end
@@ -101,7 +95,7 @@ end
 def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
   event_name = 'event'
 
-  event_class_dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -111,39 +105,35 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs',[])
-    dispatchers = [DispatcherInfo.new(e.name, evt_args, 'event')]
+    dispatch_types = [DispatchType.new(e.name, evt_args, 'generic')]
 
     # User event dispatchers
-    dispatchers += matching_dispatch_data.filter {|md| md[:name] if md[:regex].match?(e.name) }.map do |md|
+    dispatch_types += matching_dispatch_data.filter {|md| md[:name] if md[:regex].match?(e.name) }.map do |md|
       dispatcher_evt_args = md.fetch(:args,[]).map do |arg|
         dispatcher_evt_arg = evt_args.find{ |e| e.name == arg } 
         raise "User event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
         dispatcher_evt_arg
       end
-      DispatcherInfo.new(md[:name], dispatcher_evt_args, md[:name])
+      DispatchType.new(md[:name], dispatcher_evt_args, "matching_#{sanitize(md[:name])}")
     end
 
-    EventClassInfo.new(
+    Dispacther.new(
       e.name, arg_variables.fetch('outputs', []), 
       body, index_stream_class, index_event_class, 
       default_clock_class,
       arg_variables.fetch('outputs_allocated', []),
-      dispatchers
+      dispatch_types
     )
   end
 
-  data = Hash.new { |h,k| h[k] = [] }
-  event_class_dispatchers.each do |event|
-    event.dispatchers.each do |d|
-      data[d] << event.name_sanitized
+  register_callbacks = Hash.new { |h,k| h[k] = [] }
+  dispatchers.each do |dispatch|
+    dispatch.dispatch_types.each do |dispatch_type|
+      register_callbacks[dispatch_type] << dispatch
     end
   end
 
-  register_callbacks = data.map do |event,registers|
-    RegisterInfo.new(event.name, event.args, event.type, registers)
-  end
-
-  d = { event_class_dispatchers: event_class_dispatchers,
+  d = { dispatchers: dispatchers,
         register_callbacks: register_callbacks,
         callback_types: callback_types,
         event_name: event_name }
@@ -159,7 +149,7 @@ def wrote_creates(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    EventClassInfo.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
+    Dispacther.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
                        default_clock_class)
   end
 
@@ -177,16 +167,16 @@ def wrote_creates(folder, t)
 end
 
 def wrote_component(options, d, folder)
-  component_dispatchers = [EventClassInfo.new('initialize_usr_data',
+  component_dispatchers = [Dispacther.new('initialize_usr_data',
                                               [GeneratedArg.new('void **', 'usr_data_p')]),
-                           EventClassInfo.new('finalize_usr_data',
+                           Dispacther.new('finalize_usr_data',
                                               [GeneratedArg.new('void *', 'usr_data')]),
-                           EventClassInfo.new('read_params',
+                           Dispacther.new('read_params',
                                               [GeneratedArg.new('void *', 'usr_data'),
                                                GeneratedArg.new('btx_params_t *', 'usr_params')])]
 
   if options[:component_type] == 'SOURCE'
-    component_dispatchers << EventClassInfo.new('push_usr_messages',
+    component_dispatchers << Dispacther.new('push_usr_messages',
                                                 [GeneratedArg.new('void *', 'usr_data'),
                                                  GeneratedArg.new('btx_source_status_t*', 'status')])
   end
@@ -285,7 +275,7 @@ erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
 matching_dispatch_data.each { |m| m[:regex] = Regexp.new(m[:regex]) }
 
-callback_types = matching_dispatch_data.map { |c| sanitize(c[:name]) }.prepend('event')
+callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:name])}" }.prepend('generic')
 d[:callback_types] = callback_types
 
 wrote_component(options, d, folder)
