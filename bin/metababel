@@ -139,10 +139,8 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     end
   end
 
-  register_callbacks = []
-  data.each do |event,registers|
-    register_callbacks << RegisterInfo.new(
-      event.name, event.args, event.type, registers)
+  register_callbacks = data.map do |event,registers|
+    RegisterInfo.new(event.name, event.args, event.type, registers)
   end
 
   d = { event_class_dispatchers: event_class_dispatchers,
