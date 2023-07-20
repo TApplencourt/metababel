@@ -2,3 +2,9 @@
 - :name: sc
   :event_classes:
   - :name: event_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: callback
+        :field_class:
+          :type: string
