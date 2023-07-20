@@ -28,7 +28,7 @@ class TestFilterMatchingCallbackSubsetOfMembersInDifferentOrder < Test::Unit::Te
 end
 
 class TestFilterMatchingCallbackCallingOrder < Test::Unit::TestCase
-  # Verify the order in with matching are called
+  # Verify the order on which matching are called
 
   include GenericTest
   extend VariableAccessor

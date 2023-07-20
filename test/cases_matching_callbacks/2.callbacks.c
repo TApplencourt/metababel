@@ -1,12 +1,11 @@
 #include <metababel/metababel.h>
-#include <stdio.h>
 
 static void usr_foo_callback(void *btx_handle, void *usr_data) {
-  printf("foo\n");
+  btx_push_message_event_1(btx_handle,"usr_foo_callback");
 }
 
 static void usr_bar_callback(void *btx_handle, void *usr_data) {
-  printf("bar\n");
+  btx_push_message_event_1(btx_handle,"usr_bar_callback");
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
