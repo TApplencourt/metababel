@@ -23,6 +23,20 @@ def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
 
+def match?(str, pattern_or_str)
+  # String beginning and ending in '/' are treated as regexp.
+  match = pattern_or_str.match(%r{^/(?<name>.+)/$})
+  return str.match?(match['name']) if match
+  str == pattern_or_str
+end
+
+def event_signature_match?(evt_name, evt_args, match_name, match_args)
+  match?(evt_name,match_name) and match_args.all? do |match_arg|
+    # We look for the first matching argument.
+    evt_args.find { |e_arg| match?(e_arg.name, match_arg) }
+  end
+end
+
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -105,17 +119,21 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
-    dispatch_types = [DispatchType.new(e.name, evt_args, 'generic')]
+    dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
     # User event dispatchers
-    dispatch_types += matching_dispatch_data.filter { |md| md[:name] if md[:regex].match?(e.name) }.map do |md|
-      dispatcher_evt_args = md.fetch(:args, []).map do |arg|
-        dispatcher_evt_arg = evt_args.find { |e| e.name == arg }
+    matching_dispatch_filtered = matching_dispatch_data.filter do |md|
+      event_signature_match?(e.name, evt_args, md[:regex], md.fetch(:args,[]))
+    end
+
+    dispatch_types += matching_dispatch_filtered.map do |md|
+      dispatcher_evt_args = md.fetch(:args, []).map do |match_arg|
+        dispatcher_evt_arg = evt_args.find { |evt_arg| match?(evt_arg.name, match_arg) }
         raise "User event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
 
         dispatcher_evt_arg
       end
-      DispatchType.new(md[:name], dispatcher_evt_args, "matching_#{sanitize(md[:name])}")
+      DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}")
     end
 
     Dispacther.new(
@@ -274,7 +292,6 @@ erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, ou
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
-matching_dispatch_data.each { |m| m[:regex] = Regexp.new(m[:regex]) }
 
 callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:name])}" }.prepend('generic')
 d[:callback_types] = callback_types

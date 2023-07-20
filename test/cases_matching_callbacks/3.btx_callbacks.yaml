@@ -1,2 +1,2 @@
 - :name: foo
-  :regex: \S*_1
+  :regex: /\S*_1/
