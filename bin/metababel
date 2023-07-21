@@ -25,8 +25,8 @@ end
 
 def btx_match?(str, pattern_or_str)
   # String beginning and ending in '/' are treated as regexp.
-  match = pattern_or_str.match(%r{^/(?<expr>.+)/$})
-  match ? str.match?(match['expr']) : str == pattern_or_str
+  is_regex = pattern_or_str.match?(%r{^/(?<expr>.+)/$})
+  is_regex ? str =~ eval(pattern_or_str) : str == pattern_or_str
 end
 
 def btx_event_match(evt_name, evt_args, match_name, match_args)
