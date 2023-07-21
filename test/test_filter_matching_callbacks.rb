@@ -177,7 +177,6 @@ class TestFilterMatchingSimilarMembers < Test::Unit::TestCase
         btx_component_upstream_model: './test/cases_matching_callbacks/7.btx_model.yaml',
         btx_component_downstream_model: './test/cases_matching_callbacks/7.btx_model.yaml',
         btx_component_callbacks: './test/cases_matching_callbacks/7.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/cases_matching_callbacks/7.callbacks.c',
         btx_metababel_generation_fail: true
       }
     ]
