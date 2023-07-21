@@ -130,3 +130,56 @@ class TestFilterMatchingTwoEvents < Test::Unit::TestCase
     ]
   end
 end
+
+class TestFilterMatchingEventNameAndMembers < Test::Unit::TestCase
+  # 2 events match by name, but just one match both name and arguments.
+
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_matching_callbacks/6.btx_model.yaml',
+        btx_log_path: './test/cases_matching_callbacks/6.btx_log.in'
+      },
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/cases_matching_callbacks/6.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_matching_callbacks/6.btx_model.yaml',
+        btx_component_callbacks: './test/cases_matching_callbacks/6.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/cases_matching_callbacks/6.callbacks.c'
+      }
+    ]
+
+    @btx_output_validation = './test/cases_matching_callbacks/6.btx_log.out'
+  end
+end
+
+class TestFilterMatchingSimilarMembers < Test::Unit::TestCase
+  # Member regex match more than one event members. Should fail.
+
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/cases_matching_callbacks/7.btx_model.yaml',
+        btx_log_path: './test/cases_matching_callbacks/7.btx_log.txt'
+      },
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/cases_matching_callbacks/7.btx_model.yaml',
+        btx_component_downstream_model: './test/cases_matching_callbacks/7.btx_model.yaml',
+        btx_component_callbacks: './test/cases_matching_callbacks/7.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/cases_matching_callbacks/7.callbacks.c',
+        btx_metababel_generation_fail: true
+      }
+    ]
+  end
+end

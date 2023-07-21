@@ -1,5 +1,6 @@
 - :name: foo
   :regex: /\S*_1/
   :args:
-  - pf_1
-  - cf_1
+  - 'pf_1' 
+  - 'cf_1'
+
