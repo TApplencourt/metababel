@@ -33,6 +33,8 @@ def btx_event_match(evt_name, evt_args, match_name, match_args)
   # Return nil if the event and args do not match.
   # Return a list otherwise.
 
+  # If match_args.length > evt_args.length, a match_arg must match one evt_arg
+  # twice, but that is not allowed. 
   if btx_match?(evt_name, match_name) and evt_args.length >= match_args.length
     matched_args = match_args.filter_map do |match_arg|
       matched_event_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
