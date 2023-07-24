@@ -25,20 +25,26 @@ end
 
 def btx_match?(str, pattern_or_str)
   # String beginning and ending in '/' are treated as regexp.
-  is_regex = pattern_or_str.match?(%r{^/(?<expr>.+)/$})
-  is_regex ? str =~ eval(pattern_or_str) : str == pattern_or_str
+  is_regex = pattern_or_str.match?(%r{^/.+/$})
+  is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
+end
+
+def btx_args_match(evt_args, match_args)
+  match_args.map do |match_arg|
+    evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
+  end.flatten
 end
 
 def btx_event_match(evt_name, evt_args, match_name, match_args)
-  # Return nil if the event and args do not match.
-  # Return a list otherwise.
+  # Return nil if event_name doesn't match
+  if btx_match?(evt_name, match_name)
 
-  # If match_args.length > evt_args.length, a match_arg must match one evt_arg
-  # twice, but that is not allowed. 
-  if btx_match?(evt_name, match_name) and evt_args.length >= match_args.length
-    matched_args = match_args.filter_map do |match_arg|
-      matched_event_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
-    end.flatten
+    # Not arguments to match
+    return [] if match_args.empty?
+
+    # Check if agruments match
+    matched_args = btx_args_match(evt_args, match_args)
+    return nil if matched_args.empty?
 
     unless matched_args.uniq.length == match_args.length
       raise "Memeber regex matched more than one event member, got '#{matched_args.map(&:name).join(', ') }' from '#{match_args.join(', ') }'."
