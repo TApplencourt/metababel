@@ -46,7 +46,8 @@ def btx_event_match(evt_name, evt_args, match_name, match_args)
     matched_args = btx_args_match(evt_args, match_args)
     return nil if matched_args.empty?
 
-    unless matched_args.uniq.length == match_args.length
+    # Completeness and uniqueness check for the matched arguments
+    unless matched_args.length == match_args.length and matched_args.uniq.length == matched_args.length
       raise "Memeber regex matched more than one event member, got '#{matched_args.map(&:name).join(', ') }' from '#{match_args.join(', ') }'."
     end
 
