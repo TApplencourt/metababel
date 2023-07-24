@@ -23,6 +23,30 @@ def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
 
+def btx_match?(str, pattern_or_str)
+  # String beginning and ending in '/' are treated as regexp.
+  is_regex = pattern_or_str.match?(%r{^/.+/$})
+  is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
+end
+
+def btx_find_matching_arg(match_arg, evt_args)
+  matching_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
+  raise "match_arg '#{match_arg}' matching multiple event_args '#{matching_args.join(', ')}'." unless matching_args.length < 2
+  matching_args.pop()
+end
+
+def btx_get_matching_args(evt_name, evt_args, match_name, match_args)
+  # If doesn't match the name, we can shortcut
+  return nil unless btx_match?(evt_name, match_name)
+  matching_args = match_args.map { |m| btx_find_matching_arg(m, evt_args) }
+  # Check that all match_args have found a match
+  return nil unless matching_args.all?
+  # An event args match multiple match args
+  raise "event_args '#{matching_args.map(&:name).join(', ')}' matched by multiple match_args '#{match_args.join(', ')}'." unless matching_args.length == matching_args.uniq.length
+
+  matching_args
+end
+
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -105,17 +129,12 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
-    dispatch_types = [DispatchType.new(e.name, evt_args, 'generic')]
+    dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
     # User event dispatchers
-    dispatch_types += matching_dispatch_data.filter { |md| md[:name] if md[:regex].match?(e.name) }.map do |md|
-      dispatcher_evt_args = md.fetch(:args, []).map do |arg|
-        dispatcher_evt_arg = evt_args.find { |e| e.name == arg }
-        raise "User event #{dispatcher_evt_arg} argument not present in model." unless dispatcher_evt_arg
-
-        dispatcher_evt_arg
-      end
-      DispatchType.new(md[:name], dispatcher_evt_args, "matching_#{sanitize(md[:name])}")
+    dispatch_types += matching_dispatch_data.filter_map do |md|
+      dispatcher_evt_args = btx_get_matching_args(e.name, evt_args, md[:regex], md.fetch(:args,[]))
+      DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if not dispatcher_evt_args.nil?
     end
 
     Dispacther.new(
@@ -274,7 +293,6 @@ erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, ou
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
-matching_dispatch_data.each { |m| m[:regex] = Regexp.new(m[:regex]) }
 
 callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:name])}" }.prepend('generic')
 d[:callback_types] = callback_types
