@@ -29,30 +29,22 @@ def btx_match?(str, pattern_or_str)
   is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
 end
 
-def btx_args_match(evt_args, match_args)
-  match_args.map do |match_arg|
-    evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
-  end.flatten
+def btx_find_matching_arg(match_arg, evt_args)
+  matching_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
+  raise "match_arg '#{match_arg}' matching multiple event_args '#{matching_args.join(', ')}'." unless matching_args.length < 2
+  matching_args.pop()
 end
 
-def btx_event_match(evt_name, evt_args, match_name, match_args)
-  # Return nil if event_name doesn't match
-  if btx_match?(evt_name, match_name)
+def btx_get_matching_args(evt_name, evt_args, match_name, match_args)
+  # If doesn't match the name, we can shortcut
+  return nil unless btx_match?(evt_name, match_name)
+  matching_args = match_args.map { |m| btx_find_matching_arg(m, evt_args) }
+  # Check that all match_args have found a match
+  return nil unless matching_args.all?
+  # An event args match multiple match args
+  raise "event_args '#{matching_args.map(&:name).join(', ')}' matched by multiple match_args '#{match_args.join(', ')}'." unless matching_args.length == matching_args.uniq.length
 
-    # Not arguments to match
-    return [] if match_args.empty?
-
-    # Check if agruments match
-    matched_args = btx_args_match(evt_args, match_args)
-    return nil if matched_args.empty?
-
-    # Completeness and uniqueness check for the matched arguments
-    unless matched_args.length == match_args.length and matched_args.uniq.length == matched_args.length
-      raise "Memeber regex matched more than one event member, got '#{matched_args.map(&:name).join(', ') }' from '#{match_args.join(', ') }'."
-    end
-
-    matched_args
-  end
+  matching_args
 end
 
 class Array
@@ -141,7 +133,7 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
 
     # User event dispatchers
     dispatch_types += matching_dispatch_data.filter_map do |md|
-      dispatcher_evt_args = btx_event_match(e.name, evt_args, md[:regex], md.fetch(:args,[]))
+      dispatcher_evt_args = btx_get_matching_args(e.name, evt_args, md[:regex], md.fetch(:args,[]))
       DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if not dispatcher_evt_args.nil?
     end
 
