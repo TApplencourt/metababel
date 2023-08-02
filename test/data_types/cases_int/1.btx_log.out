@@ -18,15 +18,35 @@ Stream beginning:
   Trace:
     Stream (ID 0, Class ID 0)
 
+Trace class:
+  Stream class `sc` (ID 0):
+    Supports packets: No
+    Supports discarded events: No
+    Supports discarded packets: No
+    Event class `event` (ID 0):
+      Payload field class: Structure (6 members):
+        pf_1: Unsigned integer (64-bit, Base 10)
+        pf_2: Unsigned integer (64-bit, Base 10)
+        pf_3: Unsigned integer (32-bit, Base 10)
+        pf_4: Signed integer (64-bit, Base 10)
+        pf_5: Signed integer (64-bit, Base 10)
+        pf_6: Signed integer (32-bit, Base 10)
+
+{Trace 1, Stream class ID 0, Stream ID 0}
+Stream beginning:
+  Class name: sc
+  Trace:
+    Stream (ID 0, Class ID 0)
+
 {Trace 0, Stream class ID 0, Stream ID 0}
 Event `event` (Class ID 0):
   Payload:
     pf_1: 0
     pf_2: 0
     pf_3: 0
-    pf_4: -9,223,372,036,854,775,807
-    pf_5: -9,223,372,036,854,775,807
-    pf_6: -2,147,483,647
+    pf_4: -9,223,372,036,854,775,808
+    pf_5: -9,223,372,036,854,775,808
+    pf_6: -2,147,483,648
 
 {Trace 0, Stream class ID 0, Stream ID 0}
 Event `event` (Class ID 0):
@@ -37,6 +57,9 @@ Event `event` (Class ID 0):
     pf_4: 9,223,372,036,854,775,807
     pf_5: 9,223,372,036,854,775,807
     pf_6: 2,147,483,647
+
+{Trace 1, Stream class ID 0, Stream ID 0}
+Stream end
 
 {Trace 0, Stream class ID 0, Stream ID 0}
 Stream end
