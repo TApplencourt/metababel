@@ -44,7 +44,7 @@ TEXT
 def sanitize_value(field_value, field_class)
   return field_value unless field_class
 
-  field_range = field_class.fetch(:field_value_range,64).to_s
+  field_range = field_class.fetch(:field_value_range, 64)
   case field_class[:type]
   when 'integer_signed'
     "INT#{field_range}_C(#{field_value})"
