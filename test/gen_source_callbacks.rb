@@ -47,7 +47,7 @@ def sanitize_value(field_value, field_class)
   field_range = field_class.fetch(:field_value_range,64).to_s
   case field_class[:type]
   when 'integer_signed'
-    "INT#{field_range}_C(#{field_value})"  
+    "INT#{field_range}_C(#{field_value})"
   when 'integer_unsigned'
     "UINT#{field_range}_C(#{field_value})"
   else
