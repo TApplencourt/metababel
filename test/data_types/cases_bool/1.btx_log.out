@@ -1,0 +1,43 @@
+Trace class:
+  Stream class `sc` (ID 0):
+    Supports packets: No
+    Supports discarded events: No
+    Supports discarded packets: No
+    Event class `event` (ID 0):
+      Payload field class: Structure (2 members):
+        pf_1: Boolean
+        pf_2: Boolean
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Stream beginning:
+  Class name: sc
+  Trace:
+    Stream (ID 0, Class ID 0)
+
+Trace class:
+  Stream class `sc` (ID 0):
+    Supports packets: No
+    Supports discarded events: No
+    Supports discarded packets: No
+    Event class `event` (ID 0):
+      Payload field class: Structure (2 members):
+        pf_1: Boolean
+        pf_2: Boolean
+
+{Trace 1, Stream class ID 0, Stream ID 0}
+Stream beginning:
+  Class name: sc
+  Trace:
+    Stream (ID 0, Class ID 0)
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Event `event` (Class ID 0):
+  Payload:
+    pf_1: Yes
+    pf_2: No
+
+{Trace 1, Stream class ID 0, Stream ID 0}
+Stream end
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Stream end

@@ -1,0 +1,14 @@
+---
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1 # True value
+        :field_class:
+          :type: bool
+      - :name: pf_2 # False value
+        :field_class:
+          :type: bool
