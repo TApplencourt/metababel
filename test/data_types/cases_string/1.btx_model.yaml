@@ -1,0 +1,17 @@
+---
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1 # empty string
+        :field_class:
+          :type: string
+      - :name: pf_2 # nesting pattern
+        :field_class:
+          :type: string
+      - :name: pf_3 # long base 64 characters
+        :field_class:
+          :type: string
