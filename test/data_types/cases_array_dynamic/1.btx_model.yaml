@@ -1,14 +1,11 @@
 :stream_classes:
-- :name: ze
+- :name: sc
   :event_classes:
-  - :name: e_array_dynamic
+  - :name: event
     :payload_field_class:
       :type: structure
       :members:
         - :name: length
-          :field_class:
-            :type: integer_unsigned
-        - :name: dummy
           :field_class:
             :type: integer_unsigned
         - :name: entries
