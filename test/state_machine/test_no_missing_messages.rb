@@ -1,6 +1,6 @@
 require 'base_test'
 
-class TestSourceFilterSinkPassingMessagesTwoEventsNoCallbacks < Test::Unit::TestCase
+class TestSourceFilterSinkTwoEventsNoCallbacks < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -27,7 +27,7 @@ class TestSourceFilterSinkPassingMessagesTwoEventsNoCallbacks < Test::Unit::Test
   end
 end
 
-class TestSourceFilterSinkPassingMessagesTwoEventsOneCallback < Test::Unit::TestCase
+class TestSourceFilterSinkTwoEventsOneCallback < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -54,7 +54,7 @@ class TestSourceFilterSinkPassingMessagesTwoEventsOneCallback < Test::Unit::Test
   end
 end
 
-class TestSourceFilterSinkPassingMessagesTwoEventsTwoCallbacks < Test::Unit::TestCase
+class TestSourceFilterSinkTwoEventsTwoCallbacks < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
