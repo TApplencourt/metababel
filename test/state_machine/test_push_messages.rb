@@ -53,4 +53,3 @@ class TestPushMessagesFromFinalize < Test::Unit::TestCase
     @btx_output_validation = './test/state_machine/cases_push_messages/1.btx_log.txt'
   end
 end
-  
