@@ -91,7 +91,6 @@ class TestStreamBeginEndMessages < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
-        btx_log_path: './test/state_machine/cases_no_missing_messages/1.btx_log.txt'
       },
       {
         btx_component_type: 'FILTER',
