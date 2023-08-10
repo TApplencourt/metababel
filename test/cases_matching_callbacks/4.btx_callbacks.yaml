@@ -1,4 +1,0 @@
-- :name: foo
-  :regex: /\S*_1/
-  :args:
-  - _timestamp

@@ -1,2 +1,0 @@
-event_1: { callback = "usr_foo_callback" }
-event_1: { callback = "usr_bar_callback" }

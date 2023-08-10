@@ -1,0 +1,5 @@
+- :name: foo
+  :regex: /event/
+  :args:
+  - pf_1
+  - cf_1

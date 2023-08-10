@@ -1,0 +1,4 @@
+- :name: usr
+  :regex: /event/
+  :args:
+  - _timestamp

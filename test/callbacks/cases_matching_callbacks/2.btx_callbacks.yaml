@@ -1,0 +1,4 @@
+- :name: foo
+  :regex: /event/
+- :name: bar
+  :regex: /event/

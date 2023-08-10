@@ -1,0 +1,2 @@
+- :name: usr
+  :regex: /\S*_[1-2]/
