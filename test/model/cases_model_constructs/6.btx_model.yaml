@@ -1,0 +1,12 @@
+---
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - # Missing event class name (mandatory)
+    :payload_field_class:
+    :type: structure
+    :members:
+    - :name: sf
+      :field_class:
+        :type: string
+        :cast_type: const char*
