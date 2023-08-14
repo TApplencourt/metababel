@@ -1,11 +1,11 @@
+---
 :stream_classes:
 - :name: sc
   :event_classes:
-    # Missing :name attribute
-    - :payload_field_class:
+  - :name: event
+    :payload_field_class:
       :type: structure
       :members:
-      - :name: sf
+      - :name: pf
         :field_class:
           :type: string
-          :cast_type: const char*

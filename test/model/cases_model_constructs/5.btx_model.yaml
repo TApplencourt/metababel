@@ -1,0 +1,4 @@
+---
+:stream_classes:
+# Missing stream class name (mandatory)
+- :event_classes: [] # Event classes is mandatory

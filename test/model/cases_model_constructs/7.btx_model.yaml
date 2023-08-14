@@ -1,7 +1,8 @@
+---
 :stream_classes:
 - :name: sc_1
   :event_classes:
-  - :name: ec
+  - :name: event
 - :name: sc_2
   :event_classes:
-  - :name: ec
+  - :name: event

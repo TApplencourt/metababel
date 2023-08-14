@@ -1,5 +1,4 @@
 ---
 :stream_classes:
 - :name: sc
-  :event_classes:
-  - :name: ec
+  :event_classes: []

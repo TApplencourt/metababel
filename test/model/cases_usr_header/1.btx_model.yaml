@@ -1,12 +1,12 @@
 ---
 :stream_classes:
-- :name: sc1
+- :name: sc
   :event_classes:
-  - :name: event_2
+  - :name: event
     :payload_field_class:
       :type: structure
       :members:
-      - :name: sf_3
+      - :name: pf_1
         :field_class:
-          :type: integer_unsigned
-          :field_value_range: 64
+          :type: string
+          :cast_type: usr_string_t

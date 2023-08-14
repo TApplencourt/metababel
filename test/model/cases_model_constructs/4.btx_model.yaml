@@ -1,20 +1,17 @@
 ---
 :stream_classes:
-- :name: sc1
+- :name: sc
   :event_common_context_field_class:
     :type: structure
     :members:
-    - :name: sf_1
+    - :name: cf
       :field_class:
         :type: string
-        :cast_type: const char*
   :event_classes:
-  - :name: event_5
+  - :name: event
     :payload_field_class:
       :type: structure
       :members:
-      - :name: sf_6
+      - :name: pf
         :field_class:
           :type: string
-          :cast_type: const char*
-
