@@ -32,7 +32,7 @@ def get_component_generation_command(component)
     btx_component_path: '-o',
     btx_component_type: '-t',
     btx_component_name: '-c',
-    btx_component_params: '--params',
+    btx_component_params_model: '--params',
     btx_component_plugin_name: '-p',
     btx_component_downstream_model: '-d',
     btx_component_upstream_model: '-u',
@@ -65,7 +65,8 @@ def get_graph_execution_command(components, connections)
   components_list = components.map do |c|
     uuid = %w[type plugin_name name].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
     uuid_label = [c[:btx_component_label], uuid].compact.join(':')
-    "--component=#{uuid_label}"
+    component_params = c.key?(:btx_component_params) ? "--params=#{c[:btx_component_params]}" : ''
+    "--component=#{uuid_label} #{component_params}"
   end
 
   components_connections = connections.map { |c| "--connect=#{c}" }
