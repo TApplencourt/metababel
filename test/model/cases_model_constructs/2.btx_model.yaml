@@ -8,4 +8,4 @@
       :field_class:
         :type: string
   :event_classes:
-    - :name: event
+  - :name: event
