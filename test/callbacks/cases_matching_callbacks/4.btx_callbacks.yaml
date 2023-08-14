@@ -1,4 +1,4 @@
-- :name: usr
+- :name: usr_event
   :regex: /event/
   :args:
   - _timestamp

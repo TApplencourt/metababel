@@ -1,4 +1,4 @@
-- :name: foo
+- :name: usr_event
   :regex: /event/
   :args:
     - /^dum.*/

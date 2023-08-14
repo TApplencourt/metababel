@@ -9,6 +9,6 @@ static void usr_bar_callback(void *btx_handle, void *usr_data) {
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_foo(btx_handle, &usr_foo_callback);
-  btx_register_callbacks_bar(btx_handle, &usr_bar_callback);
+  btx_register_callbacks_usr_foo_event(btx_handle, &usr_foo_callback);
+  btx_register_callbacks_usr_bar_event(btx_handle, &usr_bar_callback);
 }

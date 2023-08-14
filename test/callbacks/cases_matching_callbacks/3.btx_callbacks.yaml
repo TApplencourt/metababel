@@ -1,2 +1,2 @@
-- :name: usr
+- :name: usr_event
   :regex: /\S*_[1-2]/

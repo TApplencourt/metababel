@@ -6,5 +6,5 @@ static void usr_callback(
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_usr(btx_handle, &usr_callback);
+  btx_register_callbacks_usr_event(btx_handle, &usr_callback);
 }
