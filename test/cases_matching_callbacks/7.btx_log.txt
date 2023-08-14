@@ -1,1 +1,0 @@
-event_1: { dummy_1 = 0, dummy_2 = "" }

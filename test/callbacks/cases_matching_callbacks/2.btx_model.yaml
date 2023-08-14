@@ -1,0 +1,10 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: callback
+        :field_class:
+          :type: string

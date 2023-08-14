@@ -1,0 +1,13 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: dummy_1
+        :field_class:
+          :type: integer_unsigned
+      - :name: dummy_2
+        :field_class:
+          :type: string

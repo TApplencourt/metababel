@@ -1,0 +1,4 @@
+- :name: usr_foo_event
+  :regex: /event/
+- :name: usr_bar_event
+  :regex: /event/

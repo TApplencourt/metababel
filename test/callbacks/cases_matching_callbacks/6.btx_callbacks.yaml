@@ -1,0 +1,5 @@
+- :name: usr_event
+  :regex: /event_[1-2]/
+  :args:
+    - /^dum.*/
+
