@@ -78,7 +78,7 @@ DispatchType = Struct.new(:name, :args, :id) do
   end
 end
 
-Dispacther = Struct.new(:name, :args, :body, :index_stream_class,
+Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
                         :index_event_class, :default_clock_class,
                         :args_to_free, :dispatch_types) do
   def name_sanitized
@@ -138,7 +138,7 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
       DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if not dispatcher_evt_args.nil?
     end
 
-    Dispacther.new(
+    Dispatcher.new(
       e.name, arg_variables.fetch('outputs', []),
       body, index_stream_class, index_event_class,
       default_clock_class,
@@ -170,7 +170,7 @@ def wrote_creates(folder, t)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
     end
-    Dispacther.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
+    Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
                    default_clock_class)
   end
 
@@ -188,16 +188,16 @@ def wrote_creates(folder, t)
 end
 
 def wrote_component(options, d, folder)
-  component_dispatchers = [Dispacther.new('initialize_usr_data',
+  component_dispatchers = [Dispatcher.new('initialize_usr_data',
                                           [GeneratedArg.new('void **', 'usr_data_p')]),
-                           Dispacther.new('finalize_usr_data',
+                           Dispatcher.new('finalize_usr_data',
                                           [GeneratedArg.new('void *', 'usr_data')]),
-                           Dispacther.new('read_params',
+                           Dispatcher.new('read_params',
                                           [GeneratedArg.new('void *', 'usr_data'),
                                            GeneratedArg.new('btx_params_t *', 'usr_params')])]
 
   if options[:component_type] == 'SOURCE'
-    component_dispatchers << Dispacther.new('push_usr_messages',
+    component_dispatchers << Dispatcher.new('push_usr_messages',
                                             [GeneratedArg.new('void *', 'usr_data'),
                                              GeneratedArg.new('btx_source_status_t*', 'status')])
   end
