@@ -419,7 +419,7 @@ static bt_message_iterator_class_initialize_method_status
 filter_message_iterator_initialize(
     bt_self_message_iterator *self_message_iterator,
     bt_self_message_iterator_configuration *configuration,
-    bt_self_component_port_output *self_port) {
+    bt_self_component_port_output *self_port_output) {
   /* Allocate a private data structure */
   btx_message_iterator_t *message_iterator_private_data =
       calloc(1, sizeof(btx_message_iterator_t));
