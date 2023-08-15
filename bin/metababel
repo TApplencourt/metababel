@@ -132,8 +132,9 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
     # User event dispatchers
+    usr_evt_args = evt_args + [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_types += matching_dispatch_data.filter_map do |md|
-      dispatcher_evt_args = btx_get_matching_args(e.name, evt_args, md[:regex], md.fetch(:args,[]))
+      dispatcher_evt_args = btx_get_matching_args(e.name, usr_evt_args, md[:regex], md.fetch(:args,[]))
       DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if not dispatcher_evt_args.nil?
     end
 

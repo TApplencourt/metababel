@@ -182,3 +182,30 @@ class TestMatchingSimilarMembers < Test::Unit::TestCase
     ]
   end
 end
+
+class TestCallMatchingCallbackWithEventName < Test::Unit::TestCase
+  # Validate the _event_class_name is passed properly in matchinig callbacks.
+
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
+        btx_log_path: './test/callbacks/cases_matching_callbacks/8.btx_log.txt'
+      },
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/8.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/8.callbacks.c'
+      }
+    ]
+
+    @btx_output_validation = './test/callbacks/cases_matching_callbacks/8.btx_log.txt'
+  end
+end

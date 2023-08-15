@@ -28,6 +28,10 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
       bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
+  <%# event_class_name is only required for matching callbacks.  %>
+  <% if dispatcher.dispatch_types.map(&:args).flatten.any? { |arg| arg.name.match?(/^_event_class_name$/) } %>
+  const char *_event_class_name = "<%= dispatcher.name_sanitized %>";
+  <% end %>
 
   // Call registered matching callbacks
   <% dispatcher.dispatch_types.each do |dispatch_type| %>
