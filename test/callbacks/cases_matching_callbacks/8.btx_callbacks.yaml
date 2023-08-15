@@ -2,4 +2,3 @@
   :regex: /event/
   :args:
     - _event_class_name
-
