@@ -1,0 +1,4 @@
+- :name: usr_event
+  :regex: /event/
+  :args:
+    - _event_class_name
