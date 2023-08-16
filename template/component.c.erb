@@ -1,6 +1,3 @@
-#include "utarray.h"
-#include "uthash.h"
-#include <assert.h>
 #include <babeltrace2/babeltrace.h>
 #include <metababel/btx_component.h>
 // stdio needed because `params_definition` contain fprintf
@@ -14,56 +11,21 @@ void btx_populate_params(common_data_t *common_data) {
   <%= params_definition %>
 }
 
-<% component_dispatchers.each do |e| %>
-
-typedef void btx_dispatch_<%= e.name_sanitized %>_f(
-    callbacks_t *callbacks, common_data_t *common_data,
-    <%= e.args.map{ |s| s.type }.join(", ") %>);
-
-static void btx_dispatch_<%= e.name_sanitized %>(
-    callbacks_t *callbacks, common_data_t *common_data,
-    <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
-
-  // Call all the callbacks who where registered
-  // Their type are declared in 'upstream.h'
-  <%= e.name_sanitized %>_callback_f **p = NULL;
-  while ((p = utarray_next(callbacks->generic, p))) {
-    (*p)((void *)common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
-  }
-}
+<% static_callback_types.each do |e| %>
 
 void btx_register_callbacks_<%= e.name_sanitized %>(
-    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback) {
-  // Look-up our dispatcher
-  name_to_dispatcher_t *s = NULL;
-  name_to_dispatcher_t **name_to_dispatcher =
-      &((common_data_t *)btx_handle)->name_to_dispatcher;
-  HASH_FIND_STR(*name_to_dispatcher, "<%= e.name %>", s);
-  if (!s) {
-    // We didn't find the dispatcher, so we need to:
-    // 1. Create it
-    s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
-    s->name = "<%= e.name %>";
-    s->dispatcher = (void *)&btx_dispatch_<%= e.name_sanitized %>;
-    s->callbacks = calloc(1, sizeof(callbacks_t));
-    utarray_new(s->callbacks->generic, &ut_ptr_icd);
-    // 2. Register it
-    HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
-    // 3. Add the callbacks to the array
-    utarray_push_back(s->callbacks->generic, &callback);
-  } else {
-    assert(false && "Only one callbacks for <%= e.name_sanitized %>");
-  }
+    void *btx_handle, <%= e.name_sanitized %>_static_callback_f *callback) {
+  ((common_data_t *)btx_handle)->static_callbacks-><%= e.name_sanitized %> =
+      callback;
 }
 
 void btx_call_callbacks_<%= e.name_sanitized %>(
     common_data_t *common_data,
     <%= e.args.map{ |s| "#{s.type} #{s.name}" }.join(", ") %>) {
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, "<%= e.name %>", s);
 
-  if (s)
-    (*((btx_dispatch_<%= e.name_sanitized %>_f(*))(s->dispatcher)))(
-        s->callbacks, common_data, <%= e.args.map{ |s| s.name }.join(", ") %>);
+  <%= e.name_sanitized %>_static_callback_f *p =
+      common_data->static_callbacks-><%= e.name_sanitized %>;
+  if (p)
+    p(((void *)common_data), <%= e.args.map{ |s| s.name }.join(", ") %>);
 }
 <% end %>
