@@ -31,18 +31,24 @@ end
 
 def btx_find_matching_arg(match_arg, evt_args)
   matching_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
-  raise "match_arg '#{match_arg}' matching multiple event_args '#{matching_args.join(', ')}'." unless matching_args.length < 2
-  matching_args.pop()
+  unless matching_args.length < 2
+    raise "match_arg '#{match_arg}' matching multiple event_args '#{matching_args.join(', ')}'."
+  end
+
+  matching_args.pop
 end
 
 def btx_get_matching_args(evt_name, evt_args, match_name, match_args)
   # If doesn't match the name, we can shortcut
   return nil unless btx_match?(evt_name, match_name)
+
   matching_args = match_args.map { |m| btx_find_matching_arg(m, evt_args) }
   # Check that all match_args have found a match
   return nil unless matching_args.all?
   # An event args match multiple match args
-  raise "event_args '#{matching_args.map(&:name).join(', ')}' matched by multiple match_args '#{match_args.join(', ')}'." unless matching_args.length == matching_args.uniq.length
+  unless matching_args.length == matching_args.uniq.length
+    raise "event_args '#{matching_args.map(&:name).join(', ')}' matched by multiple match_args '#{match_args.join(', ')}'."
+  end
 
   matching_args
 end
@@ -134,8 +140,11 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     # User event dispatchers
     usr_evt_args = evt_args + [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_types += matching_dispatch_data.filter_map do |md|
-      dispatcher_evt_args = btx_get_matching_args(e.name, usr_evt_args, md[:regex], md.fetch(:args,[]))
-      DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if not dispatcher_evt_args.nil?
+      dispatcher_evt_args = btx_get_matching_args(e.name, usr_evt_args, md[:regex], md.fetch(:args, []))
+      unless dispatcher_evt_args.nil?
+        DispatchType.new(sanitize(md[:name]), dispatcher_evt_args,
+                         "matching_#{sanitize(md[:name])}")
+      end
     end
 
     Dispatcher.new(
@@ -188,22 +197,22 @@ def wrote_creates(folder, t)
 end
 
 def wrote_component(options, d, folder)
-  component_dispatchers = [Dispatcher.new('initialize_usr_data',
-                                          [GeneratedArg.new('void **', 'usr_data_p')]),
-                           Dispatcher.new('finalize_usr_data',
-                                          [GeneratedArg.new('void *', 'usr_data')]),
-                           Dispatcher.new('read_params',
-                                          [GeneratedArg.new('void *', 'usr_data'),
-                                           GeneratedArg.new('btx_params_t *', 'usr_params')])]
+  static_callbacks = [Dispatcher.new('initialize_usr_data',
+                                     [GeneratedArg.new('void **', 'usr_data_p')]),
+                      Dispatcher.new('finalize_usr_data',
+                                     [GeneratedArg.new('void *', 'usr_data')]),
+                      Dispatcher.new('read_params',
+                                     [GeneratedArg.new('void *', 'usr_data'),
+                                      GeneratedArg.new('btx_params_t *', 'usr_params')])]
 
   if options[:component_type] == 'SOURCE'
-    component_dispatchers << Dispatcher.new('push_usr_messages',
-                                            [GeneratedArg.new('void *', 'usr_data'),
-                                             GeneratedArg.new('btx_source_status_t*', 'status')])
+    static_callbacks << Dispatcher.new('push_usr_messages',
+                                       [GeneratedArg.new('void *', 'usr_data'),
+                                        GeneratedArg.new('btx_source_status_t*', 'status')])
   end
 
-  d2 = { component_dispatchers: component_dispatchers,
-         event_name: 'dummy_event' }
+  d2 = { event_name: 'dummy_event',
+         static_callback_types: static_callbacks }
 
   erb_render_and_save(d2.update(d).update(options: options), 'component.h', folder)
   erb_render_and_save(d2.update(d).update(options: options), 'component.c', folder)

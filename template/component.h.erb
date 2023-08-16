@@ -14,13 +14,14 @@ struct common_data_s;
 typedef struct common_data_s common_data_t;
 
 // Params
-// Avoid icx error: empty struct has size 0 in C, size 1 in C++ [-Werror,-Wextern-c-compat]
+// Avoid icx error: empty struct has size 0 in C, size 1 in C++
+// [-Werror,-Wextern-c-compat]
 struct btx_params_s {
-<% if params_declaration %>
+  <% if params_declaration %>
   <%= params_declaration %>
-<% else %>
+  <% else %>
   int dummy;
-<% end %>
+  <% end %>
 
 }; <%# Need empty line for nice code gen %>
 typedef struct btx_params_s btx_params_t;
@@ -37,6 +38,10 @@ struct callbacks_s {
   <% end %>
 };
 typedef struct callbacks_s callbacks_t;
+
+<%# Forward Declaration %>
+struct static_callbacks_s;
+typedef struct static_callbacks_s static_callbacks_t;
 
 struct name_to_dispatcher_s {
   const char *name;
@@ -58,6 +63,8 @@ struct el {
 <% if options[:component_type] == 'SOURCE' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  static_callbacks_t *static_callbacks;
+
   void *usr_data;
   const bt_value *params;
   btx_params_t *btx_params;
@@ -96,6 +103,8 @@ typedef enum btx_source_status_e btx_source_status_t;
 <% elsif options[:component_type] == 'FILTER' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  static_callbacks_t *static_callbacks;
+
   void *usr_data;
   const bt_value *params;
   btx_params_t *btx_params;
@@ -145,6 +154,8 @@ typedef struct btx_message_iterator_s btx_message_iterator_t;
 <% elsif options[:component_type] == 'SINK' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  static_callbacks_t *static_callbacks;
+
   void *usr_data;
   const bt_value *params;
   btx_params_t *btx_params;
@@ -155,18 +166,23 @@ struct common_data_s {
 
 void btx_register_usr_callbacks(void *btx_handle);
 
-<% component_dispatchers.each do |e| %>
-<%# The signature type of callbacks %>
-typedef void
-<%= e.name_sanitized %>_callback_f(void *btx_handle,
-                                   <%= e.args.map{ |s| s.type }.join(", ") %>);
+<% static_callback_types.each do |e| %>
+typedef void <%= e.name_sanitized %>_static_callback_f(
+    void *btx_handle, <%= e.args.map{ |s| s.type }.join(", ") %>);
+
 <%# The Function who register the callbacks to the dispatcher %>
 void btx_register_callbacks_<%= e.name_sanitized %>(
-    void *btx_handle, <%= e.name_sanitized %>_callback_f *callback);
+    void *btx_handle, <%= e.name_sanitized %>_static_callback_f *callback);
 
 void btx_call_callbacks_<%= e.name_sanitized %>(
     common_data_t *common_data, <%= e.args.map{ |s| s.type }.join(", ") %>);
 <% end %>
+
+struct static_callbacks_s {
+  <% static_callback_types.each do |e| %>
+  <%= e.name_sanitized %>_static_callback_f *<%= e.name_sanitized %>;
+  <% end %>
+};
 
 #ifdef __cplusplus
 }
