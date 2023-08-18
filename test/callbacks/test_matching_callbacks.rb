@@ -211,7 +211,7 @@ class TestCallMatchingCallbackWithEventName < Test::Unit::TestCase
 end
 
 class TestCallMatchingCallbackWithEnvironmentVariable < Test::Unit::TestCase
-  # Validate a enviorment entries are passed properly into matchinig callbacks.
+  # Validate that environment entries are passed properly into matchinig callbacks.
 
   include GenericTest
   extend VariableAccessor
