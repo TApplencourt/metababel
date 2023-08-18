@@ -210,7 +210,7 @@ class TestCallMatchingCallbackWithEventName < Test::Unit::TestCase
   end
 end
 
-class TestCallMatchingCallbackWithEnviromentVariable < Test::Unit::TestCase
+class TestCallMatchingCallbackWithEnvironmentVariable < Test::Unit::TestCase
   # Validate a enviorment entries are passed properly into matchinig callbacks.
 
   include GenericTest
