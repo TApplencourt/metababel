@@ -28,6 +28,10 @@ module Babeltrace2Gen
   module BTLocator
     attr_reader :parent, :variable
 
+    def rec_trace_class
+      is_a?(Babeltrace2Gen::BTTraceClass) ? self : @parent.rec_trace_class
+    end
+
     def rec_stream_class
       is_a?(Babeltrace2Gen::BTStreamClass) ? self : @parent.rec_stream_class
     end
@@ -78,8 +82,9 @@ module Babeltrace2Gen
       raise if parent
 
       @parent = nil
-      @environment = BTEnvironmentClass.new(parent: self, entries: environment) if environment
       @assigns_automatic_stream_class_id = assigns_automatic_stream_class_id
+      # We can not use from_h since it is expecting a dict to do **dict, but environment is a list.
+      @environment = BTEnvironmentClass.new(parent: self, entries: environment) if environment
       @stream_classes = stream_classes.collect.with_index do |m, i|
         if m[:id].nil? != (@assigns_automatic_stream_class_id.nil? || @assigns_automatic_stream_class_id)
           raise "Incoherence between trace::assigns_automatic_stream_class_id and stream_class[#{i}]::id"
@@ -204,7 +209,6 @@ module Babeltrace2Gen
       pr "bt_stream_class_put_ref(#{variable});"
     end
 
-    # TODO: DEAD CODE, not needed any more, we used this with the old matching callbacks
     # The getters code generated from event_common_context_field_class do not include
     # the event variable name used by the getters. As we do not know the variable
     # name that should be generated, we can not put it directly in the template,
@@ -298,11 +302,12 @@ module Babeltrace2Gen
     end
 
     def get_getter(event:, arg_variables:)
-      if rec_stream_class.parent.environment
+      if rec_trace_class.environment
+        trace = 'trace'
         scope do
           pr "const bt_stream *stream = bt_event_borrow_stream_const(#{event});"
-          pr "const bt_trace *trace = bt_stream_borrow_trace_const(stream);"
-          rec_stream_class.parent.environment.get_getter(event: event, arg_variables: arg_variables)
+          pr "const bt_trace *#{trace} = bt_stream_borrow_trace_const(stream);"
+          rec_trace_class.environment.get_getter(trace: trace, arg_variables: arg_variables)
         end
       end
 
@@ -821,19 +826,19 @@ module Babeltrace2Gen
 
     def initialize(parent:, entries: [])
       @parent = parent
-      @entries = entries.map { |entry| BTValueClass.from_h(self, entry) }
+      @entries = entries.map { |entry| BTEntryClass.from_h(self, entry) }
     end
 
-    def get_getter(event:, arg_variables:)
+    def get_getter(trace:, arg_variables:)
       scope do
         @entries.each do |entry|
-          entry.get_getter(trace: 'trace', arg_variables: arg_variables)
+          entry.get_getter(trace: trace, arg_variables: arg_variables)
         end
       end
     end
   end
 
-  class BTValueClass
+  class BTEntryClass
     include BTPrinter
     using HashRefinements
 
@@ -841,8 +846,8 @@ module Babeltrace2Gen
       key = model.delete(:type)
       raise "No type in #{model}" unless key
 
-      h = { 'string' => BTValueClass::String,
-            'integer_signed' => BTValueClass::IntegerSigned }.freeze
+      h = { 'string' => BTEntryClass::String,
+            'integer_signed' => BTEntryClass::IntegerSigned }.freeze
       raise "Type #{key} not supported" unless h.include?(key)
       h[key].from_h(parent, model)
     end
@@ -860,7 +865,7 @@ module Babeltrace2Gen
     end
   end
 
-  class BTValueClass::String < BTValueClass
+  class BTEntryClass::String < BTEntryClass
     extend BTFromH
     attr_reader :parent, :name
 
@@ -873,7 +878,7 @@ module Babeltrace2Gen
     end
   end
 
-  class BTValueClass::IntegerSigned < BTValueClass
+  class BTEntryClass::IntegerSigned < BTEntryClass
     extend BTFromH
     attr_reader :parent, :name
 
