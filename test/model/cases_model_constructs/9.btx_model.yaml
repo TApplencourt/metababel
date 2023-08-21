@@ -4,5 +4,4 @@
     - :type: string
 :stream_classes:
 - :name: sc
-  :event_classes:
-  - :name: event
+  :event_classes: []
