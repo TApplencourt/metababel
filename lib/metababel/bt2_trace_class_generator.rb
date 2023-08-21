@@ -94,7 +94,7 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:, self_component:)
-      raise NotImplementedError, "':enviorment' keyword not suppoted for downstream model" if self.environment
+      raise NotImplementedError, "':enviorment' keyword not supported in downstream model" if self.environment
 
       pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
