@@ -83,7 +83,6 @@ module Babeltrace2Gen
 
       @parent = nil
       @assigns_automatic_stream_class_id = assigns_automatic_stream_class_id
-      # We can not use from_h since it is expecting a dict to do **dict, but environment is a list.
       @environment = BTEnvironmentClass.from_h(self, environment) if environment
       @stream_classes = stream_classes.collect.with_index do |m, i|
         if m[:id].nil? != (@assigns_automatic_stream_class_id.nil? || @assigns_automatic_stream_class_id)
