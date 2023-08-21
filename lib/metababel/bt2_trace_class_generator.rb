@@ -84,7 +84,7 @@ module Babeltrace2Gen
       @parent = nil
       @assigns_automatic_stream_class_id = assigns_automatic_stream_class_id
       # We can not use from_h since it is expecting a dict to do **dict, but environment is a list.
-      @environment = BTEnvironmentClass.new(parent: self, entries: environment) if environment
+      @environment = BTEnvironmentClass.from_h(self, environment) if environment
       @stream_classes = stream_classes.collect.with_index do |m, i|
         if m[:id].nil? != (@assigns_automatic_stream_class_id.nil? || @assigns_automatic_stream_class_id)
           raise "Incoherence between trace::assigns_automatic_stream_class_id and stream_class[#{i}]::id"
@@ -95,6 +95,8 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:, self_component:)
+      raise NotImplementedError, "':enviorment' keyword not suppoted for downstream model" if self.environment
+
       pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
         pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{variable}, #{v});"

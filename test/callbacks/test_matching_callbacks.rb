@@ -221,15 +221,14 @@ class TestCallMatchingCallbackWithEnvironmentVariables < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/9.btx_model.yaml',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/9.btx_downstream_model.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.source_callbacks.c'
       },
       {
-        btx_component_type: 'FILTER',
-        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/9.btx_model.yaml',
-        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/9.btx_model.yaml',
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/9.btx_upstream_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/9.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.filter_callbacks.c'
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.sink_callbacks.c'
       }
     ]
   end
