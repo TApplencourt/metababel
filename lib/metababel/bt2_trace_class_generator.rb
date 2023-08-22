@@ -28,6 +28,10 @@ module Babeltrace2Gen
   module BTLocator
     attr_reader :parent, :variable
 
+    def rec_trace_class
+      is_a?(Babeltrace2Gen::BTTraceClass) ? self : @parent.rec_trace_class
+    end
+
     def rec_stream_class
       is_a?(Babeltrace2Gen::BTStreamClass) ? self : @parent.rec_stream_class
     end
@@ -72,13 +76,14 @@ module Babeltrace2Gen
     include BTUtils
     extend BTFromH
 
-    attr_reader :stream_classes, :assigns_automatic_stream_class_id
+    attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id
 
-    def initialize(parent:, stream_classes:, assigns_automatic_stream_class_id: nil)
+    def initialize(parent:, stream_classes:, environment: nil, assigns_automatic_stream_class_id: nil)
       raise if parent
 
       @parent = nil
       @assigns_automatic_stream_class_id = assigns_automatic_stream_class_id
+      @environment = BTEnvironmentClass.from_h(self, environment) if environment
       @stream_classes = stream_classes.collect.with_index do |m, i|
         if m[:id].nil? != (@assigns_automatic_stream_class_id.nil? || @assigns_automatic_stream_class_id)
           raise "Incoherence between trace::assigns_automatic_stream_class_id and stream_class[#{i}]::id"
@@ -89,6 +94,8 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:, self_component:)
+      raise NotImplementedError, "':enviorment' keyword not supported in downstream model" if self.environment
+
       pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
         pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{variable}, #{v});"
@@ -296,6 +303,15 @@ module Babeltrace2Gen
     end
 
     def get_getter(event:, arg_variables:)
+      if rec_trace_class.environment
+        trace = 'trace'
+        scope do
+          pr "const bt_stream *stream = bt_event_borrow_stream_const(#{event});"
+          pr "const bt_trace *#{trace} = bt_stream_borrow_trace_const(stream);"
+          rec_trace_class.environment.get_getter(trace: trace, arg_variables: arg_variables)
+        end
+      end
+
       if rec_stream_class.event_common_context_field_class
         field = "#{event}_cc_f"
         scope do
@@ -801,6 +817,78 @@ module Babeltrace2Gen
           BTFieldClass::Variant::Option.new(name: o[:name], field_class: o[:field_class])
         end
       end
+    end
+  end
+
+  class BTEnvironmentClass
+    include BTPrinter
+    extend BTFromH
+    attr_reader :parent, :entries
+
+    def initialize(parent:, entries: [])
+      @parent = parent
+      @entries = entries.map { |entry| BTEntryClass.from_h(self, entry) }
+    end
+
+    def get_getter(trace:, arg_variables:)
+      scope do
+        @entries.each do |entry|
+          entry.get_getter(trace: trace, arg_variables: arg_variables)
+        end
+      end
+    end
+  end
+
+  class BTEntryClass
+    include BTPrinter
+    using HashRefinements
+
+    def self.from_h(parent, model)
+      key = model.delete(:type)
+      raise "No type in #{model}" unless key
+
+      h = { 'string' => BTEntryClass::String,
+            'integer_signed' => BTEntryClass::IntegerSigned }.freeze
+      raise "Type #{key} not supported" unless h.include?(key)
+      h[key].from_h(parent, model)
+    end
+
+    def get_getter(trace:, arg_variables:)
+      var_name = self.name
+      var_type = self.class.instance_variable_get(:@bt_type)
+
+      var = GeneratedArg.new(var_type, var_name)
+      arg_variables.fetch_append('outputs', var)
+
+      bt_func_get = self.class.instance_variable_get(:@bt_func)
+      pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
+      pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
+    end
+  end
+
+  class BTEntryClass::String < BTEntryClass
+    extend BTFromH
+    attr_reader :parent, :name
+
+    @bt_type = 'const char*'
+    @bt_func = 'bt_value_string_get'
+
+    def initialize(parent:, name:)
+      @parent = parent
+      @name = name
+    end
+  end
+
+  class BTEntryClass::IntegerSigned < BTEntryClass
+    extend BTFromH
+    attr_reader :parent, :name
+
+    @bt_type = 'int64_t'
+    @bt_func = 'bt_value_integer_signed_get'
+
+    def initialize(parent:, name:)
+      @parent = parent
+      @name = name
     end
   end
 end

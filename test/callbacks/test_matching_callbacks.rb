@@ -209,3 +209,27 @@ class TestCallMatchingCallbackWithEventName < Test::Unit::TestCase
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/8.btx_log.txt'
   end
 end
+
+class TestCallMatchingCallbackWithEnvironmentVariables < Test::Unit::TestCase
+  # Validate that environment entries are passed properly into matchinig callbacks.
+
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/9.btx_downstream_model.yaml',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.source_callbacks.c'
+      },
+      {
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/9.btx_upstream_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/9.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.sink_callbacks.c'
+      }
+    ]
+  end
+end

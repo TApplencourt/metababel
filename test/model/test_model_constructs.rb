@@ -123,3 +123,19 @@ class TestEventNameDuplicatedOnTheSameStream < Test::Unit::TestCase
     ]
   end
 end
+
+class TestUnSupportedEnvironmentInDownstreamModel < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/model/cases_model_constructs/9.btx_model.yaml',
+        btx_metababel_generation_fail: true
+      }
+    ]
+  end
+end
