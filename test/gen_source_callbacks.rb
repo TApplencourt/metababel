@@ -2,6 +2,7 @@ require 'optparse'
 require 'yaml'
 require 'erb'
 require 'time'
+require_relative '../lib/metababel/bt2_trace_class_generator'
 
 REGEXT_PRETTY = /
  =\s            # We are interested to the right of the equal sign
@@ -41,28 +42,31 @@ SOURCE_TEMPLATE = <<~TEXT
   }
 TEXT
 
-def sanitize_value(field_value, field_class)
-  return field_value unless field_class
+class Babeltrace2Gen::BTTraceClass
+  def find_event_class
+    @stream_classes.map do |s|
+      s.event_classes.map.with_index do |e|
+        return e if yield(e)
+      end
+    end.flatten
+  end
+end
 
-  field_range = field_class.fetch(:field_value_range, 64)
-  case field_class[:type]
-  when 'integer_signed'
-    "INT#{field_range}_C(#{field_value})"
-  when 'integer_unsigned'
-    "UINT#{field_range}_C(#{field_value})"
+def sanitize_value(field_value, field_type)
+  return field_value unless field_type
+
+  case field_type
+  when 'int64_t', 'int32_t'
+    "INT#{field_type[3,2]}_C(#{field_value})"
+  when 'uint64_t', 'uint32_t'
+    "UINT#{field_type[4,2]}_C(#{field_value})"
   else
     field_value
   end
 end
 
-def get_field_classes(yaml)
-  return yaml[:field_class] if yaml.key?(:field_class)
-
-  yaml.values.flatten.filter_map { |d| get_field_classes(d) if d.is_a?(Hash) }.flatten
-end
-
 def parse_log(input_path, yaml_path = nil)
-  field_classes = yaml_path ? get_field_classes(YAML.load_file(yaml_path)) : []
+  trace = yaml_path ? Babeltrace2Gen::BTTraceClass.from_h(nil, YAML.load_file(yaml_path)) : nil
 
   File.open(input_path, 'r') do |file|
     file.each_line.map do |line|
@@ -70,20 +74,28 @@ def parse_log(input_path, yaml_path = nil)
       raise "Unsupported format for '#{line}'." unless match
 
       timestamp, head, tail = match.captures
-      field_values_ts = nil
+      ts = nil
       if timestamp
         t = Time.parse(timestamp)
         # Need to convert in nasosecond
-        field_values_ts = t.to_i * 1_000_000_000 + t.nsec
+        ts = t.to_i * 1_000_000_000 + t.nsec
       end
-      # TODO: Can add an assert so that the stream class have a default clock
+
+      event_name = head
       field_values = tail.nil? ? [] : tail.scan(REGEXT_PRETTY).flatten
+
+      if trace
+        event_args = {}
+        event = trace.find_event_class { |e| e.name == event_name }
+        raise "Event '#{event_name}' not found" unless event
+        event.get_getter(event: 'event', arg_variables: event_args)
+        field_values = field_values.zip(
+          event_args.fetch('outputs',[]).map(&:type)).map { |value, type| sanitize_value(value, type) }
+      end
+
       data = {
-        name: head.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
-        field_values: [field_values_ts,
-                       field_values.zip(field_classes).map do |fvalue, fclass|
-                         sanitize_value(fvalue, fclass)
-                       end].compact.flatten(1)
+        name: event_name.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
+        field_values: [ts,field_values].compact.flatten(1)
       }
     end
   end
