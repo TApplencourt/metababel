@@ -23,34 +23,45 @@ def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
 
+def flat(model, key = '')
+  model.map { |k,v| v.is_a?(Hash) ? flat(v, "#{k}_") : { "#{key}#{k}".to_sym => v } }.flatten.reduce(:merge)
+end
+
+def get_events_members(model)
+  environment_entries =  model.dig(:environment, :entries)
+  model.fetch(:stream_classes,[]).map do |sc|
+    common_context_members = sc.dig(:event_common_context_field_class, :members)
+    sc.fetch(:event_classes,[]).map do |ec|
+    specific_context_members = ec.dig(:specific_context_field_class, :members)
+    payload_members = ec.dig(:payload_field_class, :members)
+    [ ec[:name], [environment_entries, specific_context_members, payload_members].flatten.compact.map(&method(:flat)) ]
+    end
+  end.flatten(1).to_h
+end
+
 def btx_match?(str, pattern_or_str)
   # String beginning and ending in '/' are treated as regexp.
   is_regex = pattern_or_str.match?(%r{^/.+/$})
   is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
 end
 
-def btx_find_matching_arg(match_arg, evt_args)
-  matching_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
-  unless matching_args.length < 2
-    raise "match_arg '#{match_arg}' matching multiple event_args '#{matching_args.join(', ')}'."
+def btx_arg_match?(event_arg, match_arg)
+  match_arg.keys.all? do |key|
+    btx_match?(event_arg[key],match_arg[key])
   end
-
-  matching_args.pop
 end
 
-def btx_get_matching_args(evt_name, evt_args, match_name, match_args)
-  # If doesn't match the name, we can shortcut
-  return nil unless btx_match?(evt_name, match_name)
+def btx_event_match?(event_name, event_args, match_name, match_args)
+  event_match = btx_match?(event_name,match_name)
+  return event_match unless match_args
 
-  matching_args = match_args.map { |m| btx_find_matching_arg(m, evt_args) }
-  # Check that all match_args have found a match
-  return nil unless matching_args.all?
-  # An event args match multiple match args
-  unless matching_args.length == matching_args.uniq.length
-    raise "event_args '#{matching_args.map(&:name).join(', ')}' matched by multiple match_args '#{match_args.join(', ')}'."
+  args_match = match_args.all? do |match_arg|
+    args_matched = event_args.find_all { |event_arg| btx_arg_match?(event_arg, match_arg) }
+    raise "match.arg '#{match_arg}' must match one event.arg '#{ args_matched }'" unless args_matched.length < 2
+    args_matched.length == 1
   end
 
-  matching_args
+  event_match and args_match
 end
 
 class Array
@@ -122,10 +133,13 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
+def wrote_event_dispatchers(folder, y, w, matching_dispatch_data, callback_types)
   event_name = 'event'
 
-  dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  trace_class = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  events_members = get_events_members(w)
+
+  dispatchers = trace_class.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -137,14 +151,24 @@ def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
     evt_args += arg_variables.fetch('outputs', [])
     dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
-    # User event dispatchers
+    # User event dispatchers:
+    # The matching of the event and the selection of the arguments to be used
+    # by the user are now separed.
+    evt_name = e.name
+    evt_fields = events_members[e.name]
+
     usr_evt_args = evt_args + [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_types += matching_dispatch_data.filter_map do |md|
-      dispatcher_evt_args = btx_get_matching_args(e.name, usr_evt_args, md[:regex], md.fetch(:args, []))
-      unless dispatcher_evt_args.nil?
-        DispatchType.new(sanitize(md[:name]), dispatcher_evt_args,
-                         "matching_#{sanitize(md[:name])}")
+      # Check if the event match.
+      event_match = btx_event_match?(evt_name, evt_fields, md[:match][:name], md.dig(:match, :args))
+      # Selecting args to be used by in callbacks.
+      dispatcher_evt_args = md.fetch(:args, []).map do |arg_name|
+        arg = usr_evt_args.find { |event_arg|  event_arg.name == arg_name }
+        raise "arg.name '#{arg_name}' does not found." unless arg
+        arg
       end
+
+      DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if event_match
     end
 
     Dispatcher.new(
@@ -320,11 +344,19 @@ end
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
 
+  # TODO: Ugly 'y, w' with duplicated data, but i do not find an easy way to
+  # do a shallow copy of a hash. I need to copy it since BTTraceClass modify it.
+
   y = options[:upstreams].reduce({}) do |y, upstream|
     # Need to specialize for merging arrays
     y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
+
+  w = options[:upstreams].reduce({}) do |y, upstream|
+    # Need to specialize for merging arrays
+    y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
+  end
+
   validate_model(y)
-  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
+  wrote_event_dispatchers(folder, y, w, matching_dispatch_data, callback_types)
 end
