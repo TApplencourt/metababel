@@ -32,9 +32,11 @@ def get_events_members(model)
   model.fetch(:stream_classes,[]).map do |sc|
     common_context_members = sc.dig(:event_common_context_field_class, :members)
     sc.fetch(:event_classes,[]).map do |ec|
-    specific_context_members = ec.dig(:specific_context_field_class, :members)
-    payload_members = ec.dig(:payload_field_class, :members)
-    [ ec[:name], [environment_entries, specific_context_members, payload_members].flatten.compact.map(&method(:flat)) ]
+      [ ec[:name],
+        [ environment_entries,
+          common_context_members,
+          ec.dig(:specific_context_field_class, :members),
+          ec.dig(:payload_field_class, :members)].flatten.compact ]
     end
   end.flatten(1).to_h
 end
@@ -45,23 +47,24 @@ def btx_match?(str, pattern_or_str)
   is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
 end
 
-def btx_arg_match?(event_arg, match_arg)
-  match_arg.keys.all? do |key|
-    btx_match?(event_arg[key],match_arg[key])
+def btx_arg_match?(event_field, match_field)
+  exclude = ['extract']
+  match_field.keys.filter { |k| exclude.include?(k) }.all? do |key|
+    btx_match?(event_field[key], match_field[key])
   end
 end
 
-def btx_event_match?(event_name, event_args, match_name, match_args)
-  event_match = btx_match?(event_name,match_name)
-  return event_match unless match_args
+def btx_event_match?(event_name, event_fields, match_name, match_fields)
+  event_match = btx_match?(event_name, match_name)
+  return event_match unless match_fields
 
-  args_match = match_args.all? do |match_arg|
-    args_matched = event_args.find_all { |event_arg| btx_arg_match?(event_arg, match_arg) }
-    raise "match.arg '#{match_arg}' must match one event.arg '#{ args_matched }'" unless args_matched.length < 2
-    args_matched.length == 1
+  fields_match = match_fields.map(&method(:flat)).all? do |match_field|
+    fields_matched = event_fields.map(&method(:flat)).find_all { |event_field| btx_arg_match?(event_field, match_field) }
+    raise "match.arg '#{match_field}' must match one event.arg '#{ fields_matched.length }'" unless fields_matched.length < 2
+    fields_matched.length == 1
   end
 
-  event_match and args_match
+  event_match and fields_match
 end
 
 class Array
@@ -160,15 +163,15 @@ def wrote_event_dispatchers(folder, y, w, matching_dispatch_data, callback_types
     usr_evt_args = evt_args + [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_types += matching_dispatch_data.filter_map do |md|
       # Check if the event match.
-      event_match = btx_event_match?(evt_name, evt_fields, md[:match][:name], md.dig(:match, :args))
-      # Selecting args to be used by in callbacks.
+      event_match = btx_event_match?(evt_name, evt_fields, md[:name], md.fetch(:args, nil))
+      # Selecting args to be used in callbacks.
       dispatcher_evt_args = md.fetch(:args, []).map do |arg_name|
-        arg = usr_evt_args.find { |event_arg|  event_arg.name == arg_name }
+        arg = usr_evt_args.find { |event_arg|  event_arg.name == arg_name[:name] and arg_name.fetch(:extract, false) }
         raise "arg.name '#{arg_name}' does not found." unless arg
         arg
       end
 
-      DispatchType.new(sanitize(md[:name]), dispatcher_evt_args, "matching_#{sanitize(md[:name])}") if event_match
+      DispatchType.new(sanitize(md[:callback]), dispatcher_evt_args, "matching_#{sanitize(md[:callback])}") if event_match
     end
 
     Dispatcher.new(
@@ -328,7 +331,7 @@ erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
 
-callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:name])}" }.prepend('generic')
+callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:callback])}" }.prepend('generic')
 d[:callback_types] = callback_types
 
 wrote_component(options, d, folder)
