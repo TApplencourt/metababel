@@ -25,6 +25,13 @@ module Babeltrace2Gen
     end
   end
 
+  module BTScalarTypeMatch
+    def match?(field_class)
+      [ field_class.class ? self.class == field_class.class : nil,
+        field_class.cast_type ? (self.cast_type ? self.cast_type.match?(field_class.cast_type) : false) : nil ].compact.all?
+    end
+  end
+
   module BTLocator
     attr_reader :parent, :variable
 
@@ -109,6 +116,14 @@ module Babeltrace2Gen
         end
       end
     end
+
+    def match?(trace_class)
+      trace_class.environment ? (@environment ? @environment.match?(trace_class.environment) : false) : nil
+    end
+
+    def get_args(trace_class)
+      trace_class.environment ? @environment.get_args(trace_class.environment) : []
+    end
   end
 
   class BTStreamClass
@@ -116,6 +131,7 @@ module Babeltrace2Gen
     include BTPrinter
     include BTLocator
     extend BTFromH
+  
     attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
                 :id, :name, :get_getter
 
@@ -224,15 +240,31 @@ module Babeltrace2Gen
         event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
       end
     end
+
+    def match?(stream_class)
+      [ @parent.match?(stream_class.parent),
+        stream_class.name ? (@name ? @name.match?(stream_class.name) : false) : nil,
+        stream_class.packet_context_field_class ? (@packet_context_field_class ? @packet_context_field_class.match?(stream_class.packet_context_field_class) : false) : nil,
+        stream_class.event_common_context_field_class ? (@event_common_context_field_class ? @event_common_context_field_class.match?(stream_class.event_common_context_field_class) : false) : nil,
+        stream_class.default_clock_class ? (@default_clock_class ? @default_clock_class == stream_class.default_clock_class : false) : nil ].compact.all?
+    end
+
+    def get_args(stream_class)
+      [ @parent.get_args(stream_class.parent),
+        stream_class.packet_context_field_class ? @packet_context_field_class.get_args(stream_class.packet_context_field_class) : nil,
+        stream_class.event_common_context_field_class ? @event_common_context_field_class.get_args(stream_class.event_common_context_field_class) : nil,
+        stream_class.default_clock_class ? (stream_class.default_clock_class.fetch(:extract, true) ? GeneratedArg.new('int64_t', '_timestamp') : nil) : nil ].flatten.compact
+    end
   end
 
   class BTEventClass
     include BTPrinter
     include BTLocator
     extend BTFromH
-    attr_reader :name, :specific_context_field_class, :payload_field_class
 
-    def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil)
+    attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
+
+    def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil, callback_name: nil)
       @parent = parent
       @name = name
       if specific_context_field_class
@@ -336,6 +368,20 @@ module Babeltrace2Gen
         @payload_field_class.get_getter(variable: field, arg_variables: arg_variables)
       end
     end
+
+    def match?(event)
+      [ @parent.match?(event.parent),
+        event.name ? (@name ? @name.match?(event.name) : false) : nil,
+        event.specific_context_field_class ? (@specific_context_field_class ? @specific_context_field_class.match?(event.specific_context_field_class) : false) : nil,
+        event.payload_field_class ? (@payload_field_class ? @payload_field_class.match?(event.payload_field_class) : false) : nil ].compact.all?
+    end
+
+    def get_args(event)
+      [ @parent.get_args(event.parent),
+        event.name ? GeneratedArg.new("const char *", @name) : nil,
+        event.specific_context_field_class ? @specific_context_field_class.get_args(event.specific_context_field_class) : nil,
+        event.payload_field_class ? @payload_field_class.get_args(event.payload_field_class) : nil ].flatten.compact
+    end
   end
 
   class BTFieldClass
@@ -414,10 +460,15 @@ module Babeltrace2Gen
       cast_func = @cast_type ? "(#{self.class.instance_variable_get(:@bt_type)})" : ''
       pr "#{bt_func_get}(#{field}, #{variable});"
     end
+
+    def match?(field_class)
+      raise NotImplementedError, self.class
+    end
   end
 
   class BTFieldClass::Bool < BTFieldClass
     extend BTFromH
+    include BTScalarTypeMatch
 
     @bt_type = 'bt_bool'
     @bt_func = 'bt_field_bool_%s_value'
@@ -445,6 +496,7 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Integer < BTFieldClass
+    include BTScalarTypeMatch
     attr_reader :field_value_range, :preferred_display_base
 
     def initialize(parent:, field_value_range: nil, preferred_display_base: nil)
@@ -541,6 +593,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
+    include BTScalarTypeMatch
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
@@ -654,12 +707,23 @@ module Babeltrace2Gen
 
   class BTMemberClass
     include BTLocator
-    attr_reader :parent, :name, :field_class
+  
+    attr_reader :parent, :name, :field_class, :extract
 
-    def initialize(parent:, name:, field_class:)
+    def initialize(parent:, name:, field_class:, extract: true)
       @parent = parent
       @name = name
       @field_class = BTFieldClass.from_h(self, field_class)
+      @extract = extract
+    end
+
+    def match?(member)
+      [ @name.match?(member.name),
+        @field_class.match?(member.field_class) ].all?
+    end
+
+    def get_arg()
+      GeneratedArg.new(@field_class.class.instance_variable_get(:@bt_type), @name)
     end
   end
 
@@ -716,6 +780,22 @@ module Babeltrace2Gen
           m.field_class.get_getter(field: field, arg_variables: arg_variables)
         end
       end
+    end
+
+    def match?(field_class)
+      field_class.members.all? do |rhs_member| 
+        members_matched = @members.find_all { |member| member.match?(rhs_member) }
+        raise "rhs_member '#{rhs_member}' must match one member '#{ members_matched.length }' matched." unless members_matched.length < 2
+        members_matched.length == 1
+      end
+    end
+
+    def get_args(field_class)
+      field_class.members.filter { |member| member.extract }.map do |rhs_member| 
+        members_matched = @members.find_all { |member| member.match?(rhs_member) }
+        raise "rhs_member '#{rhs_member}' must match one member '#{ members_matched.length }' matched." unless members_matched.length == 1
+        members_matched
+      end.flatten.map(&:get_arg)
     end
   end
 
@@ -837,12 +917,28 @@ module Babeltrace2Gen
         end
       end
     end
+
+    def match?(enviorment)
+      enviorment.entries.all? do |rhs_entry| 
+        entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
+        raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length < 2
+        entries_matched.length == 1
+      end
+    end
+
+    def get_args(enviorment)
+      enviorment.entries.filter { |entry| entry.extract }.map do |rhs_entry| 
+        entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
+        raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length < 2
+        entries_matched
+      end.flatten.map(&:get_arg)
+    end
   end
 
   class BTEntryClass
     include BTPrinter
     using HashRefinements
-
+  
     def self.from_h(parent, model)
       key = model.delete(:type)
       raise "No type in #{model}" unless key
@@ -864,31 +960,42 @@ module Babeltrace2Gen
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
       pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
     end
+
+    def match?(entry)
+      [ self.name.match?(entry.name),
+        self.class == entry.class ].all?
+    end
+
+    def get_arg()
+      GeneratedArg.new(self.class.instance_variable_get(:@bt_type), self.name)
+    end
   end
 
   class BTEntryClass::String < BTEntryClass
     extend BTFromH
-    attr_reader :parent, :name
+    attr_reader :parent, :name, :extract
 
     @bt_type = 'const char*'
     @bt_func = 'bt_value_string_get'
 
-    def initialize(parent:, name:)
+    def initialize(parent:, name:, extract: true)
       @parent = parent
       @name = name
+      @extract = extract
     end
   end
 
   class BTEntryClass::IntegerSigned < BTEntryClass
     extend BTFromH
-    attr_reader :parent, :name
+    attr_reader :parent, :name, :extract
 
     @bt_type = 'int64_t'
     @bt_func = 'bt_value_integer_signed_get'
 
-    def initialize(parent:, name:)
+    def initialize(parent:, name:, extract: true)
       @parent = parent
       @name = name
+      @extract = extract
     end
   end
 end

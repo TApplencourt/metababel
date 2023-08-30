@@ -23,50 +23,6 @@ def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
 
-def flat(model, key = '')
-  model.map { |k,v| v.is_a?(Hash) ? flat(v, "#{k}_") : { "#{key}#{k}".to_sym => v } }.flatten.reduce(:merge)
-end
-
-def get_events_members(model)
-  environment_entries =  model.dig(:environment, :entries)
-  model.fetch(:stream_classes,[]).map do |sc|
-    common_context_members = sc.dig(:event_common_context_field_class, :members)
-    sc.fetch(:event_classes,[]).map do |ec|
-      [ ec[:name],
-        [ environment_entries,
-          common_context_members,
-          ec.dig(:specific_context_field_class, :members),
-          ec.dig(:payload_field_class, :members)].flatten.compact ]
-    end
-  end.flatten(1).to_h
-end
-
-def btx_match?(str, pattern_or_str)
-  # String beginning and ending in '/' are treated as regexp.
-  is_regex = pattern_or_str.match?(%r{^/.+/$})
-  is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
-end
-
-def btx_arg_match?(event_field, match_field)
-  exclude = ['extract']
-  match_field.keys.filter { |k| exclude.include?(k) }.all? do |key|
-    btx_match?(event_field[key], match_field[key])
-  end
-end
-
-def btx_event_match?(event_name, event_fields, match_name, match_fields)
-  event_match = btx_match?(event_name, match_name)
-  return event_match unless match_fields
-
-  fields_match = match_fields.map(&method(:flat)).all? do |match_field|
-    fields_matched = event_fields.map(&method(:flat)).find_all { |event_field| btx_arg_match?(event_field, match_field) }
-    raise "match.arg '#{match_field}' must match one event.arg '#{ fields_matched.length }'" unless fields_matched.length < 2
-    fields_matched.length == 1
-  end
-
-  event_match and fields_match
-end
-
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -136,13 +92,10 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, y, w, matching_dispatch_data, callback_types)
+def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
   event_name = 'event'
 
-  trace_class = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  events_members = get_events_members(w)
-
-  dispatchers = trace_class.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  dispatchers = trace_model.map_event_classes_with_index do |e, _, _, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -154,25 +107,10 @@ def wrote_event_dispatchers(folder, y, w, matching_dispatch_data, callback_types
     evt_args += arg_variables.fetch('outputs', [])
     dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
-    # User event dispatchers:
-    # The matching of the event and the selection of the arguments to be used
-    # by the user are now separed.
-    evt_name = e.name
-    evt_fields = events_members[e.name]
-
-    usr_evt_args = evt_args + [GeneratedArg.new('const char *', '_event_class_name')]
-    dispatch_types += matching_dispatch_data.filter_map do |md|
-      # Check if the event match.
-      event_match = btx_event_match?(evt_name, evt_fields, md[:name], md.fetch(:args, nil))
-      # Selecting args to be used in callbacks.
-      dispatcher_evt_args = md.fetch(:args, []).map do |arg_name|
-        arg = usr_evt_args.find { |event_arg|  event_arg.name == arg_name[:name] and arg_name.fetch(:extract, false) }
-        raise "arg.name '#{arg_name}' does not found." unless arg
-        arg
-      end
-
-      DispatchType.new(sanitize(md[:callback]), dispatcher_evt_args, "matching_#{sanitize(md[:callback])}") if event_match
-    end
+    # user_event dispatchers
+    dispatch_types += trace_matcher.map_event_classes_with_index do |_e, _, _, _|
+      e.match?(_e) ? DispatchType.new(sanitize(_e.callback_name), e.get_args(_e), "matching_#{sanitize(_e.callback_name)}") : nil
+    end.compact
 
     Dispatcher.new(
       e.name, arg_variables.fetch('outputs', []),
@@ -329,9 +267,9 @@ end
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
-matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
+trace_class_matcher = options.key?(:callbacks) ? Babeltrace2Gen::BTTraceClass.from_h(nil, YAML.load_file(options[:callbacks])) : nil
+callback_types = trace_class_matcher.map_event_classes_with_index { |e,_,_,_| sanitize(e.callback_name) }
 
-callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:callback])}" }.prepend('generic')
 d[:callback_types] = callback_types
 
 wrote_component(options, d, folder)
@@ -354,12 +292,7 @@ if %w[FILTER SINK].include?(options[:component_type])
     # Need to specialize for merging arrays
     y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
-
-  w = options[:upstreams].reduce({}) do |y, upstream|
-    # Need to specialize for merging arrays
-    y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
-  end
-
   validate_model(y)
-  wrote_event_dispatchers(folder, y, w, matching_dispatch_data, callback_types)
+  trace_class = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  wrote_event_dispatchers(folder, trace_class, trace_class_matcher, callback_types)
 end
