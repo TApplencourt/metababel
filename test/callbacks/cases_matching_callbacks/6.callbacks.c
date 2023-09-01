@@ -3,8 +3,8 @@
 // Prevent event 1 to be passed around (downstream)
 static void btx_event_1_callback(void *btx_handle, void *usr_data) {}
 
-static void usr_event_2_callback(void *btx_handle, void *usr_data, uint64_t dummy) {
-  btx_push_message_event_2(btx_handle,dummy);
+static void usr_event_2_callback(void *btx_handle, void *usr_data, const char *event_class_name, uint64_t dummy) {
+  btx_push_message_event_2(btx_handle, dummy);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {

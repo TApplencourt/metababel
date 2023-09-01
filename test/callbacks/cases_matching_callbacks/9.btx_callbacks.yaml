@@ -1,5 +1,13 @@
-- :name: usr_event
-  :regex: /event/
-  :args:
-    - entry_2
-    - entry_1
+:match: true
+:environment:
+  :entries:
+  - :name: ^entry_1$
+    :type: string
+  - :name: ^entry_2$
+    :type: integer_signed
+:stream_classes:
+- :name: ^sc$
+  :event_classes:
+  - :name: ^event$
+    :callback_name: usr_event
+

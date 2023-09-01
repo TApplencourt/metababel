@@ -1,4 +1,8 @@
-- :name: usr_foo_event
-  :regex: /event/
-- :name: usr_bar_event
-  :regex: /event/
+:match: true
+:stream_classes:
+- :name: ^sc$
+  :event_classes:
+  - :name: ^event$
+    :callback_name: usr_foo_event
+  - :name: ^event$
+    :callback_name: usr_bar_event
