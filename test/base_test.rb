@@ -117,7 +117,7 @@ def mock_user_callbacks(component)
   assert(component.include?(:btx_component_downstream_model),
          'Need to provide :btx_component_downstream_model when generating callbacks for SOURCE')
   opt_log = component.key?(:btx_log_path) ? '-i %<btx_log_path>s' : ''
-  command = "ruby ./test/gen_source_callbacks.rb #{opt_log} -y %<btx_component_downstream_model>s -o %<btx_component_path>s/callbacks.c" % component
+  command = "ruby ./test/gen_source_callbacks.rb #{opt_log} -o %<btx_component_path>s/callbacks.c" % component
   run_command(command)
 end
 
