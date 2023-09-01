@@ -25,9 +25,9 @@ module Babeltrace2Gen
     end
   end
 
-  module BTScalarTypeMatch
+  module BTMatch
     def match?(field_class)
-      [ field_class.class ? self.class == field_class.class : nil,
+      [ field_class.type ? (self.type ? self.type.match?(field_class.type) : false) : nil,
         field_class.cast_type ? (self.cast_type ? self.cast_type.match?(field_class.cast_type) : false) : nil ].compact.all?
     end
   end
@@ -83,11 +83,13 @@ module Babeltrace2Gen
     include BTUtils
     extend BTFromH
 
-    attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id
+    attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id, :match
 
-    def initialize(parent:, stream_classes:, environment: nil, assigns_automatic_stream_class_id: nil)
+    def initialize(parent:, stream_classes:, environment: nil, assigns_automatic_stream_class_id: nil, match: false)
       raise if parent
 
+      # match indicate if this model will be used to match another.
+      @match = match
       @parent = nil
       @assigns_automatic_stream_class_id = assigns_automatic_stream_class_id
       @environment = BTEnvironmentClass.from_h(self, environment) if environment
@@ -253,6 +255,7 @@ module Babeltrace2Gen
       [ @parent.get_args(stream_class.parent),
         stream_class.packet_context_field_class ? @packet_context_field_class.get_args(stream_class.packet_context_field_class) : nil,
         stream_class.event_common_context_field_class ? @event_common_context_field_class.get_args(stream_class.event_common_context_field_class) : nil,
+        # _timestamp should be updated in the upstream.c.erb template if changed.
         stream_class.default_clock_class ? (stream_class.default_clock_class.fetch(:extract, true) ? GeneratedArg.new('int64_t', '_timestamp') : nil) : nil ].flatten.compact
     end
   end
@@ -265,6 +268,8 @@ module Babeltrace2Gen
     attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
 
     def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil, callback_name: nil)
+      @callback_name = callback_name
+
       @parent = parent
       @name = name
       if specific_context_field_class
@@ -378,7 +383,8 @@ module Babeltrace2Gen
 
     def get_args(event)
       [ @parent.get_args(event.parent),
-        event.name ? GeneratedArg.new("const char *", @name) : nil,
+        # _event_class_name should be updated in the upstream.c.erb template if changed.
+        event.name ? GeneratedArg.new('const char *', '_event_class_name') : nil,
         event.specific_context_field_class ? @specific_context_field_class.get_args(event.specific_context_field_class) : nil,
         event.payload_field_class ? @payload_field_class.get_args(event.payload_field_class) : nil ].flatten.compact
     end
@@ -389,7 +395,7 @@ module Babeltrace2Gen
     include BTPrinter
     using HashRefinements
 
-    attr_accessor :cast_type
+    attr_accessor :cast_type, :type
 
     def initialize(parent:)
       @parent = parent
@@ -397,7 +403,9 @@ module Babeltrace2Gen
 
     def self.from_h(parent, model)
       key = model.delete(:type)
-      raise "No type in #{model}" unless key
+      is_match_model = parent.rec_trace_class.match
+
+      raise "No type in #{model}" unless key or is_match_model
 
       h = {
         'bool' => BTFieldClass::Bool,
@@ -419,10 +427,16 @@ module Babeltrace2Gen
         'variant' => BTFieldClass::Variant
       }.freeze
 
-      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key)
+      # using 'parent.rec_trace_class.match' is not optimum at all, since we recurse back the tree
+      # per field type parsed. But we can pay the price to not add a new 'match' key in every
+      # field type initializer.
+      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) or is_match_model
 
       cast_type = model.delete(:cast_type)
-      fc = h[key].from_h(parent, model)
+      fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
+
+      # include type_str into field_class to be able to match it, in place of BT Objects comparison.
+      fc.type = key
       fc.cast_type = cast_type if cast_type
       fc
     end
@@ -466,9 +480,13 @@ module Babeltrace2Gen
     end
   end
 
+  class BTFieldClass::Default < BTFieldClass
+    extend BTFromH
+  end
+
   class BTFieldClass::Bool < BTFieldClass
     extend BTFromH
-    include BTScalarTypeMatch
+    include BTMatch
 
     @bt_type = 'bt_bool'
     @bt_func = 'bt_field_bool_%s_value'
@@ -496,7 +514,7 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Integer < BTFieldClass
-    include BTScalarTypeMatch
+    include BTMatch
     attr_reader :field_value_range, :preferred_display_base
 
     def initialize(parent:, field_value_range: nil, preferred_display_base: nil)
@@ -538,6 +556,7 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Real < BTFieldClass
+    include BTMatch
   end
 
   class BTFieldClass::Real::SinglePrecision < BTFieldClass::Real
@@ -593,7 +612,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
-    include BTScalarTypeMatch
+    include BTMatch
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
@@ -718,8 +737,8 @@ module Babeltrace2Gen
     end
 
     def match?(member)
-      [ @name.match?(member.name),
-        @field_class.match?(member.field_class) ].all?
+      [ member.name ? (@name ? @name.match?(member.name) : false) : nil,
+        member.field_class ? (@field_class ? @field_class.match?(member.field_class) : false) : nil ].all?
     end
 
     def get_arg()
@@ -902,6 +921,7 @@ module Babeltrace2Gen
 
   class BTEnvironmentClass
     include BTPrinter
+    include BTLocator
     extend BTFromH
     attr_reader :parent, :entries
 
@@ -929,7 +949,7 @@ module Babeltrace2Gen
     def get_args(enviorment)
       enviorment.entries.filter { |entry| entry.extract }.map do |rhs_entry| 
         entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
-        raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length < 2
+        raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length == 1
         entries_matched
       end.flatten.map(&:get_arg)
     end
@@ -938,15 +958,23 @@ module Babeltrace2Gen
   class BTEntryClass
     include BTPrinter
     using HashRefinements
+
+    attr_accessor :type
   
     def self.from_h(parent, model)
       key = model.delete(:type)
-      raise "No type in #{model}" unless key
+      is_match_model = parent.rec_trace_class.match
+
+      raise "No type in #{model}" unless key or is_match_model
 
       h = { 'string' => BTEntryClass::String,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
-      raise "Type #{key} not supported" unless h.include?(key)
-      h[key].from_h(parent, model)
+
+      raise "Type #{key} not supported" unless h.include?(key) or is_match_model
+
+      ec = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
+      ec.type = key
+      ec
     end
 
     def get_getter(trace:, arg_variables:)
@@ -962,8 +990,8 @@ module Babeltrace2Gen
     end
 
     def match?(entry)
-      [ self.name.match?(entry.name),
-        self.class == entry.class ].all?
+      [ entry.name ? (self.name ? self.name.match?(entry.name) : false) : nil,
+        entry.type ? (self.type ? self.type.match?(entry.type) : false) : nil ].all?
     end
 
     def get_arg()
