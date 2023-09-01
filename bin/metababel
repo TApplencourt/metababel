@@ -269,8 +269,14 @@ erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, ou
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 trace_class_matcher = options.key?(:callbacks) ? Babeltrace2Gen::BTTraceClass.from_h(nil, YAML.load_file(options[:callbacks])) : nil
-callback_types = options.key?(:callbacks) ? trace_class_matcher.map_event_classes_with_index { |e,_,_,_| "matching_#{sanitize(e.callback_name)}" } : []
-callback_types = callback_types.prepend('generic')
+callback_types = ['generic']
+
+if trace_class_matcher
+  callback_types += trace_class_matcher.map_event_classes_with_index do |e,_,_,_|
+    raise "Key ':callback_name' required when matching events." unless e.callback_name
+    "matching_#{sanitize(e.callback_name)}"
+  end
+end
 
 d[:callback_types] = callback_types
 
