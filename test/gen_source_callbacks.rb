@@ -58,7 +58,7 @@ def parse_log(input_path)
 
       data = {
         name: event_name.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
-        field_values: [ts,field_values].compact.flatten(1)
+        field_values: [ts, field_values].compact.flatten(1)
       }
     end
   end
