@@ -94,23 +94,24 @@ end
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
   event_name = 'event'
-
-  dispatchers = trace_model.map_event_classes_with_index do |e, _, _, default_clock_class|
+  dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
 
-    # Automatic event dispatcher
+    # automatic event dispatcher
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
     dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
     # user_event dispatchers
-    dispatch_types += trace_matcher.map_event_classes_with_index do |_e, _, _, _|
-      e.match?(_e) ? DispatchType.new(sanitize(_e.callback_name), e.get_args(_e), "matching_#{sanitize(_e.callback_name)}") : nil
-    end.compact
+    if trace_matcher
+      dispatch_types += trace_matcher.map_event_classes_with_index do |_e, _, _, _|
+        e.match?(_e) ? DispatchType.new(sanitize(_e.callback_name), e.get_args(_e), "matching_#{sanitize(_e.callback_name)}") : nil
+      end.compact
+    end
 
     Dispatcher.new(
       e.name, arg_variables.fetch('outputs', []),
@@ -268,7 +269,8 @@ erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, ou
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
 trace_class_matcher = options.key?(:callbacks) ? Babeltrace2Gen::BTTraceClass.from_h(nil, YAML.load_file(options[:callbacks])) : nil
-callback_types = trace_class_matcher.map_event_classes_with_index { |e,_,_,_| sanitize(e.callback_name) }
+callback_types = options.key?(:callbacks) ? trace_class_matcher.map_event_classes_with_index { |e,_,_,_| "matching_#{sanitize(e.callback_name)}" } : []
+callback_types = callback_types.prepend('generic')
 
 d[:callback_types] = callback_types
 
@@ -284,9 +286,6 @@ end
 
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
-
-  # TODO: Ugly 'y, w' with duplicated data, but i do not find an easy way to
-  # do a shallow copy of a hash. I need to copy it since BTTraceClass modify it.
 
   y = options[:upstreams].reduce({}) do |y, upstream|
     # Need to specialize for merging arrays
