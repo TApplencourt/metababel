@@ -40,35 +40,7 @@ SOURCE_TEMPLATE = <<~TEXT
   }
 TEXT
 
-def get_events_members_types(model)
-  model.fetch(:stream_classes,[]).map do |sc|
-    common_context_members = sc.dig(:event_common_context_field_class, :members)
-    sc.fetch(:event_classes,[]).map do |ec|
-      [ ec[:name],
-        [ common_context_members,
-          ec.dig(:specific_context_field_class, :members),
-          ec.dig(:payload_field_class, :members)
-        ].flatten.compact.map { |m| m[:field_class] } ]
-    end
-  end.flatten(1).to_h
-end
-
-def sanitize_value(field_value, field_class)
-  field_range = field_class.fetch(:field_value_range, 64)
-
-  case field_class[:type]
-  when 'integer_signed'
-    "INT#{field_range}_C(#{field_value})"
-  when 'integer_unsigned'
-    "UINT#{field_range}_C(#{field_value})"
-  else
-    field_value
-  end
-end
-
-def parse_log(input_path, yaml_path = nil)
-  evts_mems_types = yaml_path ? get_events_members_types(YAML.load_file(yaml_path)) : nil
-
+def parse_log(input_path)
   File.open(input_path, 'r') do |file|
     file.each_line.map do |line|
       match = line.match(REGEXT_EVENT)
@@ -83,7 +55,6 @@ def parse_log(input_path, yaml_path = nil)
       end
 
       field_values = tail.nil? ? [] : tail.scan(REGEXT_PRETTY).flatten
-      field_values = field_values.zip(evts_mems_types[event_name]).map { |t| sanitize_value(*t) } if yaml_path
 
       data = {
         name: event_name.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
@@ -119,10 +90,6 @@ OptionParser.new do |opts|
     exit
   end
 
-  opts.on('-y', '--yaml PATH', '[Mandatory] Path to btx_model.yaml.') do |p|
-    options[:yaml_path] = p
-  end
-
   opts.on('-i', '--log PATH', '[Mandatory] Path to btx_log.txt.') do |p|
     options[:input_path] = p
   end
@@ -134,5 +101,5 @@ end.parse!
 
 raise OptionParser::MissingArgument if options[:output_path].nil?
 
-data = options.key?(:input_path) ? parse_log(options[:input_path], options[:yaml_path]) : []
+data = options.key?(:input_path) ? parse_log(options[:input_path]) : []
 render_and_save(data, options[:output_path])
