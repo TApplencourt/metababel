@@ -145,14 +145,17 @@ def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
     end
   end
 
+  dispachers = events_dispatchers.map {  |_, d| d }
+
+
   dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }
-  events_dispatchers.each do |_, dispatcher|
+  dispachers.each do | dispatcher|
     dispatcher.dispatch_types.each do |dispatch_type|
       dispatcher_types_to_dispatchers[dispatch_type] << dispatcher
     end
   end
 
-  d = { dispatchers: events_dispatchers.map {  |_, d| d},
+  d = { dispatchers: dispatcher_types_to_dispatchers.values.flatten.uniq,
         dispatcher_types_to_dispatchers: dispatcher_types_to_dispatchers,
         callback_types: callback_types,
         event_name: event_name }
