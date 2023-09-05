@@ -1,5 +1,23 @@
 require 'base_test'
 
+class TestMatchingConflictingSignatures < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/1.btx_callbacks.yaml',
+        btx_metababel_generation_fail: true
+      }
+    ]
+  end
+end
+
 class TestMatchingCallbackCallingOrder < Test::Unit::TestCase
   # Ensure the calling order of matching callbacks comply the same as defined in the model.
  

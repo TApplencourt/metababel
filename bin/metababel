@@ -94,6 +94,8 @@ end
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
   event_name = 'event'
+
+  dispatchers_checking = Hash.new { |h, k| h[k] = [] }
   dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
@@ -109,8 +111,14 @@ def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
     # user_event dispatchers
     if trace_matcher
       dispatch_types += trace_matcher.map_event_classes_with_index do |_e, _, _, _|
-        e.match?(_e) ? DispatchType.new(sanitize(_e.callback_name), e.get_args(_e), "matching_#{sanitize(_e.callback_name)}") : nil
-      end.compact
+        if e.match?(_e)
+          name = sanitize(_e.callback_name)
+          args = e.get_args(_e)
+          dispatchers_checking[name] << args
+
+          DispatchType.new(name, args, "matching_#{name}")
+        end
+      end.compact # remove implicit nil returned values.
     end
 
     Dispatcher.new(
@@ -120,6 +128,11 @@ def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
       arg_variables.fetch('outputs_allocated', []),
       dispatch_types
     )
+  end
+
+  dispatchers_checking.each do | dispatch_type, matched_events_args |
+    signatures = matched_events_args.uniq.length
+    raise "Conflicting signatures for '#{dispatch_type}', found #{signatures} signatures, only one allowed." unless signatures == 1
   end
 
   dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }

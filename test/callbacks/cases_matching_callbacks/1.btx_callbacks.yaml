@@ -1,0 +1,12 @@
+:match: true
+:stream_classes:
+- :name: ^sc$
+  :event_classes:
+  - :name: ^event_[1-2]$
+    :callback_name: usr_foo_event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf
+        :field_class:
+          :type: .*

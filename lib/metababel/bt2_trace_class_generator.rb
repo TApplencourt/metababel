@@ -27,8 +27,8 @@ module Babeltrace2Gen
 
   module BTMatch
     def match?(field_class)
-      [ field_class.type ? (self.type ? self.type.match?(field_class.type) : false) : nil,
-        field_class.cast_type ? (self.cast_type ? self.cast_type.match?(field_class.cast_type) : false) : nil ].compact.all?
+      [ field_class.type ? (self.type ? self.type.match?(field_class.type) : false) : true,
+        field_class.cast_type ? (self.cast_type ? self.cast_type.match?(field_class.cast_type) : false) : true ].all?
     end
   end
 
@@ -120,7 +120,7 @@ module Babeltrace2Gen
     end
 
     def match?(trace_class)
-      trace_class.environment ? (@environment ? @environment.match?(trace_class.environment) : false) : nil
+      trace_class.environment ? (@environment ? @environment.match?(trace_class.environment) : false) : true
     end
 
     def get_args(trace_class)
@@ -245,10 +245,10 @@ module Babeltrace2Gen
 
     def match?(stream_class)
       [ @parent.match?(stream_class.parent),
-        stream_class.name ? (@name ? @name.match?(stream_class.name) : false) : nil,
-        stream_class.packet_context_field_class ? (@packet_context_field_class ? @packet_context_field_class.match?(stream_class.packet_context_field_class) : false) : nil,
-        stream_class.event_common_context_field_class ? (@event_common_context_field_class ? @event_common_context_field_class.match?(stream_class.event_common_context_field_class) : false) : nil,
-        stream_class.default_clock_class ? (not (@default_clock_class.nil? or stream_class.default_clock_class.nil?)) : nil ].compact.all?
+        stream_class.name ? (@name ? @name.match?(stream_class.name) : false) : true,
+        stream_class.packet_context_field_class ? (@packet_context_field_class ? @packet_context_field_class.match?(stream_class.packet_context_field_class) : false) : true,
+        stream_class.event_common_context_field_class ? (@event_common_context_field_class ? @event_common_context_field_class.match?(stream_class.event_common_context_field_class) : false) : true,
+        stream_class.default_clock_class ? (not (@default_clock_class.nil? or stream_class.default_clock_class.nil?)) : true ].all?
     end
 
     def get_args(stream_class)
@@ -376,9 +376,9 @@ module Babeltrace2Gen
 
     def match?(event)
       [ @parent.match?(event.parent),
-        event.name ? (@name ? @name.match?(event.name) : false) : nil,
-        event.specific_context_field_class ? (@specific_context_field_class ? @specific_context_field_class.match?(event.specific_context_field_class) : false) : nil,
-        event.payload_field_class ? (@payload_field_class ? @payload_field_class.match?(event.payload_field_class) : false) : nil ].compact.all?
+        event.name ? (@name ? @name.match?(event.name) : false) : true,
+        event.specific_context_field_class ? (@specific_context_field_class ? @specific_context_field_class.match?(event.specific_context_field_class) : false) : true,
+        event.payload_field_class ? (@payload_field_class ? @payload_field_class.match?(event.payload_field_class) : false) : true ].all?
     end
 
     def get_args(event)
@@ -741,8 +741,8 @@ module Babeltrace2Gen
     end
 
     def match?(member)
-      [ member.name ? (@name ? @name.match?(member.name) : false) : nil,
-        member.field_class ? (@field_class ? @field_class.match?(member.field_class) : false) : nil ].compact.all?
+      [ member.name ? (@name ? @name.match?(member.name) : false) : true,
+        member.field_class ? (@field_class ? @field_class.match?(member.field_class) : false) : true ].all?
     end
 
     def get_arg()
@@ -994,8 +994,8 @@ module Babeltrace2Gen
     end
 
     def match?(entry)
-      [ entry.name ? (self.name ? self.name.match?(entry.name) : false) : nil,
-        entry.type ? (self.type ? self.type.match?(entry.type) : false) : nil ].compact.all?
+      [ entry.name ? (self.name ? self.name.match?(entry.name) : false) : true,
+        entry.type ? (self.type ? self.type.match?(entry.type) : false) : true ].all?
     end
 
     def get_arg()
