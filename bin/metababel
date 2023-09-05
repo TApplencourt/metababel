@@ -54,7 +54,7 @@ DispatchType = Struct.new(:name, :args, :id) do
   end
 
   def signature
-    "(#{args.join(", ")})"
+    "(#{args.join(', ')})"
   end
 end
 
@@ -89,14 +89,11 @@ class Babeltrace2Gen::BTTraceClass
     end.flatten(1)
   end
 
-  def map_event_classes
+  def map_event_classes(&block)
     @stream_classes.map do |s|
-      s.event_classes.map do |e|
-        yield e
-      end
+      s.event_classes.map(&block)
     end.flatten(1)
   end
-
 end
 
 class GeneratedArg < Struct.new(:type, :name)
@@ -127,14 +124,14 @@ def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
       default_clock_class,
       arg_variables.fetch('outputs_allocated', []),
       [dispatch_type],
-      e)
+      e
+    )
   end
 
   trace_matcher.map_event_classes do |em|
-
-    matching_dispatcher = dispatchers.filter { |dispatcher|  dispatcher.event.match?(em) }
+    matching_dispatcher = dispatchers.filter { |dispatcher| dispatcher.event.match?(em) }
     # Verify same signature
-    signatures = matching_dispatcher.map { |dispatcher| dispatcher.event.get_args(em)}.uniq
+    signatures = matching_dispatcher.map { |dispatcher| dispatcher.event.get_args(em) }.uniq
     unless signatures.size == 1
       signatures_str = signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
       raise "Conflicting signatures for '#{em.callback_name}', found #{signatures.size} signatures, only one allowed: '#{signatures_str}'"
@@ -142,13 +139,13 @@ def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
     name_sanitized = sanitize(em.callback_name)
     dispatch_type = DispatchType.new(name_sanitized, signatures.pop, "matching_#{name_sanitized}")
     # Modify the dispatcher to add the new dispatchType
-    matching_dispatcher.each do | dispatcher |    
+    matching_dispatcher.each do |dispatcher|
       dispatcher.dispatch_types << dispatch_type
     end
   end
 
   dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }
-  dispatchers.each do | dispatcher|
+  dispatchers.each do |dispatcher|
     dispatcher.dispatch_types.each do |dispatch_type|
       dispatcher_types_to_dispatchers[dispatch_type] << dispatcher
     end
@@ -300,6 +297,7 @@ if options.key?(:callbacks)
   trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, YAML.load_file(options[:callbacks]))
   callback_types += trace_matcher.map_event_classes do |e|
     raise "Key ':callback_name' required when matching events." unless e.callback_name
+
     "matching_#{sanitize(e.callback_name)}"
   end
 end
