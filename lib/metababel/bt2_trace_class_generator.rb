@@ -435,11 +435,9 @@ module Babeltrace2Gen
       cast_type = model.delete(:cast_type)
       fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
 
-      # The getters code generated from event_common_context_field_class do not include
-      # the event variable name used by the getters. As we do not know the variable
-      # name that should be generated, we can not put it directly in the template,
-      # since, if the code generation generates another name we must update the
-      # template in addition.
+      # Since key (:type) can be a string or a regex, we store 
+      # the type into the field to apply string.math?(regex)
+      # in place of comparing fields objects.
       fc.type = key
       fc.cast_type = cast_type if cast_type
       fc
