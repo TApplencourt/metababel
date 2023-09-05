@@ -248,7 +248,7 @@ module Babeltrace2Gen
         stream_class.name ? (@name ? @name.match?(stream_class.name) : false) : nil,
         stream_class.packet_context_field_class ? (@packet_context_field_class ? @packet_context_field_class.match?(stream_class.packet_context_field_class) : false) : nil,
         stream_class.event_common_context_field_class ? (@event_common_context_field_class ? @event_common_context_field_class.match?(stream_class.event_common_context_field_class) : false) : nil,
-        stream_class.default_clock_class ? (@default_clock_class ? @default_clock_class == stream_class.default_clock_class : false) : nil ].compact.all?
+        stream_class.default_clock_class ? (not (@default_clock_class.nil? or stream_class.default_clock_class.nil?)) : nil ].compact.all?
     end
 
     def get_args(stream_class)
@@ -435,7 +435,11 @@ module Babeltrace2Gen
       cast_type = model.delete(:cast_type)
       fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
 
-      # include type_str into field_class to be able to match it, in place of BT Objects comparison.
+      # The getters code generated from event_common_context_field_class do not include
+      # the event variable name used by the getters. As we do not know the variable
+      # name that should be generated, we can not put it directly in the template,
+      # since, if the code generation generates another name we must update the
+      # template in addition.
       fc.type = key
       fc.cast_type = cast_type if cast_type
       fc
@@ -738,7 +742,7 @@ module Babeltrace2Gen
 
     def match?(member)
       [ member.name ? (@name ? @name.match?(member.name) : false) : nil,
-        member.field_class ? (@field_class ? @field_class.match?(member.field_class) : false) : nil ].all?
+        member.field_class ? (@field_class ? @field_class.match?(member.field_class) : false) : nil ].compact.all?
     end
 
     def get_arg()
@@ -991,7 +995,7 @@ module Babeltrace2Gen
 
     def match?(entry)
       [ entry.name ? (self.name ? self.name.match?(entry.name) : false) : nil,
-        entry.type ? (self.type ? self.type.match?(entry.type) : false) : nil ].all?
+        entry.type ? (self.type ? self.type.match?(entry.type) : false) : nil ].compact.all?
     end
 
     def get_arg()
