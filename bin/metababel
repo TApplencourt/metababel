@@ -60,7 +60,8 @@ end
 
 Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
                         :index_event_class, :default_clock_class,
-                        :args_to_free, :dispatch_types) do
+                        :args_to_free, :dispatch_types,
+                        :event) do
   def name_sanitized
     sanitize(name)
   end
@@ -108,7 +109,7 @@ end
 def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
   event_name = 'event'
 
-  events_dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -118,44 +119,42 @@ def wrote_event_dispatchers(folder, trace_model, trace_matcher, callback_types)
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
-    dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
+    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic')
 
-    [e, Dispatcher.new(
+    Dispatcher.new(
       e.name, arg_variables.fetch('outputs', []),
       body, index_stream_class, index_event_class,
       default_clock_class,
       arg_variables.fetch('outputs_allocated', []),
-      dispatch_types )]
+      [dispatch_type],
+      e)
   end
 
   trace_matcher.map_event_classes do |em|
 
-    matching_dispacher = events_dispatchers.filter { |e, dispatcher|  e.match?(em) }
+    matching_dispatcher = dispatchers.filter { |dispatcher|  dispatcher.event.match?(em) }
     # Verify same signature
-    signatures = matching_dispacher.map { |e, _| e.get_args(em)}.uniq
+    signatures = matching_dispatcher.map { |dispatcher| dispatcher.event.get_args(em)}.uniq
     unless signatures.size == 1
       signatures_str = signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
       raise "Conflicting signatures for '#{em.callback_name}', found #{signatures.size} signatures, only one allowed: '#{signatures_str}'"
     end
-    args = signatures.pop
     name_sanitized = sanitize(em.callback_name)
+    dispatch_type = DispatchType.new(name_sanitized, signatures.pop, "matching_#{name_sanitized}")
     # Modify the dispatcher to add the new dispatchType
-    matching_dispacher.each do | _, dispacher|    
-        dispacher.dispatch_types << DispatchType.new(name_sanitized, args, "matching_#{name_sanitized}")
+    matching_dispatcher.each do | dispatcher |    
+      dispatcher.dispatch_types << dispatch_type
     end
   end
 
-  dispachers = events_dispatchers.map {  |_, d| d }
-
-
   dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }
-  dispachers.each do | dispatcher|
+  dispatchers.each do | dispatcher|
     dispatcher.dispatch_types.each do |dispatch_type|
       dispatcher_types_to_dispatchers[dispatch_type] << dispatcher
     end
   end
 
-  d = { dispatchers: dispatcher_types_to_dispatchers.values.flatten.uniq,
+  d = { dispatchers: dispatchers,
         dispatcher_types_to_dispatchers: dispatcher_types_to_dispatchers,
         callback_types: callback_types,
         event_name: event_name }
