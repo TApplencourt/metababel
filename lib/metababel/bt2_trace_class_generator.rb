@@ -1,5 +1,25 @@
 require_relative 'bt2_generator_utils'
 
+def _match?(obj, match_obj)
+  match_obj ? (obj ? obj.match?(match_obj) : false) : true
+end
+
+def _attrs_match?(attrs, obj, match_obj)
+  attrs.map { |s| _match?(obj.send(s), match_obj.send(s)) }.all?
+end
+
+class NilClass
+  def match?(obj)
+    self == obj
+  end
+end
+
+class Hash
+  def match?(obj)
+    self == obj
+  end
+end
+
 module HashRefinements
   refine Hash do
     def fetch_append(key, item)
@@ -103,7 +123,7 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:, self_component:)
-      raise NotImplementedError, "':enviorment' keyword not supported in downstream model" if self.environment
+      raise NotImplementedError, "':environment' keyword not supported in downstream model" if self.environment
 
       pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
@@ -120,7 +140,7 @@ module Babeltrace2Gen
     end
 
     def match?(trace_class)
-      trace_class.environment ? (@environment ? @environment.match?(trace_class.environment) : false) : true
+      _match?(@environment, trace_class.environment)
     end
 
     def get_args(trace_class)
@@ -244,11 +264,7 @@ module Babeltrace2Gen
     end
 
     def match?(stream_class)
-      [ @parent.match?(stream_class.parent),
-        stream_class.name ? (@name ? @name.match?(stream_class.name) : false) : true,
-        stream_class.packet_context_field_class ? (@packet_context_field_class ? @packet_context_field_class.match?(stream_class.packet_context_field_class) : false) : true,
-        stream_class.event_common_context_field_class ? (@event_common_context_field_class ? @event_common_context_field_class.match?(stream_class.event_common_context_field_class) : false) : true,
-        stream_class.default_clock_class ? (not (@default_clock_class.nil? or stream_class.default_clock_class.nil?)) : true ].all?
+      _attrs_match?([:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class], self, stream_class)
     end
 
     def get_args(stream_class)
@@ -375,10 +391,7 @@ module Babeltrace2Gen
     end
 
     def match?(event)
-      [ @parent.match?(event.parent),
-        event.name ? (@name ? @name.match?(event.name) : false) : true,
-        event.specific_context_field_class ? (@specific_context_field_class ? @specific_context_field_class.match?(event.specific_context_field_class) : false) : true,
-        event.payload_field_class ? (@payload_field_class ? @payload_field_class.match?(event.payload_field_class) : false) : true ].all?
+      [:parent, :name, :specific_context_field_class, :payload_field_class].map { |s| _match?(self.send(s), event.send(s)) }.all?
     end
 
     def get_args(event)
@@ -739,8 +752,7 @@ module Babeltrace2Gen
     end
 
     def match?(member)
-      [ member.name ? (@name ? @name.match?(member.name) : false) : true,
-        member.field_class ? (@field_class ? @field_class.match?(member.field_class) : false) : true ].all?
+      _attrs_match?([:name, :field_class], self, member)    
     end
 
     def get_arg()
@@ -940,16 +952,16 @@ module Babeltrace2Gen
       end
     end
 
-    def match?(enviorment)
-      enviorment.entries.all? do |rhs_entry| 
+    def match?(environment)
+      environment.entries.all? do |rhs_entry| 
         entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
         raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length < 2
         entries_matched.length == 1
       end
     end
 
-    def get_args(enviorment)
-      enviorment.entries.filter { |entry| entry.extract }.map do |rhs_entry| 
+    def get_args(environment)
+      environment.entries.filter { |entry| entry.extract }.map do |rhs_entry| 
         entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
         raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length == 1
         entries_matched
