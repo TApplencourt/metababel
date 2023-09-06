@@ -8,6 +8,12 @@ def _attrs_match?(attrs, obj, match_obj)
   attrs.map { |s| _match?(obj.send(s), match_obj.send(s)) }.all?
 end
 
+def _one_match?(objs, match_obj)
+  matches = objs.find_all { |obj| obj.match?(match_obj) }
+  raise "'#{match_obj}' must match one member, '#{ matches.length }' matched." unless matches.length < 2
+  matches.length == 1
+end
+
 class NilClass
   def match?(obj)
     self == obj
@@ -816,11 +822,7 @@ module Babeltrace2Gen
     end
 
     def match?(field_class)
-      field_class.members.all? do |rhs_member| 
-        members_matched = @members.find_all { |member| member.match?(rhs_member) }
-        raise "rhs_member '#{rhs_member}' must match one member '#{ members_matched.length }' matched." unless members_matched.length < 2
-        members_matched.length == 1
-      end
+      field_class.members.all? { |match_member| _one_match?(@members, match_member) }
     end
 
     def get_args(field_class)
@@ -953,11 +955,7 @@ module Babeltrace2Gen
     end
 
     def match?(environment)
-      environment.entries.all? do |rhs_entry| 
-        entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
-        raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length < 2
-        entries_matched.length == 1
-      end
+      environment.entries.all? { |match_entry| _one_match?(@entries, match_entry)}
     end
 
     def get_args(environment)
