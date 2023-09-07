@@ -1,44 +1,5 @@
 require_relative 'bt2_generator_utils'
-
-# Required to properly parse the result of match?
-# when applied on native data types such as String.
-def normalize(obj)
-  obj == true ? [] : (obj == false ? nil : obj)
-end 
-
-def equivament?(obj, match_obj)
-  match_obj ? (obj ? normalize(obj.match?(match_obj)) : nil) : []
-end
-
-def attrs_match?(attrs, obj, match_obj)
-  attrs.map { |s| equivament?(obj.send(s), match_obj.send(s)) }
-end
-
-# This function applied only at Struct and Enviroment level to extract
-# entries (in env) and members (in struct). Since match? only return 
-# nil and []. if a member or an entry match we need to return the 
-# member or entry itself, thats why obj.match?(match_obj) ? obj : nil, 
-# as [] is evaluated to true.
-def each_match_once?(objs, match_objs)
-  args_matched = match_objs.map do |match_obj|
-    # 'obj.match?(match_obj)' will return all the matches made in the member nested attributes.
-    # if all the attributes match, the member is returned, otherwise nil.
-    matches = objs.map { |obj| obj.match?(match_obj).flatten.all? ? obj : nil }
-    raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched." unless matches.length < 2
-    matches
-  end.flatten(1)
-
-  # We need to valudate that one function argument is not matched by two different match expressions.
-  raise "Argument matched multiple times '#{args_matched.uniq.map(&:get_arg)}' in match expression '#{match_objs.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
-  args_matched
-end
-
-class Hash
-  # Special case for ':default_clock_class: {}''
-  def match?(obj)
-    self == obj ? [] : nil
-  end
-end
+require_relative 'bt2_matching_utils'
 
 module HashRefinements
   refine Hash do
@@ -62,12 +23,6 @@ module Babeltrace2Gen
   module BTUtils
     def bt_set_conditionally(guard)
       yield guard ? 'BT_TRUE' : 'BT_FALSE' unless guard.nil?
-    end
-  end
-
-  module BTMatch
-    def match?(field_class)
-      equivament?(self.type, field_class.type)
     end
   end
 
@@ -120,6 +75,7 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
     include BTUtils
+    include BTMatchUtils
     extend BTFromH
 
     attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id, :match
@@ -167,6 +123,7 @@ module Babeltrace2Gen
     include BTUtils
     include BTPrinter
     include BTLocator
+    include BTMatchUtils
     extend BTFromH
   
     attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
@@ -286,6 +243,7 @@ module Babeltrace2Gen
   class BTEventClass
     include BTPrinter
     include BTLocator
+    include BTMatchUtils
     extend BTFromH
 
     attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
@@ -406,6 +364,7 @@ module Babeltrace2Gen
   class BTFieldClass
     include BTLocator
     include BTPrinter
+    include BTMatchUtils
     using HashRefinements
 
     attr_accessor :cast_type, :type
@@ -740,6 +699,7 @@ module Babeltrace2Gen
   end
 
   class BTMemberClass
+    include BTMatchUtils
     include BTLocator
   
     attr_reader :parent, :name, :field_class, :extract
