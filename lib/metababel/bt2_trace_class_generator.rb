@@ -1,28 +1,43 @@
 require_relative 'bt2_generator_utils'
 
+def normalize(obj)
+  obj == true ? [] : (obj == false ? nil : obj)
+end 
+
 def _match?(obj, match_obj)
-  match_obj ? (obj ? obj.match?(match_obj) : false) : true
+  match_obj ? (obj ? normalize(obj.match?(match_obj)) : nil) : []
 end
 
 def _attrs_match?(attrs, obj, match_obj)
-  attrs.map { |s| _match?(obj.send(s), match_obj.send(s)) }.all?
+  attrs.map { |s| _match?(obj.send(s), match_obj.send(s)) }
 end
 
-def _one_match?(objs, match_obj)
-  matches = objs.find_all { |obj| obj.match?(match_obj) }
-  raise "'#{match_obj}' must match one member, '#{ matches.length }' matched." unless matches.length < 2
-  matches.length == 1
+# This function applied only at Struct and Enviroment level to extract
+# entries (in env) and members (in struct). Since match? only return 
+# nil and []. if a member or an entry match we need to return the 
+# member or entry itself, thats why obj.match?(match_obj) ? obj : nil, 
+# as [] is evaluated to true.
+def _every_match_once?(objs, match_objs)
+  args_matched = match_objs.map do |match_obj|
+    matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }.compact
+    raise "'#{match_obj}' must match only one member, '#{ matches.length }' matched." unless matches.length == 1
+    matches
+  end.flatten
+
+  # We need to valudate that one function argument is not matched by two different match expressions.
+  raise "Argument matched multiple times '#{args_matched.uniq.map(&:get_arg)}' in match expression '#{match_objs.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
+  args_matched
 end
 
 class NilClass
   def match?(obj)
-    self == obj
+    self == obj ? [] : nil
   end
 end
 
 class Hash
   def match?(obj)
-    self == obj
+    self == obj ? [] : nil
   end
 end
 
@@ -53,8 +68,7 @@ module Babeltrace2Gen
 
   module BTMatch
     def match?(field_class)
-      [ field_class.type ? (self.type ? self.type.match?(field_class.type) : false) : true,
-        field_class.cast_type ? (self.cast_type ? self.cast_type.match?(field_class.cast_type) : false) : true ].all?
+      _match?(self.type, field_class.type)
     end
   end
 
@@ -147,10 +161,6 @@ module Babeltrace2Gen
 
     def match?(trace_class)
       _match?(@environment, trace_class.environment)
-    end
-
-    def get_args(trace_class)
-      trace_class.environment ? @environment.get_args(trace_class.environment) : []
     end
   end
 
@@ -272,14 +282,6 @@ module Babeltrace2Gen
     def match?(stream_class)
       _attrs_match?([:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class], self, stream_class)
     end
-
-    def get_args(stream_class)
-      [ @parent.get_args(stream_class.parent),
-        stream_class.packet_context_field_class ? @packet_context_field_class.get_args(stream_class.packet_context_field_class) : nil,
-        stream_class.event_common_context_field_class ? @event_common_context_field_class.get_args(stream_class.event_common_context_field_class) : nil,
-        # _timestamp should be updated in the upstream.c.erb template if changed.
-        stream_class.default_clock_class ? (stream_class.default_clock_class.fetch(:extract, true) ? GeneratedArg.new('int64_t', '_timestamp') : nil) : nil ].flatten.compact
-    end
   end
 
   class BTEventClass
@@ -397,15 +399,8 @@ module Babeltrace2Gen
     end
 
     def match?(event)
-      [:parent, :name, :specific_context_field_class, :payload_field_class].map { |s| _match?(self.send(s), event.send(s)) }.all?
-    end
-
-    def get_args(event)
-      [ @parent.get_args(event.parent),
-        # _event_class_name should be updated in the upstream.c.erb template if changed.
-        event.name ? GeneratedArg.new('const char *', '_event_class_name') : nil,
-        event.specific_context_field_class ? @specific_context_field_class.get_args(event.specific_context_field_class) : nil,
-        event.payload_field_class ? @payload_field_class.get_args(event.payload_field_class) : nil ].flatten.compact
+      match = _attrs_match?([:parent, :name, :specific_context_field_class, :payload_field_class], self, event).flatten
+      match.include?(nil) ? nil : match
     end
   end
 
@@ -822,15 +817,7 @@ module Babeltrace2Gen
     end
 
     def match?(field_class)
-      field_class.members.all? { |match_member| _one_match?(@members, match_member) }
-    end
-
-    def get_args(field_class)
-      field_class.members.filter { |member| member.extract }.map do |rhs_member| 
-        members_matched = @members.find_all { |member| member.match?(rhs_member) }
-        raise "rhs_member '#{rhs_member}' must match one member '#{ members_matched.length }' matched." unless members_matched.length == 1
-        members_matched
-      end.flatten.map(&:get_arg)
+      _every_match_once?(@members, field_class.members)
     end
   end
 
@@ -955,15 +942,7 @@ module Babeltrace2Gen
     end
 
     def match?(environment)
-      environment.entries.all? { |match_entry| _one_match?(@entries, match_entry)}
-    end
-
-    def get_args(environment)
-      environment.entries.filter { |entry| entry.extract }.map do |rhs_entry| 
-        entries_matched = @entries.find_all { |entry| entry.match?(rhs_entry) }
-        raise "rhs_entry '#{rhs_entry}' must match one entry, but '#{ entries_matched.length }' matched." unless entries_matched.length == 1
-        entries_matched
-      end.flatten.map(&:get_arg)
+      _every_match_once?(@entries, environment.entries)
     end
   end
 
@@ -1002,8 +981,7 @@ module Babeltrace2Gen
     end
 
     def match?(entry)
-      [ entry.name ? (self.name ? self.name.match?(entry.name) : false) : true,
-        entry.type ? (self.type ? self.type.match?(entry.type) : false) : true ].all?
+      _attrs_match?([:name, :type], self, entry)
     end
 
     def get_arg()
