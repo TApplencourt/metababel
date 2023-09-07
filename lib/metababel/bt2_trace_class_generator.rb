@@ -75,8 +75,11 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
     include BTUtils
+    include BTMatch
     include BTMatchUtils
     extend BTFromH
+
+    @@bt_match_attrs = [:environment]
 
     attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id, :match
 
@@ -113,18 +116,17 @@ module Babeltrace2Gen
         end
       end
     end
-
-    def match?(trace_class)
-      equivament?(@environment, trace_class.environment)
-    end
   end
 
   class BTStreamClass
     include BTUtils
     include BTPrinter
     include BTLocator
+    include BTMatch
     include BTMatchUtils
     extend BTFromH
+
+    @@bt_match_attrs = [:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class]
   
     attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
                 :id, :name, :get_getter
@@ -234,17 +236,16 @@ module Babeltrace2Gen
         event_common_context_field_class.get_getter(variable: field, arg_variables: arg_variables)
       end
     end
-
-    def match?(stream_class)
-      attrs_match?([:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class], self, stream_class)
-    end
   end
 
   class BTEventClass
     include BTPrinter
     include BTLocator
+    include BTMatch
     include BTMatchUtils
     extend BTFromH
+
+    @@bt_match_attrs = [:parent, :name, :specific_context_field_class, :payload_field_class]
 
     attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
 
@@ -354,18 +355,16 @@ module Babeltrace2Gen
         @payload_field_class.get_getter(variable: field, arg_variables: arg_variables)
       end
     end
-
-    def match?(event)
-      match = attrs_match?([:parent, :name, :specific_context_field_class, :payload_field_class], self, event).flatten
-      match.include?(nil) ? nil : match.map(&:get_arg)
-    end
   end
 
   class BTFieldClass
     include BTLocator
     include BTPrinter
+    include BTMatch
     include BTMatchUtils
     using HashRefinements
+
+    @@bt_match_attrs = [:type, :cast_type]
 
     attr_accessor :cast_type, :type
 
@@ -448,10 +447,6 @@ module Babeltrace2Gen
       cast_func = @cast_type ? "(#{self.class.instance_variable_get(:@bt_type)})" : ''
       pr "#{bt_func_get}(#{field}, #{variable});"
     end
-
-    def match?(field_class)
-      raise NotImplementedError, self.class
-    end
   end
 
   class BTFieldClass::Default < BTFieldClass
@@ -488,7 +483,7 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Integer < BTFieldClass
-    include BTMatch
+    # include BTMatch
     attr_reader :field_value_range, :preferred_display_base
 
     def initialize(parent:, field_value_range: nil, preferred_display_base: nil)
@@ -530,7 +525,6 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Real < BTFieldClass
-    include BTMatch
   end
 
   class BTFieldClass::Real::SinglePrecision < BTFieldClass::Real
@@ -586,7 +580,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
-    include BTMatch
+    # include BTMatch
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
@@ -699,8 +693,11 @@ module Babeltrace2Gen
   end
 
   class BTMemberClass
+    include BTMatch
     include BTMatchUtils
     include BTLocator
+
+    @@bt_match_attrs = [:name, :field_class]
   
     attr_reader :parent, :name, :field_class, :extract
 
@@ -709,10 +706,6 @@ module Babeltrace2Gen
       @name = name
       @field_class = BTFieldClass.from_h(self, field_class)
       @extract = extract
-    end
-
-    def match?(member)
-      attrs_match?([:name, :field_class], self, member)    
     end
 
     def get_arg()
@@ -884,6 +877,7 @@ module Babeltrace2Gen
   class BTEnvironmentClass
     include BTPrinter
     include BTLocator
+    include BTMatchUtils
     extend BTFromH
     attr_reader :parent, :entries
 
@@ -907,7 +901,11 @@ module Babeltrace2Gen
 
   class BTEntryClass
     include BTPrinter
+    include BTMatch
+    include BTMatchUtils
     using HashRefinements
+
+    @@bt_match_attrs = [:name, :type]
 
     attr_accessor :type
   
@@ -937,10 +935,6 @@ module Babeltrace2Gen
       bt_func_get = self.class.instance_variable_get(:@bt_func)
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
       pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
-    end
-
-    def match?(entry)
-      attrs_match?([:name, :type], self, entry)
     end
 
     def get_arg()
