@@ -1,15 +1,17 @@
 require_relative 'bt2_generator_utils'
 
+# Required to properly parse the result of match?
+# when applied on native data types such as String.
 def normalize(obj)
   obj == true ? [] : (obj == false ? nil : obj)
 end 
 
-def _match?(obj, match_obj)
+def equivament?(obj, match_obj)
   match_obj ? (obj ? normalize(obj.match?(match_obj)) : nil) : []
 end
 
-def _attrs_match?(attrs, obj, match_obj)
-  attrs.map { |s| _match?(obj.send(s), match_obj.send(s)) }
+def attrs_match?(attrs, obj, match_obj)
+  attrs.map { |s| equivament?(obj.send(s), match_obj.send(s)) }
 end
 
 # This function applied only at Struct and Enviroment level to extract
@@ -17,25 +19,22 @@ end
 # nil and []. if a member or an entry match we need to return the 
 # member or entry itself, thats why obj.match?(match_obj) ? obj : nil, 
 # as [] is evaluated to true.
-def _every_match_once?(objs, match_objs)
+def each_match_once?(objs, match_objs)
   args_matched = match_objs.map do |match_obj|
-    matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }.compact
-    raise "'#{match_obj}' must match only one member, '#{ matches.length }' matched." unless matches.length == 1
+    # 'obj.match?(match_obj)' will return all the matches made in the member nested attributes.
+    # if all the attributes match, the member is returned, otherwise nil.
+    matches = objs.map { |obj| obj.match?(match_obj).flatten.all? ? obj : nil }
+    raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched." unless matches.length < 2
     matches
-  end.flatten
+  end.flatten(1)
 
   # We need to valudate that one function argument is not matched by two different match expressions.
   raise "Argument matched multiple times '#{args_matched.uniq.map(&:get_arg)}' in match expression '#{match_objs.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
   args_matched
 end
 
-class NilClass
-  def match?(obj)
-    self == obj ? [] : nil
-  end
-end
-
 class Hash
+  # Special case for ':default_clock_class: {}''
   def match?(obj)
     self == obj ? [] : nil
   end
@@ -68,7 +67,7 @@ module Babeltrace2Gen
 
   module BTMatch
     def match?(field_class)
-      _match?(self.type, field_class.type)
+      equivament?(self.type, field_class.type)
     end
   end
 
@@ -160,7 +159,7 @@ module Babeltrace2Gen
     end
 
     def match?(trace_class)
-      _match?(@environment, trace_class.environment)
+      equivament?(@environment, trace_class.environment)
     end
   end
 
@@ -280,7 +279,7 @@ module Babeltrace2Gen
     end
 
     def match?(stream_class)
-      _attrs_match?([:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class], self, stream_class)
+      attrs_match?([:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class], self, stream_class)
     end
   end
 
@@ -399,8 +398,8 @@ module Babeltrace2Gen
     end
 
     def match?(event)
-      match = _attrs_match?([:parent, :name, :specific_context_field_class, :payload_field_class], self, event).flatten
-      match.include?(nil) ? nil : match
+      match = attrs_match?([:parent, :name, :specific_context_field_class, :payload_field_class], self, event).flatten
+      match.include?(nil) ? nil : match.map(&:get_arg)
     end
   end
 
@@ -753,7 +752,7 @@ module Babeltrace2Gen
     end
 
     def match?(member)
-      _attrs_match?([:name, :field_class], self, member)    
+      attrs_match?([:name, :field_class], self, member)    
     end
 
     def get_arg()
@@ -817,7 +816,7 @@ module Babeltrace2Gen
     end
 
     def match?(field_class)
-      _every_match_once?(@members, field_class.members)
+      each_match_once?(@members, field_class.members)
     end
   end
 
@@ -942,7 +941,7 @@ module Babeltrace2Gen
     end
 
     def match?(environment)
-      _every_match_once?(@entries, environment.entries)
+      each_match_once?(@entries, environment.entries)
     end
   end
 
@@ -981,7 +980,7 @@ module Babeltrace2Gen
     end
 
     def match?(entry)
-      _attrs_match?([:name, :type], self, entry)
+      attrs_match?([:name, :type], self, entry)
     end
 
     def get_arg()
