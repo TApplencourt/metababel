@@ -949,7 +949,6 @@ module Babeltrace2Gen
 
   class BTEntryClass::String < BTEntryClass
     extend BTFromH
-    attr_reader :parent, :name, :extract
 
     @bt_type = 'const char*'
     @bt_func = 'bt_value_string_get'
@@ -957,7 +956,6 @@ module Babeltrace2Gen
 
   class BTEntryClass::IntegerSigned < BTEntryClass
     extend BTFromH
-    attr_reader :parent, :name, :extract
 
     @bt_type = 'int64_t'
     @bt_func = 'bt_value_integer_signed_get'
