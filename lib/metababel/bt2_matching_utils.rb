@@ -10,7 +10,7 @@ module Babeltrace2Gen
     def match?(obj)
       match_attrs = self.class.class_variable_get(:@@bt_match_attrs)
       match = attrs_match?(match_attrs, self, obj).flatten
-      match.include?(nil) ? nil : match.map(&:get_arg)
+      match.include?(nil) ? nil : match.map { |m| m.respond_to?(:get_arg) ? m.get_arg : m }
     end
   end
 
@@ -38,9 +38,11 @@ module Babeltrace2Gen
       args_matched = match_objs.map do |match_obj|
       # 'obj.match?(match_obj)' will return all the matches made in the member nested attributes.
       # if all the attributes match, the member is returned, otherwise nil.
-      matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }
+      matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }.compact
       raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched." unless matches.length < 2
-      matches
+      
+      # If not argument matched, then nil. 
+      matches.empty? ? nil : matches
       end.flatten(1)
 
       # We need to valudate that one function argument is not matched by two different match expressions.
