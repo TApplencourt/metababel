@@ -932,6 +932,7 @@ module Babeltrace2Gen
     end
 
     def get_getter(trace:, arg_variables:)
+      var_name = self.name
       arg_variables.fetch_append('outputs', self.get_arg)
       bt_func_get = self.class.instance_variable_get(:@bt_func)
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
