@@ -408,7 +408,7 @@ module Babeltrace2Gen
 
       # Since key (:type) can be a string or a regex, we store 
       # the type into the field to apply string.math?(regex)
-      # in place of comparing fields objects.
+      # in place of comparing field objects.
       fc.type = key
       fc.cast_type = cast_type if cast_type
       fc
@@ -907,31 +907,32 @@ module Babeltrace2Gen
 
     @@bt_match_attrs = [:name, :type]
 
-    attr_accessor :type
-  
+    attr_accessor :name, :type, :extract
+
+    def initialize(parent:, name:, type:, extract: true)
+      @parent = parent
+      @name = name
+      @type = type
+      @extract = extract
+    end
+
     def self.from_h(parent, model)
-      key = model.delete(:type)
+      type = model.fetch(:type, nil)
       is_match_model = parent.rec_trace_class.match
 
-      raise "No type in #{model}" unless key or is_match_model
+      raise "No type in #{model}" unless type or is_match_model
 
       h = { 'string' => BTEntryClass::String,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
 
-      raise "Type #{key} not supported" unless h.include?(key) or is_match_model
+      raise "Type #{type} not supported" unless h.include?(type) or is_match_model
 
-      ec = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
-      ec.type = key
+      ec = h.include?(type) ? h[type].from_h(parent, model) : BTEntryClass::Default.from_h(parent, model)
       ec
     end
 
     def get_getter(trace:, arg_variables:)
-      var_name = self.name
-      var_type = self.class.instance_variable_get(:@bt_type)
-
-      var = GeneratedArg.new(var_type, var_name)
-      arg_variables.fetch_append('outputs', var)
-
+      arg_variables.fetch_append('outputs', self.get_arg)
       bt_func_get = self.class.instance_variable_get(:@bt_func)
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
       pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
@@ -942,18 +943,16 @@ module Babeltrace2Gen
     end
   end
 
+  class BTEntryClass::Default < BTEntryClass
+    extend BTFromH
+  end
+
   class BTEntryClass::String < BTEntryClass
     extend BTFromH
     attr_reader :parent, :name, :extract
 
     @bt_type = 'const char*'
     @bt_func = 'bt_value_string_get'
-
-    def initialize(parent:, name:, extract: true)
-      @parent = parent
-      @name = name
-      @extract = extract
-    end
   end
 
   class BTEntryClass::IntegerSigned < BTEntryClass
@@ -962,11 +961,5 @@ module Babeltrace2Gen
 
     @bt_type = 'int64_t'
     @bt_func = 'bt_value_integer_signed_get'
-
-    def initialize(parent:, name:, extract: true)
-      @parent = parent
-      @name = name
-      @extract = extract
-    end
   end
 end
