@@ -1,4 +1,3 @@
-:match: true
 :stream_classes:
 - :name: ^sc$
   :default_clock_class: {}

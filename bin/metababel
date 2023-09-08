@@ -304,7 +304,9 @@ callback_types = ['generic']
 trace_matcher = Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
 
 if options.key?(:callbacks)
-  trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, YAML.load_file(options[:callbacks]))
+  data = YAML.load_file(options[:callbacks])
+  data[:match] = true
+  trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
   callback_types += trace_matcher.map_event_classes do |e|
     raise "Key ':callback_name' required when matching events." unless e.callback_name
 

@@ -1,4 +1,3 @@
-:match: true
 :environment:
   :entries:
   - :name: ^entry_1$
