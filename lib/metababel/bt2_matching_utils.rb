@@ -10,6 +10,7 @@ module Babeltrace2Gen
     def match?(obj)
       match_attrs = self.class.class_variable_get(:@@bt_match_attrs)
       match = attrs_match?(match_attrs, self, obj).flatten
+      # forward nil value if encountered.
       match.include?(nil) ? nil : match.map { |m| m.respond_to?(:get_arg) ? m.get_arg : m }
     end
   end
@@ -47,7 +48,9 @@ module Babeltrace2Gen
 
       # We need to valudate that one function argument is not matched by two different match expressions.
       raise "Argument matched multiple times '#{args_matched.uniq.map(&:get_arg)}' in match expression '#{match_objs.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
-      args_matched
+
+      # Extract required args, convert non-required args to [], preserve nil if found.
+      args_matched.zip(match_objs).map {|obj, match_obj| match_obj.extract ? obj : (obj.nil? ? nil : []) }
     end
   end
 end
