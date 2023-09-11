@@ -48,7 +48,7 @@ class Hash
   end
 end
 
-DispatchType = Struct.new(:name, :args, :id) do
+DispatchType = Struct.new(:name, :args, :id, :matched_dispatchers) do
   def name_sanitized
     sanitize(name)
   end
@@ -116,16 +116,15 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
-    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic')
 
-    Dispatcher.new(
-      e.name, arg_variables.fetch('outputs', []),
-      body, index_stream_class, index_event_class,
-      default_clock_class,
-      arg_variables.fetch('outputs_allocated', []),
-      [dispatch_type],
-      e
+    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
+    dispatcher = Dispatcher.new(
+      e.name, evt_args, body, index_stream_class, index_event_class,default_clock_class,
+      arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
     )
+    dispatch_type.matched_dispatchers << dispatcher
+
+    dispatcher
   end
 
   trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
@@ -149,22 +148,13 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
     dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if (default_clock_class ? default_clock_class.fetch(:extract, true) : false)
     dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_type_args += signatures.pop
+    dispatch_type = DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
     matched_dispatchers.each do |dispatcher|
-      dispatcher.dispatch_types << DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}")
+      dispatcher.dispatch_types << dispatch_type
     end
   end
 
-  dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }
-  dispatchers.each do |dispatcher|
-    dispatcher.dispatch_types.each do |dispatch_type|
-      dispatcher_types_to_dispatchers[dispatch_type] << dispatcher
-    end
-  end
-
-  d = { dispatchers: dispatchers,
-        dispatcher_types_to_dispatchers: dispatcher_types_to_dispatchers,
-        callback_types: callback_types,
-        event_name: event_name }
+  d = { dispatchers: dispatchers, event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)

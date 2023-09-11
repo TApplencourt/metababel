@@ -9,7 +9,7 @@ typedef void(dispatcher_t)(callbacks_t *callbacks, common_data_t *common_data,
                            const bt_message *upstream_message);
 
 <%# The Function who register the callbacks to the dispatcher %>
-<% dispatcher_types_to_dispatchers.keys.each do |dispatch_type| %>
+<% dispatchers.map(&:dispatch_types).flatten.uniq.each do |dispatch_type| %>
 typedef void <%= dispatch_type.name_sanitized %>_callback_f(
     void *btx_handle,
     void *
