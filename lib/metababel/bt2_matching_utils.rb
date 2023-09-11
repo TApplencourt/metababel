@@ -1,6 +1,6 @@
 module HashRefinements
   refine Hash do
-    # Special case for emty hash {} in ':default_clock_class: {}'.
+    # Special case for empty hash {} in ':default_clock_class: {}'.
     def match?(obj)
       self == obj ? [] : nil
     end
@@ -45,11 +45,11 @@ module Babeltrace2Gen
       matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }.compact
       raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched." unless matches.length < 2
       
-      # If not argument matched, then nil (no matched argument).
+      # If not argument matched, then nil.
       matches.empty? ? nil : matches
       end.flatten(1)
 
-      # We need to valudate that one function argument is not matched by two different match expressions.
+      # We need to validate that one function argument is not matched by two different match expressions.
       raise "Argument matched multiple times '#{args_matched.uniq.map(&:get_arg)}' in match expression '#{match_objs.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
 
       # Extract required args, convert non-required args to [], preserve nil if found.
