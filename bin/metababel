@@ -133,6 +133,8 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
       [dispatcher, extracted_args] if extracted_args
     end
 
+    raise "No event matched '#{em.callback_name}', at least one matching event required." unless not dispatchers_to_extracted_args.empty?
+
     matched_dispatchers, signatures = dispatchers_to_extracted_args.transpose
 
     # Verify same signature
@@ -303,8 +305,6 @@ if options.key?(:callbacks)
     "matching_#{sanitize(e.callback_name)}"
   end
 end
-
-pp callback_types
 
 d[:callback_types] = callback_types
 
