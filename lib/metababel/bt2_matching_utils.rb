@@ -10,10 +10,7 @@ end
 module Babeltrace2Gen
   module BTMatch
     def match?(obj)
-      match_attrs = self.class.class_variable_get(:@@bt_match_attrs)
-      match = attrs_match?(match_attrs, self, obj).flatten
-      # forward nil value if encountered; ortherwise, trasnform returned args if not transformed yet.
-      match.include?(nil) ? nil : match.map { |m| m.respond_to?(:get_arg) ? m.get_arg : m }
+      attrs_match?(self.class.class_variable_get(:@@bt_match_attrs), self, obj)
     end
   end
 
@@ -29,31 +26,32 @@ module Babeltrace2Gen
       match_obj ? (obj ? normalize(obj.match?(match_obj)) : nil) : []
     end
 
+    # Return [] or [GenArg,...] if all attrs match, nil otherwise.
     def attrs_match?(attrs, obj, match_obj)
-      attrs.map { |s| equivament?(obj.send(s), match_obj.send(s)) }
+      match = attrs.map { |s| equivament?(obj.send(s), match_obj.send(s)) }.flatten
+      match.include?(nil) ? nil : match
     end
 
-    # This function applied only at Struct and Enviroment level to extract
-    # entries (in env) and members (in struct). Since match? only return 
-    # nil and []. if a member or an entry match we need to return the 
-    # member or entry itself, thats why obj.match?(match_obj) ? obj : nil, 
-    # as [] is evaluated to true.
+    # Return [] or [GenArg,..] iff every member is matched uniquelly, nil otherwise.
     def each_match_once?(objs, match_objs)
       args_matched = match_objs.map do |match_obj|
-      # 'obj.match?(match_obj)' will return all the matches made in the member nested attributes.
-      # if all the attributes match, the member is returned, otherwise nil.
-      matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }.compact
-      raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched." unless matches.length < 2
-      
-      # If not argument matched, then nil.
-      matches.empty? ? nil : matches
-      end.flatten(1)
+        matches = objs.map { |obj| obj.match?(match_obj) ? obj : nil }.compact
 
-      # We need to validate that one function argument is not matched by two different match expressions.
+        # Check that one match_obj only match cero or one member.
+        raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched." unless matches.length < 2
+
+        # If not argument matched, then nil; otherwise, return the matched member.
+        matches.pop
+      end
+
+      # Check that member is not matched by two different match_objs.
       raise "Argument matched multiple times '#{args_matched.uniq.map(&:get_arg)}' in match expression '#{match_objs.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
 
-      # Extract required args, convert non-required args to [], preserve nil if found.
-      args_matched.zip(match_objs).map {|obj, match_obj| match_obj.extract ? obj : (obj.nil? ? nil : []) }
+      # If at least one match_obj did not match a member, then nil.
+      return nil if args_matched.include?(nil)
+
+      # Extract required args.
+      args_matched.zip(match_objs).filter_map {|obj, match_obj| obj.get_arg if match_obj.extract }
     end
   end
 end
