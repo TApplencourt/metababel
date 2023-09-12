@@ -156,7 +156,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
     end
   end
 
-  d = { dispatchers: dispatchers, event_name: event_name }
+  d = { dispatchers: dispatchers, dispatch_types: dispatchers.map(&:dispatch_types).flatten.uniq, event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
