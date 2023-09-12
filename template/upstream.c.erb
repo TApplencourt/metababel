@@ -83,7 +83,7 @@ void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
 }
 
 <% end %>
-<% dispatchers.map(&:dispatch_types).flatten.uniq.each do |dispatch_type| %>
+<% dispatch_types.each do |dispatch_type| %>
 void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
     void *btx_handle,
     <%= dispatch_type.name_sanitized %>_callback_f *callback) {
