@@ -9,4 +9,3 @@
   :event_classes:
   - :name: ^event$
     :callback_name: usr_event
-

@@ -26,7 +26,7 @@ module Babeltrace2Gen
       match_obj ? (obj ? normalize(obj.match?(match_obj)) : nil) : []
     end
 
-    # Return [] or [GenArg,...] if all attrs match, nil otherwise.
+    # Return [] or [GenArg,...] iff all attrs match, nil otherwise.
     def attrs_match?(attrs, obj, match_obj)
       match = attrs.map { |s| equivament?(obj.send(s), match_obj.send(s)) }.flatten
       match.include?(nil) ? nil : match
