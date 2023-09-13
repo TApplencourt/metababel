@@ -76,7 +76,6 @@ module Babeltrace2Gen
     include BTPrinter
     include BTUtils
     include BTMatch
-    include BTMatchUtils
     extend BTFromH
 
     @@bt_match_attrs = [:environment]
@@ -123,7 +122,6 @@ module Babeltrace2Gen
     include BTPrinter
     include BTLocator
     include BTMatch
-    include BTMatchUtils
     extend BTFromH
 
     @@bt_match_attrs = [:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class]
@@ -242,7 +240,6 @@ module Babeltrace2Gen
     include BTPrinter
     include BTLocator
     include BTMatch
-    include BTMatchUtils
     extend BTFromH
 
     @@bt_match_attrs = [:parent, :name, :specific_context_field_class, :payload_field_class]
@@ -361,7 +358,6 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
     include BTMatch
-    include BTMatchUtils
     using HashRefinements
 
     @@bt_match_attrs = [:type, :cast_type]
@@ -455,7 +451,6 @@ module Babeltrace2Gen
 
   class BTFieldClass::Bool < BTFieldClass
     extend BTFromH
-    include BTMatch
 
     @bt_type = 'bt_bool'
     @bt_func = 'bt_field_bool_%s_value'
@@ -483,7 +478,6 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Integer < BTFieldClass
-    # include BTMatch
     attr_reader :field_value_range, :preferred_display_base
 
     def initialize(parent:, field_value_range: nil, preferred_display_base: nil)
@@ -694,7 +688,6 @@ module Babeltrace2Gen
 
   class BTMemberClass
     include BTMatch
-    include BTMatchUtils
     include BTLocator
 
     @@bt_match_attrs = [:name, :field_class]
@@ -714,9 +707,12 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Structure < BTFieldClass
+    include BTMatchMembers
     extend BTFromH
 
     attr_reader :members
+
+    @@bt_match_attrs = [:members]
 
     def initialize(parent:, members: [])
       @parent = parent
@@ -766,10 +762,6 @@ module Babeltrace2Gen
           m.field_class.get_getter(field: field, arg_variables: arg_variables)
         end
       end
-    end
-
-    def match?(field_class)
-      each_match_once?(@members, field_class.members)
     end
   end
 
@@ -877,9 +869,11 @@ module Babeltrace2Gen
   class BTEnvironmentClass
     include BTPrinter
     include BTLocator
-    include BTMatchUtils
+    include BTMatchMembers
     extend BTFromH
     attr_reader :parent, :entries
+
+    @@bt_match_attrs = [:entries]
 
     def initialize(parent:, entries: [])
       @parent = parent
@@ -893,16 +887,11 @@ module Babeltrace2Gen
         end
       end
     end
-
-    def match?(environment)
-      each_match_once?(@entries, environment.entries)
-    end
   end
 
   class BTEntryClass
     include BTPrinter
     include BTMatch
-    include BTMatchUtils
     using HashRefinements
 
     @@bt_match_attrs = [:name, :type]
