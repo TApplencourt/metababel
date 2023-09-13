@@ -106,7 +106,7 @@ end
 def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_types)
   event_name = 'event'
 
-  dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  dispatchers_to_dispatch_type = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -124,10 +124,12 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
     )
     dispatch_type.matched_dispatchers << dispatcher
 
-    dispatcher
+    [dispatcher, dispatch_type]
   end
 
-  trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+  dispatchers, dispatch_types = dispatchers_to_dispatch_type.transpose
+
+  dispatch_types += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
     dispatchers_to_extracted_args = dispatchers.filter_map do |dispatcher|
       extracted_args = dispatcher.event.match?(em)
       [dispatcher, extracted_args] if extracted_args
@@ -151,12 +153,15 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
     dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_type_args += signatures.pop
     dispatch_type = DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
+
     matched_dispatchers.each do |dispatcher|
       dispatcher.dispatch_types << dispatch_type
     end
+
+    dispatch_type
   end
 
-  d = { dispatchers: dispatchers, dispatch_types: dispatchers.map(&:dispatch_types).flatten.uniq, event_name: event_name }
+  d = { dispatchers: dispatchers, dispatch_types: dispatch_types, event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
