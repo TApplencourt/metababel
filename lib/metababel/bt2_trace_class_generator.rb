@@ -250,7 +250,9 @@ module Babeltrace2Gen
       @callback_name = callback_name
 
       @parent = parent
-      @name = name
+      @name = name 
+      raise "Name is mandatory for BTEventClass" if name.nil? and !rec_trace_class.match
+
       if specific_context_field_class
         @specific_context_field_class = BTFieldClass.from_h(self,
                                                             specific_context_field_class)
