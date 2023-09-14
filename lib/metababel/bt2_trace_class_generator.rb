@@ -695,9 +695,9 @@ module Babeltrace2Gen
   
     attr_reader :parent, :name, :field_class, :extract
 
-    def initialize(parent:, name:, field_class:, extract: true)
+    def initialize(parent:, name: nil, field_class:, extract: true)
       @parent = parent
-      @name = name
+      @name = name # Name can be nil in the matching callbacks
       @field_class = BTFieldClass.from_h(self, field_class)
       @extract = extract
     end

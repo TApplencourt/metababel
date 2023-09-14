@@ -132,13 +132,11 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model, callback_
 
     matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
       extracted_args = dispatcher.event.match?(em)
-      p ["extracted_args", extracted_args]
-      [dispatcher, extracted_args.filter { |a| a unless a.is_a?(TrueClass) } ] unless extracted_args.include?(false)
+      [dispatcher, extracted_args.filter { |a| a.is_a?(Babeltrace2Gen::GeneratedArg) } ] if extracted_args.all? 
     end.transpose
 
     raise "No event matched '#{em.callback_name}', at least one matching event required." unless not matched_dispatchers.empty?
 
-    p signatures
     # Verify same signature
     unique_signatures = signatures.uniq
     unless unique_signatures.size == 1

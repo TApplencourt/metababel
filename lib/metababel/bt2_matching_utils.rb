@@ -7,20 +7,18 @@ module HashRefinements
   end
 end
 
+# What the inherentency should do
+def find_bt_match_attrs(c)
+  a = c.instance_variable_get(:@bt_match_attrs)
+  a ? a : find_bt_match_attrs(c.superclass)
+end
+
+
 module Babeltrace2Gen
   using HashRefinements
 
   module BTMatch
-
-  def find_bt_match_attrs(c)
-      a = c.instance_variable_get(:@bt_match_attrs)
-      if a.nil?
-        find_bt_match_attrs(c.superclass)
-      else
-        a
-      end
-  end
-
+  
     def match?(match_obj)
       attrs_syms = find_bt_match_attrs(self.class)
       attrs_syms.map do |attr_sym|
@@ -33,12 +31,10 @@ module Babeltrace2Gen
 
   module BTMatchMembers
     def match?(match_obj)
-      attr_sym = self.class.instance_variable_get(:@bt_match_attrs)[0]
+      attr_sym =  find_bt_match_attrs(self.class)[0]
       self_members, match_members = self.send(attr_sym), match_obj.send(attr_sym)
 
       args_matched = match_members.filter_map do |match_obj|
-        # Exist in the model, but doesn't exist in matching, but we will not extract it, so true
-        next true if match_obj.nil?
         matches = self_members.filter { |member| member.match?(match_obj).all? }
         # Check that one match_obj only match zero or one member.
         raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched #{matches.map(&:name)}." unless matches.length < 2 
