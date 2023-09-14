@@ -52,10 +52,6 @@ DispatchType = Struct.new(:name, :args, :id, :matched_dispatchers) do
   def name_sanitized
     sanitize(name)
   end
-
-  def signature
-    "(#{args.join(', ')})"
-  end
 end
 
 Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
