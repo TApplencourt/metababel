@@ -8,10 +8,11 @@ module HashRefinements
 end
 
 module Babeltrace2Gen
+  using HashRefinements
   module BTMatch
     def match?(match_obj)
       attrs_syms = self.class.class_variable_get(:@@bt_match_attrs)
-      attrs_syms.map do |attr_sym| 
+      attrs_syms.map do |attr_sym|
         match_attr = match_obj.send(attr_sym)
         self_attr = self.send(attr_sym)
         match_attr.nil? ? true : (self_attr.nil? ? false : self_attr.match?(match_attr))
@@ -25,6 +26,7 @@ module Babeltrace2Gen
       self_members, match_members = self.send(attr_sym), match_obj.send(attr_sym)
 
       args_matched = match_members.filter_map do |match_obj|
+        false if match_obj.nil?
         matches = self_members.filter_map { |member| member if member.match?(match_obj).all? }
         # Check that one match_obj only match zero or one member.
         raise "Match expression '#{match_obj.name}' must match only one member, '#{ matches.length }' matched #{matches.map(&:name)}." unless matches.length < 2 
@@ -32,14 +34,11 @@ module Babeltrace2Gen
         matches.pop.get_arg unless matches.empty?
       end
 
-      # Check that member is not matched by two different match_objs.
       raise "Members '#{args_matched.uniq.map(&:name)}' matched multiple times in '#{match_members.map(&:name)}'. " unless args_matched.uniq.length == args_matched.length
       
-      # If at least one match_obj did not match a member, then nil.
       return false unless args_matched.uniq.length == match_members.length
       
-      # Extract required args.
-      args_matched.zip(match_members).filter_map {|obj, match_obj| obj if match_obj.extract }
+      args_matched.zip(match_members).map {|obj, match_obj| match_obj.extract ? obj : true}
     end
   end
 end
