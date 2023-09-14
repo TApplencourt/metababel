@@ -573,7 +573,6 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
-    # include BTMatch
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
