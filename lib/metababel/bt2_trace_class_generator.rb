@@ -370,6 +370,7 @@ module Babeltrace2Gen
 
     def self.from_h(parent, model)
       key = model.delete(:type)
+      # /!\ Recursion
       is_match_model = parent.rec_trace_class.match
 
       raise "No type in #{model}" unless key or is_match_model
@@ -394,9 +395,6 @@ module Babeltrace2Gen
         'variant' => BTFieldClass::Variant
       }.freeze
 
-      # using 'parent.rec_trace_class.match' is not optimum at all, since we recurse back the tree
-      # per field type parsed. But we can pay the price to not add a new 'match' key in every
-      # field type initializer.
       raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) or is_match_model
 
       cast_type = model.delete(:cast_type)
