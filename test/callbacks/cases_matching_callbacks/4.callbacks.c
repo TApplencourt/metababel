@@ -1,7 +1,7 @@
 #include <metababel/metababel.h>
 
 static void usr_callback(
-  void *btx_handle, void *usr_data, int64_t _timestamp) {
+  void *btx_handle, void *usr_data, int64_t _timestamp, const char *event_class_name) {
   btx_push_message_event(btx_handle, _timestamp);
 }
 

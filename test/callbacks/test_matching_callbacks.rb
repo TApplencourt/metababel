@@ -1,8 +1,6 @@
 require 'base_test'
 
-class TestMatchingCallbackSubsetOfMembersInDifferentOrder < Test::Unit::TestCase
-  # The matching extract only a subset of the members (in a different order from the set)
-
+class TestMatchingConflictingSignatures < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -10,20 +8,13 @@ class TestMatchingCallbackSubsetOfMembersInDifferentOrder < Test::Unit::TestCase
   def self.startup
     @btx_components = [
       {
-        btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/1.btx_log.txt'
-      },
-      {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/1.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/1.callbacks.c'
+        btx_metababel_generation_fail: true
       }
     ]
-
-    @btx_output_validation = './test/callbacks/cases_matching_callbacks/1.btx_log.txt'
   end
 end
 
@@ -183,9 +174,7 @@ class TestMatchingSimilarMembers < Test::Unit::TestCase
   end
 end
 
-class TestCallMatchingCallbackWithEventName < Test::Unit::TestCase
-  # Validate the _event_class_name is passed properly in matchinig callbacks.
-
+class TestExludeEventNameInMatching < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -202,11 +191,9 @@ class TestCallMatchingCallbackWithEventName < Test::Unit::TestCase
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/8.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/8.callbacks.c'
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/8.callbacks.c',
       }
     ]
-
-    @btx_output_validation = './test/callbacks/cases_matching_callbacks/8.btx_log.txt'
   end
 end
 
@@ -231,5 +218,31 @@ class TestCallMatchingCallbackWithEnvironmentVariables < Test::Unit::TestCase
         btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.sink_callbacks.c'
       }
     ]
+  end
+end
+
+class TestMatchingEventNameArgNameArgTypeAndArgCastType < Test::Unit::TestCase
+
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/10.btx_upstream_model.yaml',
+        btx_log_path: './test/callbacks/cases_matching_callbacks/10.btx_log.in'
+      },
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/10.btx_upstream_model.yaml',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/10.btx_downstream_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/10.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/10.callbacks.c'
+      }
+    ]
+
+    @btx_output_validation = './test/callbacks/cases_matching_callbacks/10.btx_log.out'
   end
 end

@@ -1,4 +1,6 @@
-- :name: usr_event
-  :regex: /event/
-  :args:
-  - _timestamp
+:stream_classes:
+- :name: ^sc$
+  :default_clock_class: {}
+  :event_classes:
+  - :name: ^event$
+    :callback_name: usr_event

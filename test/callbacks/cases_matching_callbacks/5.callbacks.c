@@ -19,7 +19,7 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
   free(data);
 }
 
-static void usr_event_1_2_callback(void *btx_handle, void *usr_data) {
+static void usr_event_1_2_callback(void *btx_handle, void *usr_data, const char *event_class_name) {
   ((data_t *)usr_data)->usr_event_count += 1;
 }
 

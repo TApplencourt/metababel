@@ -1,11 +1,11 @@
 :stream_classes:
-- :name: ^sc$
+- :name: sc
   :event_classes:
-  - :name: ^event_[1-2]$
-    :callback_name: usr_event
+  - :name: event_4
     :payload_field_class:
       :type: structure
       :members:
-      - :name: dummy
+      - :name: pf_1
         :field_class:
           :type: integer_unsigned
+          :cast_type: uint64_t

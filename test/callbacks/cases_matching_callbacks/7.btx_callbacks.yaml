@@ -1,5 +1,9 @@
-- :name: usr_event
-  :regex: /event/
-  :args:
-    - /^dum.*/
-
+:stream_classes:
+- :name: ^sc$
+  :event_classes:
+  - :name: event
+    :callback_name: usr_event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: ^dum.*

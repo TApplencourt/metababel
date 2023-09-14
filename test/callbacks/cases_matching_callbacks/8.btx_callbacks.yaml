@@ -1,4 +1,4 @@
-- :name: usr_event
-  :regex: /event/
-  :args:
-    - _event_class_name
+:stream_classes:
+- :name: ^sc$
+  :event_classes:
+  - :callback_name: usr_event

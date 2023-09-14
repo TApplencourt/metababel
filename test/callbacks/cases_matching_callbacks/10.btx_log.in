@@ -1,0 +1,3 @@
+event_1: { pf_1 = 0 }
+event_2: { pf_1 = 0 }
+event_3: { pf_1 = "0" }

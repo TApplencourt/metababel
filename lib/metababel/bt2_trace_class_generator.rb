@@ -1,4 +1,5 @@
 require_relative 'bt2_generator_utils'
+require_relative 'bt2_matching_utils'
 
 module HashRefinements
   refine Hash do
@@ -74,13 +75,18 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
     include BTUtils
+    include BTMatch
     extend BTFromH
 
-    attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id
+    @bt_match_attrs = [:environment]
 
-    def initialize(parent:, stream_classes:, environment: nil, assigns_automatic_stream_class_id: nil)
+    attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id, :match
+
+    def initialize(parent:, stream_classes:, environment: nil, assigns_automatic_stream_class_id: nil, match: false)
       raise if parent
 
+      # match indicate if this model will be used to match another.
+      @match = match
       @parent = nil
       @assigns_automatic_stream_class_id = assigns_automatic_stream_class_id
       @environment = BTEnvironmentClass.from_h(self, environment) if environment
@@ -94,7 +100,7 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:, self_component:)
-      raise NotImplementedError, "':enviorment' keyword not supported in downstream model" if self.environment
+      raise NotImplementedError, "':environment' keyword not supported in downstream model" if self.environment
 
       pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
@@ -115,7 +121,11 @@ module Babeltrace2Gen
     include BTUtils
     include BTPrinter
     include BTLocator
+    include BTMatch
     extend BTFromH
+
+    @bt_match_attrs = [:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class]
+  
     attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
                 :id, :name, :get_getter
 
@@ -229,12 +239,20 @@ module Babeltrace2Gen
   class BTEventClass
     include BTPrinter
     include BTLocator
+    include BTMatch
     extend BTFromH
-    attr_reader :name, :specific_context_field_class, :payload_field_class
 
-    def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil)
+    @bt_match_attrs = [:parent, :name, :specific_context_field_class, :payload_field_class]
+
+    attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
+
+    def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil, callback_name: nil)
+      @callback_name = callback_name
+
       @parent = parent
-      @name = name
+      @name = name 
+      raise "Name is mandatory for BTEventClass" if name.nil? and !rec_trace_class.match
+
       if specific_context_field_class
         @specific_context_field_class = BTFieldClass.from_h(self,
                                                             specific_context_field_class)
@@ -341,9 +359,12 @@ module Babeltrace2Gen
   class BTFieldClass
     include BTLocator
     include BTPrinter
+    include BTMatch
     using HashRefinements
 
-    attr_accessor :cast_type
+    @bt_match_attrs = [:type, :cast_type]
+
+    attr_accessor :cast_type, :type
 
     def initialize(parent:)
       @parent = parent
@@ -351,7 +372,10 @@ module Babeltrace2Gen
 
     def self.from_h(parent, model)
       key = model.delete(:type)
-      raise "No type in #{model}" unless key
+      # /!\ Recursion
+      is_match_model = parent.rec_trace_class.match
+
+      raise "No type in #{model}" unless key or is_match_model
 
       h = {
         'bool' => BTFieldClass::Bool,
@@ -373,10 +397,15 @@ module Babeltrace2Gen
         'variant' => BTFieldClass::Variant
       }.freeze
 
-      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key)
+      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) or is_match_model
 
       cast_type = model.delete(:cast_type)
-      fc = h[key].from_h(parent, model)
+      fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
+
+      # Since key (:type) can be a string or a regex, we store 
+      # the type into the field to apply string.math?(regex)
+      # in place of comparing field objects.
+      fc.type = key
       fc.cast_type = cast_type if cast_type
       fc
     end
@@ -416,6 +445,10 @@ module Babeltrace2Gen
     end
   end
 
+  class BTFieldClass::Default < BTFieldClass
+    extend BTFromH
+  end
+
   class BTFieldClass::Bool < BTFieldClass
     extend BTFromH
 
@@ -445,6 +478,7 @@ module Babeltrace2Gen
   end
 
   class BTFieldClass::Integer < BTFieldClass
+
     attr_reader :field_value_range, :preferred_display_base
 
     def initialize(parent:, field_value_range: nil, preferred_display_base: nil)
@@ -463,7 +497,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Integer::Unsigned < BTFieldClass::Integer
     extend BTFromH
-
+    
     @bt_type = 'uint64_t'
     @bt_func = 'bt_field_integer_unsigned_%s_value'
 
@@ -653,20 +687,32 @@ module Babeltrace2Gen
   end
 
   class BTMemberClass
+    include BTMatch
     include BTLocator
-    attr_reader :parent, :name, :field_class
 
-    def initialize(parent:, name:, field_class:)
+    @bt_match_attrs = [:name, :field_class]
+  
+    attr_reader :parent, :name, :field_class, :extract
+
+    def initialize(parent:, name: nil, field_class:, extract: true)
       @parent = parent
-      @name = name
+      @name = name # Name can be nil in the matching callbacks
       @field_class = BTFieldClass.from_h(self, field_class)
+      @extract = extract
+    end
+
+    def get_arg()
+      GeneratedArg.new(@field_class.class.instance_variable_get(:@bt_type), @name)
     end
   end
 
   class BTFieldClass::Structure < BTFieldClass
+    include BTMatchMembers
     extend BTFromH
 
     attr_reader :members
+
+    @bt_match_attrs = [ :members ]
 
     def initialize(parent:, members: [])
       @parent = parent
@@ -822,8 +868,12 @@ module Babeltrace2Gen
 
   class BTEnvironmentClass
     include BTPrinter
+    include BTLocator
+    include BTMatchMembers
     extend BTFromH
     attr_reader :parent, :entries
+
+    @bt_match_attrs = [:entries]
 
     def initialize(parent:, entries: [])
       @parent = parent
@@ -841,54 +891,63 @@ module Babeltrace2Gen
 
   class BTEntryClass
     include BTPrinter
+    include BTMatch
     using HashRefinements
 
+    @bt_match_attrs = [:name, :type]
+
+    attr_accessor :name, :type, :extract
+
+    def initialize(parent:, name:, type:, extract: true)
+      @parent = parent
+      @name = name
+      @type = type
+      @extract = extract
+    end
+
     def self.from_h(parent, model)
-      key = model.delete(:type)
-      raise "No type in #{model}" unless key
+      type = model.fetch(:type, nil)
+      is_match_model = parent.rec_trace_class.match
+
+      raise "No type in #{model}" unless type or is_match_model
 
       h = { 'string' => BTEntryClass::String,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
-      raise "Type #{key} not supported" unless h.include?(key)
-      h[key].from_h(parent, model)
+
+      raise "Type #{type} not supported" unless h.include?(type) or is_match_model
+
+      ec = h.include?(type) ? h[type].from_h(parent, model) : BTEntryClass::Default.from_h(parent, model)
+      ec
     end
 
     def get_getter(trace:, arg_variables:)
       var_name = self.name
-      var_type = self.class.instance_variable_get(:@bt_type)
-
-      var = GeneratedArg.new(var_type, var_name)
-      arg_variables.fetch_append('outputs', var)
-
+      arg_variables.fetch_append('outputs', self.get_arg)
       bt_func_get = self.class.instance_variable_get(:@bt_func)
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
       pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
     end
+
+    def get_arg()
+      GeneratedArg.new(self.class.instance_variable_get(:@bt_type), self.name)
+    end
+  end
+
+  class BTEntryClass::Default < BTEntryClass
+    extend BTFromH
   end
 
   class BTEntryClass::String < BTEntryClass
     extend BTFromH
-    attr_reader :parent, :name
 
     @bt_type = 'const char*'
     @bt_func = 'bt_value_string_get'
-
-    def initialize(parent:, name:)
-      @parent = parent
-      @name = name
-    end
   end
 
   class BTEntryClass::IntegerSigned < BTEntryClass
     extend BTFromH
-    attr_reader :parent, :name
 
     @bt_type = 'int64_t'
     @bt_func = 'bt_value_integer_signed_get'
-
-    def initialize(parent:, name:)
-      @parent = parent
-      @name = name
-    end
   end
 end

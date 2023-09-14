@@ -23,12 +23,11 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   <%= "\n" + dispatcher.body %>
   <% end %>
   <% if dispatcher.default_clock_class %>
-  int64_t _timestamp;
   const bt_clock_snapshot *clock_snapshot =
       bt_message_event_borrow_default_clock_snapshot_const(upstream_message);
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
-  <%# event_class_name, only required when at least one matching callback match it as argument.  %>
+  <%# event_class_name, only required when there is at least one matching callback for this event.  %>
   <% if dispatcher.dispatch_types.map(&:args).flatten.any? { |arg| arg.name == '_event_class_name' } %>
   const char *_event_class_name = "<%= dispatcher.name_sanitized %>";
   <% end %>
@@ -84,11 +83,11 @@ void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
 }
 
 <% end %>
-<% dispatcher_types_to_dispatchers.each do |dispatch_type, dispatchers| %>
+<% dispatch_types.each do |dispatch_type| %>
 void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
     void *btx_handle,
     <%= dispatch_type.name_sanitized %>_callback_f *callback) {
-  <% dispatchers.each do |dispatcher| %>
+  <% dispatch_type.matched_dispatchers.each do |dispatcher| %>
   btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
       btx_handle, "<%= dispatch_type.id %>", (void *)callback);
   <% end %>
@@ -99,7 +98,7 @@ void btx_delete_dispatchers(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
-    <% callback_types.each do |name| %>
+    <% dispatch_types.map(&:id).uniq.each do |name| %>
     if (current->callbacks-><%= name %>)
       utarray_free(current->callbacks-><%= name %>);
     <% end %>

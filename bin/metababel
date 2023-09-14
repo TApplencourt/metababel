@@ -23,36 +23,6 @@ def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
 
-def btx_match?(str, pattern_or_str)
-  # String beginning and ending in '/' are treated as regexp.
-  is_regex = pattern_or_str.match?(%r{^/.+/$})
-  is_regex ? eval(pattern_or_str).match?(str) : str == pattern_or_str
-end
-
-def btx_find_matching_arg(match_arg, evt_args)
-  matching_args = evt_args.find_all { |evt_arg| btx_match?(evt_arg.name, match_arg) }
-  unless matching_args.length < 2
-    raise "match_arg '#{match_arg}' matching multiple event_args '#{matching_args.join(', ')}'."
-  end
-
-  matching_args.pop
-end
-
-def btx_get_matching_args(evt_name, evt_args, match_name, match_args)
-  # If doesn't match the name, we can shortcut
-  return nil unless btx_match?(evt_name, match_name)
-
-  matching_args = match_args.map { |m| btx_find_matching_arg(m, evt_args) }
-  # Check that all match_args have found a match
-  return nil unless matching_args.all?
-  # An event args match multiple match args
-  unless matching_args.length == matching_args.uniq.length
-    raise "event_args '#{matching_args.map(&:name).join(', ')}' matched by multiple match_args '#{match_args.join(', ')}'."
-  end
-
-  matching_args
-end
-
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -78,7 +48,7 @@ class Hash
   end
 end
 
-DispatchType = Struct.new(:name, :args, :id) do
+DispatchType = Struct.new(:name, :args, :id, :matched_dispatchers) do
   def name_sanitized
     sanitize(name)
   end
@@ -86,7 +56,8 @@ end
 
 Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
                         :index_event_class, :default_clock_class,
-                        :args_to_free, :dispatch_types) do
+                        :args_to_free, :dispatch_types,
+                        :event) do
   def name_sanitized
     sanitize(name)
   end
@@ -111,7 +82,13 @@ class Babeltrace2Gen::BTTraceClass
       s.event_classes.map.with_index do |e, index_event_class|
         yield(e, index_stream_class, index_event_class, s.default_clock_class)
       end
-    end.flatten
+    end.flatten(1)
+  end
+
+  def map_event_classes(&block)
+    @stream_classes.map do |s|
+      s.event_classes.map(&block)
+    end.flatten(1)
   end
 end
 
@@ -122,51 +99,65 @@ end
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
+def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   event_name = 'event'
 
-  dispatchers = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
     end
 
-    # Automatic event dispatcher
+    # automatic event dispatcher
     evt_args = []
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
-    dispatch_types = [DispatchType.new(e.name_sanitized, evt_args, 'generic')]
 
-    # User event dispatchers
-    usr_evt_args = evt_args + [GeneratedArg.new('const char *', '_event_class_name')]
-    dispatch_types += matching_dispatch_data.filter_map do |md|
-      dispatcher_evt_args = btx_get_matching_args(e.name, usr_evt_args, md[:regex], md.fetch(:args, []))
-      unless dispatcher_evt_args.nil?
-        DispatchType.new(sanitize(md[:name]), dispatcher_evt_args,
-                         "matching_#{sanitize(md[:name])}")
-      end
-    end
-
-    Dispatcher.new(
-      e.name, arg_variables.fetch('outputs', []),
-      body, index_stream_class, index_event_class,
-      default_clock_class,
-      arg_variables.fetch('outputs_allocated', []),
-      dispatch_types
+    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
+    dispatcher = Dispatcher.new(
+      e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
+      arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
     )
+    dispatch_type.matched_dispatchers << dispatcher
+
+    dispatcher
   end
 
-  dispatcher_types_to_dispatchers = Hash.new { |h, k| h[k] = [] }
-  dispatchers.each do |dispatch|
-    dispatch.dispatch_types.each do |dispatch_type|
-      dispatcher_types_to_dispatchers[dispatch_type] << dispatch
+  dispatch_types = dispatchers.flat_map(&:dispatch_types)
+  dispatch_types += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+    matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
+      extracted_args = dispatcher.event.match?(em)
+      [dispatcher, extracted_args] if extracted_args
+    end.transpose
+
+    if !matched_dispatchers or matched_dispatchers.empty?
+      raise "No event matched '#{em.callback_name}', at least one matching event required."
     end
+
+    # Verify same signature
+    unique_signatures = signatures.uniq
+    unless unique_signatures.size == 1
+      signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
+      raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
+    end
+
+    # Modify the dispatcher to add the new dispatchType
+    name_sanitized = sanitize(em.callback_name)
+    dispatch_type_args = []
+    dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class and default_clock_class.fetch(:extract, true)
+    dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
+    dispatch_type_args += signatures.pop
+    dispatch_type = DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}",
+                                     matched_dispatchers)
+
+    matched_dispatchers.each do |dispatcher|
+      dispatcher.dispatch_types << dispatch_type
+    end
+
+    dispatch_type
   end
 
-  d = { dispatchers: dispatchers,
-        dispatcher_types_to_dispatchers: dispatcher_types_to_dispatchers,
-        callback_types: callback_types,
-        event_name: event_name }
+  d = { dispatchers: dispatchers, dispatch_types: dispatch_types, event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
@@ -302,9 +293,20 @@ end
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
 erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
 
-matching_dispatch_data = options.key?(:callbacks) ? YAML.load_file(options[:callbacks]) : []
+callback_types = ['generic']
+trace_matcher = Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
 
-callback_types = matching_dispatch_data.map { |c| "matching_#{sanitize(c[:name])}" }.prepend('generic')
+if options.key?(:callbacks)
+  data = YAML.load_file(options[:callbacks])
+  data[:match] = true
+  trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
+  callback_types += trace_matcher.map_event_classes do |e|
+    raise "Key ':callback_name' required when matching events." unless e.callback_name
+
+    "matching_#{sanitize(e.callback_name)}"
+  end
+end
+
 d[:callback_types] = callback_types
 
 wrote_component(options, d, folder)
@@ -325,6 +327,6 @@ if %w[FILTER SINK].include?(options[:component_type])
     y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
   validate_model(y)
-  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, t, matching_dispatch_data, callback_types)
+  trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  wrote_event_dispatchers(folder, trace_model, trace_matcher)
 end
