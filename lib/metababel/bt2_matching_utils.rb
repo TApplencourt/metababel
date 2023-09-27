@@ -8,18 +8,12 @@ module HashRefinements
   end
 end
 
-#TODO: Inheritance should do it for us
-def find_bt_match_attrs(c)
-  a = c.instance_variable_get(:@bt_match_attrs)
-  a || find_bt_match_attrs(c.superclass)
-end
-
 module Babeltrace2Gen
   using HashRefinements
 
   module BTMatch
     def match?(match_obj)
-      attrs_syms = find_bt_match_attrs(self.class)
+      attrs_syms = self.class::BT_MATCH_ATTRS
       attrs = attrs_syms.map do |attr_sym|
         match_attr = match_obj.send(attr_sym)
         # In the model, but not in the match, assuming True
@@ -40,7 +34,7 @@ module Babeltrace2Gen
   module BTMatchMembers
     def match?(match_obj)
       # Object here have only one symbol, who cannot be nil
-      attr_sym = find_bt_match_attrs(self.class)[0]
+      attr_sym = self.class::BT_MATCH_ATTRS[0]
 
       self_members = send(attr_sym)
       match_members = match_obj.send(attr_sym)
