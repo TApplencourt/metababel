@@ -138,8 +138,6 @@ module Babeltrace2Gen
       @parent = parent
       @name = name
 
-      raise 'Two packet_context' if packet_context_field_class && packet_context
-
       # Should put assert to check for struct
       @packet_context_field_class = BTFieldClass.from_h(self, packet_context_field_class) if packet_context_field_class
 
