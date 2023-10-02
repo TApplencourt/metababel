@@ -1,0 +1,9 @@
+:stream_classes:
+- :name: sc
+  :packet_context_field_class:
+    :type: structure
+    :members:
+    - :name: dummy
+      :field_class:
+        :type: string
+  :event_classes: []
