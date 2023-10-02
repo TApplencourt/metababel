@@ -62,20 +62,20 @@ class TestSourceFilterSinkTwoEventsTwoCallbacks < Test::Unit::TestCase
   def self.startup
     @btx_components = [
       {
-          btx_component_type: 'SOURCE',
-          btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
-          btx_log_path: './test/state_machine/cases_no_missing_messages/1.btx_log.txt'
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
+        btx_log_path: './test/state_machine/cases_no_missing_messages/1.btx_log.txt'
       },
       {
-          btx_component_type: 'FILTER',
-          btx_component_upstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
-          btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
-          btx_file_usr_callbacks: './test/state_machine/cases_no_missing_messages/3.filter_callbacks.c'
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
+        btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
+        btx_file_usr_callbacks: './test/state_machine/cases_no_missing_messages/3.filter_callbacks.c'
       },
       {
-          btx_component_type: 'SINK',
-          btx_component_upstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
-          btx_file_usr_callbacks: './test/state_machine/cases_no_missing_messages/1.sink_callbacks.c'
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
+        btx_file_usr_callbacks: './test/state_machine/cases_no_missing_messages/1.sink_callbacks.c'
       }
     ]
   end
@@ -90,7 +90,7 @@ class TestStreamBeginEndMessages < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml',
+        btx_component_downstream_model: './test/state_machine/cases_no_missing_messages/1.btx_model.yaml'
       },
       {
         btx_component_type: 'FILTER',

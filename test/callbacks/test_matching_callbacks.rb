@@ -20,7 +20,7 @@ end
 
 class TestMatchingCallbackCallingOrder < Test::Unit::TestCase
   # Ensure the calling order of matching callbacks comply the same as defined in the model.
- 
+
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -65,7 +65,7 @@ class TestMatchingAndRegularEventCallbacksDispatchDifferentEvents < Test::Unit::
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/3.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/3.btx_callbacks.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/3.callbacks.c'
-      },
+      }
     ]
   end
 end
@@ -191,7 +191,7 @@ class TestExludeEventNameInMatching < Test::Unit::TestCase
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/8.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/8.callbacks.c',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/8.callbacks.c'
       }
     ]
   end
@@ -222,7 +222,6 @@ class TestCallMatchingCallbackWithEnvironmentVariables < Test::Unit::TestCase
 end
 
 class TestMatchingEventNameArgNameArgTypeAndArgCastType < Test::Unit::TestCase
-
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor

@@ -27,6 +27,7 @@ module Babeltrace2Gen
         self_attr.match?(match_attr)
       end.flatten
       return false unless attrs.all?
+
       attrs.filter { |a| a.is_a?(Babeltrace2Gen::GeneratedArg) }
     end
   end
@@ -48,6 +49,7 @@ module Babeltrace2Gen
         unless matches.length < 2
           raise "Match expression '#{match_obj.name}' must match only one member, '#{matches.length}' matched #{matches.map(&:name)}."
         end
+
         # If not argument matched, then nil; otherwise, return the matched member.
         matches.pop.get_arg unless matches.empty?
       end

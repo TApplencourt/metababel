@@ -144,7 +144,12 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     # Modify the dispatcher to add the new dispatchType
     name_sanitized = sanitize(em.callback_name)
     dispatch_type_args = []
-    dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class and default_clock_class.fetch(:extract, true)
+    if default_clock_class and default_clock_class.fetch(
+      :extract, true
+    )
+      dispatch_type_args += [GeneratedArg.new('int64_t',
+                                              '_timestamp')]
+    end
     dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_type_args += signatures.pop
     dispatch_type = DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}",

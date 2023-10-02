@@ -49,7 +49,6 @@ class TestCallTwoCallbacksForOneEvent < Test::Unit::TestCase
 end
 
 class TestCallAutomaticCallbackWithEnvironmentVariables < Test::Unit::TestCase
-
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor

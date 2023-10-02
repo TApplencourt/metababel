@@ -24,7 +24,7 @@ class TestNoPayloadField < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/2.btx_model.yaml',
+        btx_component_downstream_model: './test/model/cases_model_constructs/2.btx_model.yaml'
       }
     ]
   end
@@ -54,7 +54,7 @@ class TestCommonAndPayloadFields < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/4.btx_model.yaml',
+        btx_component_downstream_model: './test/model/cases_model_constructs/4.btx_model.yaml'
       }
     ]
   end
@@ -149,7 +149,7 @@ class TestPacketContextField < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/10.btx_model.yaml',
+        btx_component_downstream_model: './test/model/cases_model_constructs/10.btx_model.yaml'
       }
     ]
   end
