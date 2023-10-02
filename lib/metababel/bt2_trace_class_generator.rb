@@ -78,7 +78,7 @@ module Babeltrace2Gen
     include BTMatch
     extend BTFromH
 
-    @bt_match_attrs = [:environment]
+    BT_MATCH_ATTRS = [:environment]
 
     attr_reader :stream_classes, :environment, :assigns_automatic_stream_class_id, :match
 
@@ -124,7 +124,7 @@ module Babeltrace2Gen
     include BTMatch
     extend BTFromH
 
-    @bt_match_attrs = [:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class]
+    BT_MATCH_ATTRS = [:parent, :name, :packet_context_field_class, :event_common_context_field_class, :default_clock_class]
   
     attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
                 :id, :name, :get_getter
@@ -242,7 +242,7 @@ module Babeltrace2Gen
     include BTMatch
     extend BTFromH
 
-    @bt_match_attrs = [:parent, :name, :specific_context_field_class, :payload_field_class]
+    BT_MATCH_ATTRS = [:parent, :name, :specific_context_field_class, :payload_field_class]
 
     attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
 
@@ -362,7 +362,7 @@ module Babeltrace2Gen
     include BTMatch
     using HashRefinements
 
-    @bt_match_attrs = [:type, :cast_type]
+    BT_MATCH_ATTRS = [:type, :cast_type]
 
     attr_accessor :cast_type, :type
 
@@ -690,7 +690,7 @@ module Babeltrace2Gen
     include BTMatch
     include BTLocator
 
-    @bt_match_attrs = [:name, :field_class]
+    BT_MATCH_ATTRS = [:name, :field_class]
   
     attr_reader :parent, :name, :field_class, :extract
 
@@ -712,7 +712,7 @@ module Babeltrace2Gen
 
     attr_reader :members
 
-    @bt_match_attrs = [ :members ]
+    BT_MATCH_ATTRS = [:members]
 
     def initialize(parent:, members: [])
       @parent = parent
@@ -873,7 +873,7 @@ module Babeltrace2Gen
     extend BTFromH
     attr_reader :parent, :entries
 
-    @bt_match_attrs = [:entries]
+    BT_MATCH_ATTRS = [:entries]
 
     def initialize(parent:, entries: [])
       @parent = parent
@@ -894,7 +894,7 @@ module Babeltrace2Gen
     include BTMatch
     using HashRefinements
 
-    @bt_match_attrs = [:name, :type]
+    BT_MATCH_ATTRS = [:name, :type]
 
     attr_accessor :name, :type, :extract
 
