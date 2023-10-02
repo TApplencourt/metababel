@@ -179,6 +179,10 @@ module Babeltrace2Gen
       end
 
       if @packet_context_field_class
+        # Support for packets required for packet_context_field_class
+        # We do not support create_packet neither packet_beginning_default_clock_snapshot (BT_FALSE) nor packet_end_default_clock_snapshot (BT_FALSE)
+        pr "bt_stream_class_set_supports_packets(#{variable}, BT_TRUE, BT_FALSE, BT_FALSE);"
+
         var_pc = "#{variable}_pc_fc"
         scope do
           pr "bt_field_class *#{var_pc};"
