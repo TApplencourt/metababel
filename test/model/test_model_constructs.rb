@@ -9,8 +9,8 @@ class TestNoCommonNoPayloadFields < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/1.btx_model.yaml'
-      }
+        btx_component_downstream_model: './test/model/cases_model_constructs/1.btx_model.yaml',
+      },
     ]
   end
 end
@@ -24,8 +24,8 @@ class TestNoPayloadField < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/2.btx_model.yaml'
-      }
+        btx_component_downstream_model: './test/model/cases_model_constructs/2.btx_model.yaml',
+      },
     ]
   end
 end
@@ -39,8 +39,8 @@ class TestNoCommonField < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/3.btx_model.yaml'
-      }
+        btx_component_downstream_model: './test/model/cases_model_constructs/3.btx_model.yaml',
+      },
     ]
   end
 end
@@ -54,8 +54,8 @@ class TestCommonAndPayloadFields < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/4.btx_model.yaml'
-      }
+        btx_component_downstream_model: './test/model/cases_model_constructs/4.btx_model.yaml',
+      },
     ]
   end
 end
@@ -70,8 +70,8 @@ class TestNoNameForStreamClass < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/5.btx_model.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
@@ -86,8 +86,8 @@ class TestNoNameForEventClass < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/6.btx_model.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
@@ -102,8 +102,8 @@ class TestEventNameDuplicatedOnDifferentStreams < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/7.btx_model.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
@@ -118,8 +118,8 @@ class TestEventNameDuplicatedOnTheSameStream < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/8.btx_model.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
@@ -134,8 +134,8 @@ class TestUnSupportedEnvironmentInDownstreamModel < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/9.btx_model.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
@@ -149,8 +149,8 @@ class TestPacketContextField < Test::Unit::TestCase
     @btx_components = [
       {
         btx_component_type: 'SOURCE',
-        btx_component_downstream_model: './test/model/cases_model_constructs/10.btx_model.yaml'
-      }
+        btx_component_downstream_model: './test/model/cases_model_constructs/10.btx_model.yaml',
+      },
     ]
   end
 end

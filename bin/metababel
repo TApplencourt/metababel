@@ -71,9 +71,7 @@ def erb_render_and_save(vars,
   # The regex remove the lines who are not indented
   # Maybe related to `https://github.com/ruby/erb/issues/24`
   str = ERB.new(template, trim_mode: '<>').result_with_hash(vars).gsub(/^ +$\n/, '')
-  File.open(File.join(out_folder, "#{prefix}#{out_name || basename}"), 'w') do |f|
-    f.write(str)
-  end
+  File.write(File.join(out_folder, "#{prefix}#{out_name || basename}"), str)
 end
 
 class Babeltrace2Gen::BTTraceClass

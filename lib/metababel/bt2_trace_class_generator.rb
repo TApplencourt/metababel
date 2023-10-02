@@ -398,7 +398,7 @@ module Babeltrace2Gen
         'option_with_selector_field_bool' => BTFieldClass::Option::WithSelectorField::Bool,
         'option_with_selector_field_unsigned' => BTFieldClass::Option::WithSelectorField::IntegerUnsigned,
         'option_with_selector_field_signed' => BTFieldClass::Option::WithSelectorField::IntegerSigned,
-        'variant' => BTFieldClass::Variant
+        'variant' => BTFieldClass::Variant,
       }.freeze
 
       raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) or is_match_model

@@ -5,7 +5,7 @@ module Babeltrace2Gen
     INDENT_INCREMENT = '  '.freeze
 
     def pr(str)
-      @@output << INDENT_INCREMENT * @@indent << str << "\n"
+      @@output << (INDENT_INCREMENT * @@indent) << str << "\n"
     end
     module_function :pr
 

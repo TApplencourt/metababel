@@ -125,7 +125,7 @@ module Babeltrace2Gen
 
     def initialize(name, usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !usr_default_value.nil? and (!usr_default_value.is_a? Integer or !usr_default_value.between?(0, 2**64 - 1))
+      if !usr_default_value.nil? and (!usr_default_value.is_a? Integer or !usr_default_value.between?(0, (2**64) - 1))
         raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} and must be in [0,2^64-1], but provided '#{usr_default_value}'."
       end
 
