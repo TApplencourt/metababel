@@ -119,17 +119,17 @@ void btx_push_message_<%= e.name_sanitized %>(
 
   common_data_t *common_data = (common_data_t *)btx_handle;
 
-  bt_stream *stream = bt_trace_borrow_stream_by_index(
+  bt_stream *_stream = bt_trace_borrow_stream_by_index(
       common_data->downstream_trace, <%= e.index_stream_class %>);
-  bt_stream_class *stream_class = bt_stream_borrow_class(stream);
+  bt_stream_class *stream_class = bt_stream_borrow_class(_stream);
   bt_event_class *event_class = bt_stream_class_borrow_event_class_by_index(
       stream_class, <%= e.index_event_class %>);
   <% if !e.default_clock_class %>
   bt_message *message = bt_message_event_create(
-      common_data->self_message_iterator, event_class, stream);
+      common_data->self_message_iterator, event_class, _stream);
   <% else %>
   bt_message *message = bt_message_event_create_with_default_clock_snapshot(
-      common_data->self_message_iterator, event_class, stream, _timestamp);
+      common_data->self_message_iterator, event_class, _stream, _timestamp);
   <% end %>
 
   bt_event *downstream_event = bt_message_event_borrow_event(message);
