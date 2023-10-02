@@ -100,7 +100,7 @@ end
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
-  event_name = 'event'
+  event_name = '_event'
 
   dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
@@ -164,7 +164,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
 end
 
 def wrote_creates(folder, t)
-  event_name = 'event'
+  event_name = '_event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
