@@ -51,14 +51,14 @@ def parse_log(input_path)
       if timestamp
         t = Time.parse(timestamp)
         # Need to convert in nasosecond
-        ts = t.to_i * 1_000_000_000 + t.nsec
+        ts = (t.to_i * 1_000_000_000) + t.nsec
       end
 
       field_values = tail.nil? ? [] : tail.scan(REGEXT_PRETTY).flatten
 
       data = {
         name: event_name.gsub(/[^0-9A-Za-z-]/, '_'), # Should reuse metababel mangling
-        field_values: [ts, field_values].compact.flatten(1)
+        field_values: [ts, field_values].compact.flatten(1),
       }
     end
   end

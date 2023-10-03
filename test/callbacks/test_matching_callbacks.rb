@@ -12,15 +12,15 @@ class TestMatchingConflictingSignatures < Test::Unit::TestCase
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/1.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/1.btx_callbacks.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
 
 class TestMatchingCallbackCallingOrder < Test::Unit::TestCase
   # Ensure the calling order of matching callbacks comply the same as defined in the model.
- 
+
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -30,15 +30,15 @@ class TestMatchingCallbackCallingOrder < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/2.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/2.btx_log.in'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/2.btx_log.in',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/2.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/2.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/2.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/2.callbacks.c'
-      }
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/2.callbacks.c',
+      },
     ]
 
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/2.btx_log.out'
@@ -57,14 +57,14 @@ class TestMatchingAndRegularEventCallbacksDispatchDifferentEvents < Test::Unit::
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/3.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/3.btx_log.txt'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/3.btx_log.txt',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/3.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/3.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/3.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/3.callbacks.c'
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/3.callbacks.c',
       },
     ]
   end
@@ -82,15 +82,15 @@ class TestCallMatchingCallbackWithTimestamp < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/4.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/4.btx_log.txt'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/4.btx_log.txt',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/4.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/4.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/4.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/4.callbacks.c'
-      }
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/4.callbacks.c',
+      },
     ]
 
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/4.btx_log.txt'
@@ -109,15 +109,15 @@ class TestMatchingTwoEvents < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/5.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/5.btx_log.txt'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/5.btx_log.txt',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/5.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/5.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/5.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/5.callbacks.c'
-      }
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/5.callbacks.c',
+      },
     ]
   end
 end
@@ -134,15 +134,15 @@ class TestMatchingEventNameAndMembers < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/6.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/6.btx_log.in'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/6.btx_log.in',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/6.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/6.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/6.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/6.callbacks.c'
-      }
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/6.callbacks.c',
+      },
     ]
 
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/6.btx_log.out'
@@ -161,15 +161,15 @@ class TestMatchingSimilarMembers < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/7.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/7.btx_log.txt'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/7.btx_log.txt',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/7.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/7.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/7.btx_callbacks.yaml',
-        btx_metababel_generation_fail: true
-      }
+        btx_metababel_generation_fail: true,
+      },
     ]
   end
 end
@@ -184,7 +184,7 @@ class TestExludeEventNameInMatching < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/8.btx_log.txt'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/8.btx_log.txt',
       },
       {
         btx_component_type: 'FILTER',
@@ -192,7 +192,7 @@ class TestExludeEventNameInMatching < Test::Unit::TestCase
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/8.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/8.btx_callbacks.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/8.callbacks.c',
-      }
+      },
     ]
   end
 end
@@ -209,20 +209,19 @@ class TestCallMatchingCallbackWithEnvironmentVariables < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/9.btx_downstream_model.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.source_callbacks.c'
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.source_callbacks.c',
       },
       {
         btx_component_type: 'SINK',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/9.btx_upstream_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/9.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.sink_callbacks.c'
-      }
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/9.sink_callbacks.c',
+      },
     ]
   end
 end
 
 class TestMatchingEventNameArgNameArgTypeAndArgCastType < Test::Unit::TestCase
-
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -232,15 +231,15 @@ class TestMatchingEventNameArgNameArgTypeAndArgCastType < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/10.btx_upstream_model.yaml',
-        btx_log_path: './test/callbacks/cases_matching_callbacks/10.btx_log.in'
+        btx_log_path: './test/callbacks/cases_matching_callbacks/10.btx_log.in',
       },
       {
         btx_component_type: 'FILTER',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/10.btx_upstream_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/10.btx_downstream_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/10.btx_callbacks.yaml',
-        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/10.callbacks.c'
-      }
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/10.callbacks.c',
+      },
     ]
 
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/10.btx_log.out'

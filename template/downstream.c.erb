@@ -36,10 +36,10 @@ void btx_downstream_push_message(
 }
 
 bt_trace_class *
-btx_downstream_trace_class_create_rec(bt_self_component *self_component) {
-  bt_trace_class *trace_class;
+btx_downstream_trace_class_create_rec(bt_self_component *_self_component) {
+  bt_trace_class *_trace_class;
   <%= body_declarator_classes %>
-  return trace_class;
+  return _trace_class;
 }
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
@@ -121,24 +121,24 @@ void btx_push_message_<%= e.name_sanitized %>(
 
   bt_stream *_stream = bt_trace_borrow_stream_by_index(
       common_data->downstream_trace, <%= e.index_stream_class %>);
-  bt_stream_class *stream_class = bt_stream_borrow_class(_stream);
-  bt_event_class *event_class = bt_stream_class_borrow_event_class_by_index(
-      stream_class, <%= e.index_event_class %>);
+  bt_stream_class *_stream_class = bt_stream_borrow_class(_stream);
+  bt_event_class *_event_class = bt_stream_class_borrow_event_class_by_index(
+      _stream_class, <%= e.index_event_class %>);
   <% if !e.default_clock_class %>
-  bt_message *message = bt_message_event_create(
-      common_data->self_message_iterator, event_class, _stream);
+  bt_message *_message = bt_message_event_create(
+      common_data->self_message_iterator, _event_class, _stream);
   <% else %>
-  bt_message *message = bt_message_event_create_with_default_clock_snapshot(
-      common_data->self_message_iterator, event_class, _stream, _timestamp);
+  bt_message *_message = bt_message_event_create_with_default_clock_snapshot(
+      common_data->self_message_iterator, _event_class, _stream, _timestamp);
   <% end %>
 
-  bt_event *downstream_event = bt_message_event_borrow_event(message);
+  bt_event *_downstream_event = bt_message_event_borrow_event(_message);
 
   btx_set_message_<%= e.name_sanitized %>(
-      downstream_event<%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
+      _downstream_event<%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
 
-  btx_message_iterator_t *message_iterator_private_data =
+  btx_message_iterator_t *_message_iterator_private_data =
       bt_self_message_iterator_get_data(common_data->self_message_iterator);
-  btx_downstream_push_message(message_iterator_private_data, message);
+  btx_downstream_push_message(_message_iterator_private_data, _message);
 }
 <% end %>

@@ -1,14 +1,16 @@
 #include <babeltrace2/babeltrace.h>
 #include <metababel/btx_component.h>
 // stdio needed because `params_definition` contain fprintf
+<% if params_definition %>
 #include <stdio.h>
+<% end %>
 
 void btx_populate_params(common_data_t *common_data) {
-  const bt_value *params = common_data->params;
-  btx_params_t *usr_params = common_data->btx_params;
-  (void)params;
-  (void)usr_params;
+  <% if params_definition %>
+  const bt_value *_params = common_data->params;
+  btx_params_t *_usr_params = common_data->btx_params;
   <%= params_definition %>
+  <% end %>
 }
 
 <% static_callback_types.each do |e| %>
