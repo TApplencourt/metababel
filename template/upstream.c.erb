@@ -29,7 +29,7 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   <% end %>
   <%# event_class_name, only required when there is at least one matching callback for this event.  %>
   <% if dispatcher.dispatch_types.map(&:args).flatten.any? { |arg| arg.name == '_event_class_name' } %>
-  const char *_event_class_name = "<%= dispatcher.name_sanitized %>";
+  const char *_event_class_name = "<%= dispatcher.name %>";
   <% end %>
 
   // Call registered matching callbacks
