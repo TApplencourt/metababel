@@ -71,9 +71,7 @@ def erb_render_and_save(vars,
   # The regex remove the lines who are not indented
   # Maybe related to `https://github.com/ruby/erb/issues/24`
   str = ERB.new(template, trim_mode: '<>').result_with_hash(vars).gsub(/^ +$\n/, '')
-  File.open(File.join(out_folder, "#{prefix}#{out_name || basename}"), 'w') do |f|
-    f.write(str)
-  end
+  File.write(File.join(out_folder, "#{prefix}#{out_name || basename}"), str)
 end
 
 class Babeltrace2Gen::BTTraceClass
@@ -144,7 +142,12 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     # Modify the dispatcher to add the new dispatchType
     name_sanitized = sanitize(em.callback_name)
     dispatch_type_args = []
-    dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class and default_clock_class.fetch(:extract, true)
+    if default_clock_class and default_clock_class.fetch(
+      :extract, true
+    )
+      dispatch_type_args += [GeneratedArg.new('int64_t',
+                                              '_timestamp')]
+    end
     dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
     dispatch_type_args += signatures.pop
     dispatch_type = DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}",
@@ -175,7 +178,7 @@ def wrote_creates(folder, t)
   end
 
   body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
-    t.get_declarator(variable: 'trace_class', self_component: 'self_component')
+    t.get_declarator(variable: '_trace_class', self_component: '_self_component')
   end
 
   d = { body_declarator_classes: body_declarator_classes,
@@ -274,20 +277,16 @@ base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin
 folder = "#{base_folder}/metababel"
 FileUtils.mkdir_p(folder)
 
-d = { options: options }
+d = { options: options, params_declaration: nil, params_definition: nil }
 
-d[:params_declaration] = ''
-d[:params_definition] = ''
 if options.key?(:params)
   y = YAML.load_file(options[:params])
   c = Babeltrace2Gen::BTValueCLass.from_h(y)
   body = Babeltrace2Gen.context(indent: 1) do
-    c.get('usr_params', 'params')
+    c.get('_usr_params', '_params')
   end
-  d[:params_declaration] = c.get_struct_definition('params')
+  d[:params_declaration] = c.get_struct_definition('_params')
   d[:params_definition] = body
-else
-  d[:params_declaration] = 'char _dummy;'
 end
 
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')

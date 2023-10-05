@@ -37,7 +37,7 @@ def get_component_generation_command(component)
     btx_component_downstream_model: '-d',
     btx_component_upstream_model: '-u',
     btx_component_usr_header_file: '-i',
-    btx_component_callbacks: '--callbacks'
+    btx_component_callbacks: '--callbacks',
   }
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
 
@@ -163,7 +163,7 @@ module GenericTest
     # Output validation
     return unless btx_output_validation
 
-    expected_output = File.open(btx_output_validation, 'r').read
+    expected_output = File.read(btx_output_validation)
     assert_equal(expected_output, stdout_str)
   end
 end

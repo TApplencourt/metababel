@@ -8,4 +8,5 @@ Gem::Specification.new do |s|
   s.files       = Dir['{lib}/**/*.rb', 'template/*.erb', 'bin/*', 'LICENSE', '*.md']
   s.license     = 'MIT'
   s.executables = ['metababel']
+  s.metadata['rubygems_mfa_required'] = 'true'
 end
