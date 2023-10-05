@@ -436,7 +436,16 @@ module Babeltrace2Gen
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
       cast_func = @cast_type ? "(#{@cast_type})" : ''
-      pr "#{variable} = #{cast_func}#{bt_func_get}(#{field});"
+
+      if @cast_type and @cast_type.start_with?("struct ")
+        bt_type = self.class.instance_variable_get(:@bt_type)
+        raise "Unsupported '#{bt_type}' to '#{@cast_type}' casting." unless self.class == BTFieldClass::String
+
+        pr "// Dump string data to the struct."
+        pr "memcpy(&#{variable}, #{bt_func_get}(#{field}), sizeof(#{variable}));"
+      else
+        pr "#{variable} = #{cast_func}#{bt_func_get}(#{field});"
+      end
     end
 
     def get_setter(field:, arg_variables:)
@@ -449,13 +458,14 @@ module Babeltrace2Gen
         raise "Unsupported '#{@cast_type}' to '#{bt_type}' casting." unless self.class == BTFieldClass::String
 
         pr "// Dump data to a temporal string."
-        pr "char *#{field}_temp = NULL;"
+        pr "char *#{field}_temp = malloc(sizeof(pf_1));"
         pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
         pr "\n"
         pr "// Set string field with dumped data."
         pr "bt_field_string_clear(#{field});"
         pr "bt_field_string_append_status #{field}_status = bt_field_string_append_with_length(#{field}, #{field}_temp, sizeof(#{variable}));"
         pr "assert(#{field}_status == BT_FIELD_STRING_APPEND_STATUS_OK && \"Out of memory\");"
+        pr "free(#{field}_temp);"
       else
         pr "#{bt_func_get}(#{field}, #{cast_func}#{variable});"
       end
