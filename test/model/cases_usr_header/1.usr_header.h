@@ -1,1 +1,3 @@
-typedef char * usr_string_t;
+struct MyStruct {
+    char dummy[8];
+};

@@ -9,4 +9,4 @@
       - :name: pf_1
         :field_class:
           :type: string
-          :cast_type: usr_string_t
+          :cast_type: struct MyStruct
