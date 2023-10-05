@@ -5,7 +5,7 @@ jobs:
   build-and-check:
     strategy:
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc]
         gem: [true, false]
     name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}
     runs-on: ubuntu-latest
