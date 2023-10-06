@@ -255,7 +255,7 @@ module Babeltrace2Gen
 
       @parent = parent
       @name = name
-      raise 'Name is mandatory for BTEventClass' if name.nil? and !rec_trace_class.match
+      raise 'Name is mandatory for BTEventClass' if name.nil? && !rec_trace_class.match
 
       if specific_context_field_class
         @specific_context_field_class = BTFieldClass.from_h(self,
@@ -587,7 +587,7 @@ module Babeltrace2Gen
     end
 
     def get_getter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type and @cast_type.match?(/^struct [a-zA-Z_][a-zA-Z0-9_]*$/)
+      return super(field: field, arg_variables: arg_variables) unless @cast_type && @cast_type.match?(/^struct [a-zA-Z_][a-zA-Z0-9_]*$/)
 
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
@@ -597,7 +597,7 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type and @cast_type.match?(/^struct [a-zA-Z_][a-zA-Z0-9_]*$/)
+      return super(field: field, arg_variables: arg_variables) unless @cast_type && @cast_type.match?(/^struct [a-zA-Z_][a-zA-Z0-9_]*$/)
 
       variable = bt_get_variable(arg_variables).name
 
