@@ -463,7 +463,7 @@ module Babeltrace2Gen
         pr "char *#{field}_temp = malloc(sizeof(pf_1));"
         pr "assert(#{field}_temp != NULL && \"Out of memory\");"
         pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
-        pr "\n"
+        pr ""
         pr "// Set string field with dumped data."
         pr "bt_field_string_clear(#{field});"
         pr "bt_field_string_append_status #{field}_status = bt_field_string_append_with_length(#{field}, #{field}_temp, sizeof(#{variable}));"
