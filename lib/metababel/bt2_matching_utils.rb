@@ -55,7 +55,7 @@ module Babeltrace2Gen
       end
 
       # We didn't match anything
-      if args_matched.empty? or args_matched.uniq.length != match_members.length
+      if args_matched.empty? || args_matched.uniq.length != match_members.length
         return false
       # Same arguments in the model have been matched twice
       elsif args_matched.uniq.length != args_matched.length

@@ -255,7 +255,7 @@ module Babeltrace2Gen
 
       @parent = parent
       @name = name
-      raise 'Name is mandatory for BTEventClass' if name.nil? and !rec_trace_class.match
+      raise 'Name is mandatory for BTEventClass' if name.nil? && !rec_trace_class.match
 
       if specific_context_field_class
         @specific_context_field_class = BTFieldClass.from_h(self,
@@ -379,7 +379,7 @@ module Babeltrace2Gen
       # /!\ Recursion
       is_match_model = parent.rec_trace_class.match
 
-      raise "No type in #{model}" unless key or is_match_model
+      raise "No type in #{model}" unless key || is_match_model
 
       h = {
         'bool' => BTFieldClass::Bool,
@@ -401,7 +401,7 @@ module Babeltrace2Gen
         'variant' => BTFieldClass::Variant,
       }.freeze
 
-      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) or is_match_model
+      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) || is_match_model
 
       cast_type = model.delete(:cast_type)
       fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
@@ -912,12 +912,12 @@ module Babeltrace2Gen
       type = model.fetch(:type, nil)
       is_match_model = parent.rec_trace_class.match
 
-      raise "No type in #{model}" unless type or is_match_model
+      raise "No type in #{model}" unless type || is_match_model
 
       h = { 'string' => BTEntryClass::String,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
 
-      raise "Type #{type} not supported" unless h.include?(type) or is_match_model
+      raise "Type #{type} not supported" unless h.include?(type) || is_match_model
 
       h.include?(type) ? h[type].from_h(parent, model) : BTEntryClass::Default.from_h(parent, model)
     end

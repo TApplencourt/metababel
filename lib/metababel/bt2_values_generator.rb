@@ -92,7 +92,7 @@ module Babeltrace2Gen
 
     def initialize(name, usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !usr_default_value.nil? and !%w[BT_TRUE BT_FALSE].include? usr_default_value
+      if !usr_default_value.nil? && !%w[BT_TRUE BT_FALSE].include?(usr_default_value)
         raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} (BT_TRUE or BT_FALSE) but provided '#{usr_default_value}'."
       end
 
@@ -109,7 +109,7 @@ module Babeltrace2Gen
     def initialize(name, usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
       # Every object that can be converted to string is being supported.
-      if !usr_default_value.nil? and !usr_default_value.respond_to?(:to_s)
+      if !usr_default_value.nil? && !usr_default_value.respond_to?(:to_s)
         raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} but provided '#{usr_default_value}'."
       end
 
@@ -125,7 +125,7 @@ module Babeltrace2Gen
 
     def initialize(name, usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !usr_default_value.nil? and (!usr_default_value.is_a? Integer or !usr_default_value.between?(0, (2**64) - 1))
+      if !usr_default_value.nil? && (!usr_default_value.is_a? Integer || !usr_default_value.between?(0, (2**64) - 1))
         raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} and must be in [0,2^64-1], but provided '#{usr_default_value}'."
       end
 
