@@ -24,6 +24,10 @@ module Babeltrace2Gen
     def bt_set_conditionally(guard)
       yield guard ? 'BT_TRUE' : 'BT_FALSE' unless guard.nil?
     end
+
+    def is_cast_to_struct?
+      @cast_type && @cast_type.match?(/^struct \w+$/)
+    end
   end
 
   module BTLocator
@@ -445,7 +449,7 @@ module Babeltrace2Gen
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'set'
       variable = bt_get_variable(arg_variables).name
       cast_func = @cast_type ? "(#{self.class.instance_variable_get(:@bt_type)})" : ''
-      pr "#{bt_func_get}(#{field}, #{variable});"
+      pr "#{bt_func_get}(#{field}, #{cast_func}#{variable});"
     end
   end
 
@@ -578,12 +582,40 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
+    include BTUtils
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
 
     def get_declarator(trace_class:, variable:)
       pr "#{variable} = bt_field_class_string_create(#{trace_class});"
+    end
+
+    def get_getter(field:, arg_variables:)
+      return super(field: field, arg_variables: arg_variables) unless is_cast_to_struct?
+
+      bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
+      variable = bt_get_variable(arg_variables).name
+
+      pr "// Dump string data to the struct."
+      pr "memcpy(&#{variable}, #{bt_func_get}(#{field}), sizeof(#{variable}));"
+    end
+
+    def get_setter(field:, arg_variables:)
+      return super(field: field, arg_variables: arg_variables) unless is_cast_to_struct?
+
+      variable = bt_get_variable(arg_variables).name
+
+      pr "// Dump data to a temporal string."
+      pr "char *#{field}_temp = malloc(sizeof(pf_1));"
+      pr "assert(#{field}_temp != NULL && \"Out of memory\");"
+      pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
+      pr ""
+      pr "// Set string field with dumped data."
+      pr "bt_field_string_clear(#{field});"
+      pr "bt_field_string_append_status #{field}_status = bt_field_string_append_with_length(#{field}, #{field}_temp, sizeof(#{variable}));"
+      pr "assert(#{field}_status == BT_FIELD_STRING_APPEND_STATUS_OK && \"Out of memory\");"
+      pr "free(#{field}_temp);"
     end
   end
 
