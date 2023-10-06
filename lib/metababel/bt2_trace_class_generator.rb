@@ -151,7 +151,7 @@ module Babeltrace2Gen
       @assigns_automatic_event_class_id = assigns_automatic_event_class_id
       @event_classes = event_classes.collect do |ec|
         if ec[:id].nil? != (@assigns_automatic_event_class_id.nil? || @assigns_automatic_event_class_id.nil)
-          raise 'Incorect id scheme'
+          raise 'Incorrect id scheme'
         end
 
         BTEventClass.from_h(self, ec)
@@ -202,7 +202,7 @@ module Babeltrace2Gen
           pr "bt_field_class_put_ref(#{var_ecc});"
         end
       end
-      # Need to do is afert packet an devent_common_context because it can refer members to those
+      # Need to do is after common_context because it can refer members to those
       bt_set_conditionally(@assigns_automatic_event_class_id) do |v|
         pr "bt_stream_class_set_assigns_automatic_event_class_id(#{variable}, #{v});"
       end
@@ -223,7 +223,7 @@ module Babeltrace2Gen
       pr "bt_stream_class_put_ref(#{variable});"
     end
 
-    # The getters code generated from event_common_context_field_class do not include
+    # The getters code generated from event_common_context_field_class does not include
     # the event variable name used by the getters. As we do not know the variable
     # name that should be generated, we can not put it directly in the template,
     # since, if the code generation generates another name we must update the
@@ -255,7 +255,7 @@ module Babeltrace2Gen
 
       @parent = parent
       @name = name
-      raise 'Name is mandatory for BTEventClass' if name.nil? and !rec_trace_class.match
+      raise 'Name is mandatory for BTEventClass' if name.nil? && !rec_trace_class.match
 
       if specific_context_field_class
         @specific_context_field_class = BTFieldClass.from_h(self,
@@ -267,7 +267,7 @@ module Babeltrace2Gen
     end
 
     def get_declarator(trace_class:, variable:, stream_class:)
-      # Store the variable name for instrospection purpose (PATH)
+      # Store the variable name for introspection purposes (PATH)
       @variable = variable
       if @id
         pr "#{variable} = bt_event_class_create_with_id(#{stream_class}, #{@id});"
@@ -379,7 +379,7 @@ module Babeltrace2Gen
       # /!\ Recursion
       is_match_model = parent.rec_trace_class.match
 
-      raise "No type in #{model}" unless key or is_match_model
+      raise "No type in #{model}" unless key || is_match_model
 
       h = {
         'bool' => BTFieldClass::Bool,
@@ -401,13 +401,13 @@ module Babeltrace2Gen
         'variant' => BTFieldClass::Variant,
       }.freeze
 
-      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) or is_match_model
+      raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) || is_match_model
 
       cast_type = model.delete(:cast_type)
       fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
 
       # Since key (:type) can be a string or a regex, we store
-      # the type into the field to apply string.math?(regex)
+      # the type into the field to apply string.match?(regex)
       # in place of comparing field objects.
       fc.type = key
       fc.cast_type = cast_type if cast_type
@@ -912,12 +912,12 @@ module Babeltrace2Gen
       type = model.fetch(:type, nil)
       is_match_model = parent.rec_trace_class.match
 
-      raise "No type in #{model}" unless type or is_match_model
+      raise "No type in #{model}" unless type || is_match_model
 
       h = { 'string' => BTEntryClass::String,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
 
-      raise "Type #{type} not supported" unless h.include?(type) or is_match_model
+      raise "Type #{type} not supported" unless h.include?(type) || is_match_model
 
       h.include?(type) ? h[type].from_h(parent, model) : BTEntryClass::Default.from_h(parent, model)
     end
