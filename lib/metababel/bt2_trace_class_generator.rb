@@ -24,6 +24,10 @@ module Babeltrace2Gen
     def bt_set_conditionally(guard)
       yield guard ? 'BT_TRUE' : 'BT_FALSE' unless guard.nil?
     end
+
+    def is_cast_to_struct?
+      @cast_type && @cast_type.match?(/^struct \w+$/)
+    end
   end
 
   module BTLocator
@@ -578,6 +582,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::String < BTFieldClass
     extend BTFromH
+    include BTUtils
 
     @bt_type = 'const char*'
     @bt_func = 'bt_field_string_%s_value'
@@ -587,7 +592,7 @@ module Babeltrace2Gen
     end
 
     def get_getter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type && @cast_type.match?(/^struct [a-zA-Z_][a-zA-Z0-9_]*$/)
+      return super(field: field, arg_variables: arg_variables) unless is_cast_to_struct?
 
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
@@ -597,7 +602,7 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type && @cast_type.match?(/^struct [a-zA-Z_][a-zA-Z0-9_]*$/)
+      return super(field: field, arg_variables: arg_variables) unless is_cast_to_struct?
 
       variable = bt_get_variable(arg_variables).name
 
