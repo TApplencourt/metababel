@@ -461,6 +461,7 @@ module Babeltrace2Gen
 
         pr "// Dump data to a temporal string."
         pr "char *#{field}_temp = malloc(sizeof(pf_1));"
+        pr "assert(#{field}_temp != NULL && \"Out of memory\");"
         pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
         pr "\n"
         pr "// Set string field with dumped data."
