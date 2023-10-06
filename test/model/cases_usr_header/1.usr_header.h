@@ -1,3 +1,3 @@
 struct MyStruct {
-    char dummy[8];
+    char *dummy;
 };
