@@ -29,14 +29,13 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
    * not put any message into the message array */
   switch (message_iterator_private_data->state) {
   case BTX_SOURCE_STATE_INITIALIZING:
-    /* Begining of Stream */
-    btx_push_messages_stream_beginning(self_message_iterator,
-                                       message_iterator_private_data);
-
     /* Call Initialize user callback */
     btx_call_callbacks_initialize_usr_data(
         message_iterator_private_data->common_data,
         &message_iterator_private_data->common_data->usr_data);
+    /* Begining of Stream */
+    btx_push_messages_stream_beginning(self_message_iterator,
+                                       message_iterator_private_data);
     /* Call read callbacks */
     btx_call_callbacks_read_params(
         message_iterator_private_data->common_data,

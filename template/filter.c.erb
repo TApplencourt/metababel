@@ -256,15 +256,13 @@ filter_message_iterator_next_initializing(
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
       bt_self_message_iterator_get_data(self_message_iterator);
-
-  /* Begining of Stream */
-  btx_push_messages_stream_beginning(self_message_iterator,
-                                     message_iterator_private_data);
-
   /* Call Initialize user callback */
   btx_call_callbacks_initialize_usr_data(
       message_iterator_private_data->common_data,
       &message_iterator_private_data->common_data->usr_data);
+  /* Begining of Stream */
+  btx_push_messages_stream_beginning(self_message_iterator,
+                                     message_iterator_private_data);
   /* Call read callbacks */
   btx_call_callbacks_read_params(
       message_iterator_private_data->common_data,
