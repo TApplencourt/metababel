@@ -18,7 +18,6 @@ class TestPushMessagesAgain < Test::Unit::TestCase
   end
 end
 
-
 class TestPushMessagesFromInitialize < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
