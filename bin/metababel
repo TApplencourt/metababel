@@ -199,11 +199,11 @@ def wrote_component(options, d, folder)
                                      [GeneratedArg.new('void *', 'usr_data'),
                                       GeneratedArg.new('btx_params_t *', 'usr_params')])]
   # Usefull to push message
-  if ['SOURCE','FILTER'].include?(options[:component_type])
+  if %w[SOURCE FILTER].include?(options[:component_type])
     static_callbacks += [Dispatcher.new('initialize_processing',
-                                     [GeneratedArg.new('void *', 'usr_data_p')]),
-                        Dispatcher.new('finalize_processing',
-                                     [GeneratedArg.new('void *', 'usr_data')])]
+                                        [GeneratedArg.new('void *', 'usr_data_p')]),
+                         Dispatcher.new('finalize_processing',
+                                        [GeneratedArg.new('void *', 'usr_data')])]
   end
 
   if options[:component_type] == 'SOURCE'
