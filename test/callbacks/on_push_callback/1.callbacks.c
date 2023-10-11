@@ -20,7 +20,8 @@ static void on_push_callback(void *btx_handle, void *usr_data, const bt_message*
     // Just forward the first message
     if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT)
         ((struct s *)(usr_data))->counter++;
-    if (((struct s *)(usr_data))->counter == 1)
+
+    if (((struct s *)(usr_data))->counter == 1 || bt_message_get_type(message) != BT_MESSAGE_TYPE_EVENT )
         btx_push_message(btx_handle, message);
 }
 

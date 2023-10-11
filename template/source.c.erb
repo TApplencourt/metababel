@@ -57,14 +57,13 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
         message_iterator_private_data->common_data,
         message_iterator_private_data->common_data->usr_data, &status);
     if (status == BTX_SOURCE_END) {
-
+      /* End of Stream */
+      btx_push_messages_stream_end(self_message_iterator,
+                                   message_iterator_private_data);
       /* Call Finalize user callback */
       btx_call_callbacks_finalize_usr_data(
           message_iterator_private_data->common_data,
           message_iterator_private_data->common_data->usr_data);
-      /* End of Stream */
-      btx_push_messages_stream_end(self_message_iterator,
-                                   message_iterator_private_data);
       message_iterator_private_data->state = BTX_SOURCE_STATE_FINALIZING;
     }
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;

@@ -125,14 +125,13 @@ static inline void
 filter_message_iterator_next_processing_reading_to_finalizing(
     bt_self_message_iterator *self_message_iterator,
     btx_message_iterator_t *message_iterator_private_data) {
+  /* End of Stream */
+  btx_push_messages_stream_end(self_message_iterator,
+                               message_iterator_private_data);
   /* Call Finalize user callback */
   btx_call_callbacks_finalize_usr_data(
       message_iterator_private_data->common_data,
       message_iterator_private_data->common_data->usr_data);
-  /* End of Stream */
-  btx_push_messages_stream_end(self_message_iterator,
-                               message_iterator_private_data);
-
   /* Transition to switch */
   message_iterator_private_data->state = BTX_FILTER_STATE_FINALIZING;
   message_iterator_private_data->processing_state =
