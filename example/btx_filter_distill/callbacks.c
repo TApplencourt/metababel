@@ -45,8 +45,8 @@ static void btx_filter_condition(void *btx_handle, void *usr_data, const char* e
 static void btx_filter_callback(void *btx_handle, void *usr_data, const char* event_class_name, int64_t timestamp) {}
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
-  btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data);
+  btx_register_callbacks_initialize_component(btx_handle, &btx_initialize_usr_data);
+  btx_register_callbacks_finalize_component(btx_handle, &btx_finalize_usr_data);
   btx_register_callbacks_read_params(btx_handle, &btx_read_params);
   btx_register_matching_callback_sc(btx_handle, &btx_filter_condition, &btx_filter_callback);
 }

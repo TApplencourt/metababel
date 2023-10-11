@@ -191,9 +191,13 @@ def wrote_creates(folder, t)
 end
 
 def wrote_component(options, d, folder)
-  static_callbacks = [Dispatcher.new('initialize_usr_data',
+  static_callbacks = [Dispatcher.new('initialize_component',
                                      [GeneratedArg.new('void **', 'usr_data_p')]),
-                      Dispatcher.new('finalize_usr_data',
+                      Dispatcher.new('finalize_component',
+                                     [GeneratedArg.new('void *', 'usr_data')]),
+                      Dispatcher.new('initialize_processing',
+                                     [GeneratedArg.new('void *', 'usr_data_p')]),
+                      Dispatcher.new('finalize_processing',
                                      [GeneratedArg.new('void *', 'usr_data')]),
                       Dispatcher.new('read_params',
                                      [GeneratedArg.new('void *', 'usr_data'),
