@@ -23,6 +23,8 @@ static void on_push_callback(void *btx_handle, void *usr_data, const bt_message*
 
     if (((struct s *)(usr_data))->counter == 1 || bt_message_get_type(message) != BT_MESSAGE_TYPE_EVENT )
         btx_push_message(btx_handle, message);
+    else
+        bt_message_put_ref(message);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
