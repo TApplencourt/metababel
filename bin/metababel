@@ -328,9 +328,9 @@ end
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
 
-  y = options[:upstreams].reduce({}) do |y, upstream|
+  y = options[:upstreams].reduce({}) do |y_, upstream|
     # Need to specialize for merging arrays
-    y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
+    y_.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
   validate_model(y)
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
