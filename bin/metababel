@@ -195,13 +195,16 @@ def wrote_component(options, d, folder)
                                      [GeneratedArg.new('void **', 'usr_data_p')]),
                       Dispatcher.new('finalize_component',
                                      [GeneratedArg.new('void *', 'usr_data')]),
-                      Dispatcher.new('initialize_processing',
-                                     [GeneratedArg.new('void *', 'usr_data_p')]),
-                      Dispatcher.new('finalize_processing',
-                                     [GeneratedArg.new('void *', 'usr_data')]),
                       Dispatcher.new('read_params',
                                      [GeneratedArg.new('void *', 'usr_data'),
                                       GeneratedArg.new('btx_params_t *', 'usr_params')])]
+  # Usefull to push message
+  if ['SOURCE','FILTER'].include?(options[:component_type])
+    static_callbacks += [Dispatcher.new('initialize_processing',
+                                     [GeneratedArg.new('void *', 'usr_data_p')]),
+                        Dispatcher.new('finalize_processing',
+                                     [GeneratedArg.new('void *', 'usr_data')])]
+  end
 
   if options[:component_type] == 'SOURCE'
     static_callbacks << Dispatcher.new('push_usr_messages',
