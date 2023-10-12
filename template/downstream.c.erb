@@ -58,7 +58,7 @@ void btx_downstream_push_message(
 
 void btx_register_on_push_callback(void *btx_handle,
                                    on_push_callback_f *callback) {
-  ((common_data_t *)btx_handle)->on_push_callback = callback;
+  ((common_data_t *)btx_handle)->on_push_callback = (void *)callback;
 }
 bt_trace_class *
 btx_downstream_trace_class_create_rec(bt_self_component *_self_component) {
