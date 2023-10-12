@@ -10,3 +10,4 @@
         :field_class:
           :type: string
           :cast_type: struct MyStruct
+          :cast_type_is_struct: true
