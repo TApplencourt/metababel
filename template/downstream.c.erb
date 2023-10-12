@@ -46,7 +46,7 @@ void btx_downstream_push_message(
     const bt_message *message) {
 
   on_push_callback_f *p =
-      message_iterator_private_data->common_data->on_push_callback;
+      (on_push_callback_f *) message_iterator_private_data->common_data->on_push_callback;
   if (p)
     p(((void *)message_iterator_private_data),
       message_iterator_private_data->common_data->usr_data, message);
