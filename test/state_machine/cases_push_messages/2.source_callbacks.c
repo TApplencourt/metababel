@@ -6,6 +6,5 @@ void btx_initialize(void *btx_handle, void *usr_data) {
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_initialize_processing(btx_handle,
-                                               &btx_initialize);
+  btx_register_callbacks_initialize_processing(btx_handle, &btx_initialize);
 }
