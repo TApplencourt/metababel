@@ -4,6 +4,9 @@
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
 #include <stdbool.h>
+<% if options.key?(:usr_data_header) %>
+#include "<%= options[:usr_data_header] %>"
+<% end %>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,10 +30,6 @@ struct btx_params_s {
 typedef struct btx_params_s btx_params_t;
 
 void btx_populate_params(common_data_t *common_data_t);
-
-<% if options.key?(:usr_data_header) %>
-#include "<%= options[:usr_data_header] %>"
-<% end %>
 
 struct callbacks_s {
   <% callback_types.each do |c| %>
