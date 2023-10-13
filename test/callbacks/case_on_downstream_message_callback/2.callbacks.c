@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <babeltrace2/babeltrace.h>
 #include <metababel/metababel.h>
 
 void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
