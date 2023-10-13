@@ -57,4 +57,16 @@ stateDiagram-v2
 
 At finalization we will call the `btx_user_finalization(struct xprof_common_data *common_data)`
 
-
+# Callbacks Registration and Calling order
+ 
+```
+0 register_callback
+1 call_initialize_component # Cannot Push
+2 call_read_params
+3   stream_begin
+4       call_initialize_processing # Can Push
+5           call_callbacks
+5       call_finalize_processing # Can Push
+6   stream_end
+7 call_finalize_component # Cannot push
+```

@@ -191,13 +191,20 @@ def wrote_creates(folder, t)
 end
 
 def wrote_component(options, d, folder)
-  static_callbacks = [Dispatcher.new('initialize_usr_data',
+  static_callbacks = [Dispatcher.new('initialize_component',
                                      [GeneratedArg.new('void **', 'usr_data_p')]),
-                      Dispatcher.new('finalize_usr_data',
+                      Dispatcher.new('finalize_component',
                                      [GeneratedArg.new('void *', 'usr_data')]),
                       Dispatcher.new('read_params',
                                      [GeneratedArg.new('void *', 'usr_data'),
                                       GeneratedArg.new('btx_params_t *', 'usr_params')])]
+  # Usefull to push message
+  if %w[SOURCE FILTER].include?(options[:component_type])
+    static_callbacks += [Dispatcher.new('initialize_processing',
+                                        [GeneratedArg.new('void *', 'usr_data_p')]),
+                         Dispatcher.new('finalize_processing',
+                                        [GeneratedArg.new('void *', 'usr_data')])]
+  end
 
   if options[:component_type] == 'SOURCE'
     static_callbacks << Dispatcher.new('push_usr_messages',
@@ -321,9 +328,9 @@ end
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
 
-  y = options[:upstreams].reduce({}) do |y, upstream|
+  y = options[:upstreams].reduce({}) do |y_, upstream|
     # Need to specialize for merging arrays
-    y.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
+    y_.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
   end
   validate_model(y)
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)

@@ -15,18 +15,21 @@ void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
   *usr_data = (usr_data_t *)calloc(1, sizeof(usr_data_t));
 }
 
-void btx_read_params(void *btx_handle, void *usr_data, btx_params_t *usr_params) {
+void btx_read_params(void *btx_handle, void *usr_data,
+                     btx_params_t *usr_params) {
   usr_data_t *data = (usr_data_t *)usr_data;
   data->file = fopen(usr_params->path, "r");
 }
 
-void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t *status) {
+void btx_push_usr_messages(void *btx_handle, void *usr_data,
+                           btx_source_status_t *status) {
   usr_data_t *data = (usr_data_t *)usr_data;
   int64_t timestamp;
   uint64_t extra_us;
   /* Try to read a line from the input file into individual tokens */
-  int count = fscanf(data->file, "%" PRIu64 " %" PRIu64 " %s %[^\n]", &timestamp, &extra_us,
-                     &data->name_buffer[0], &data->msg_buffer[0]);
+  int count =
+      fscanf(data->file, "%" PRIu64 " %" PRIu64 " %s %[^\n]", &timestamp,
+             &extra_us, &data->name_buffer[0], &data->msg_buffer[0]);
   /* Reached the end of the file? */
   if (count == EOF || feof(data->file)) {
     *status = BTX_SOURCE_END;
@@ -67,8 +70,9 @@ void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
-  btx_register_callbacks_initialize_usr_data(btx_handle, &btx_initialize_usr_data);
+  btx_register_callbacks_initialize_component(btx_handle,
+                                              &btx_initialize_usr_data);
   btx_register_callbacks_read_params(btx_handle, &btx_read_params);
-  btx_register_callbacks_finalize_usr_data(btx_handle, &btx_finalize_usr_data);
+  btx_register_callbacks_finalize_component(btx_handle, &btx_finalize_usr_data);
   btx_register_callbacks_push_usr_messages(btx_handle, &btx_push_usr_messages);
 }

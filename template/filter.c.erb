@@ -125,10 +125,12 @@ static inline void
 filter_message_iterator_next_processing_reading_to_finalizing(
     bt_self_message_iterator *self_message_iterator,
     btx_message_iterator_t *message_iterator_private_data) {
+
   /* Call Finalize user callback */
-  btx_call_callbacks_finalize_usr_data(
+  btx_call_callbacks_finalize_processing(
       message_iterator_private_data->common_data,
       message_iterator_private_data->common_data->usr_data);
+
   /* End of Stream */
   btx_push_messages_stream_end(self_message_iterator,
                                message_iterator_private_data);
@@ -262,14 +264,9 @@ filter_message_iterator_next_initializing(
                                      message_iterator_private_data);
 
   /* Call Initialize user callback */
-  btx_call_callbacks_initialize_usr_data(
+  btx_call_callbacks_initialize_processing(
       message_iterator_private_data->common_data,
-      &message_iterator_private_data->common_data->usr_data);
-  /* Call read callbacks */
-  btx_call_callbacks_read_params(
-      message_iterator_private_data->common_data,
-      message_iterator_private_data->common_data->usr_data,
-      message_iterator_private_data->common_data->btx_params);
+      message_iterator_private_data->common_data->usr_data);
 
   /* We need to transition to the processing state*/
   message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
@@ -341,12 +338,19 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   common_data->static_callbacks = calloc(1, sizeof(static_callbacks_t));
   common_data->btx_params = calloc(1, sizeof(btx_params_t));
   common_data->params = params;
+
   /* Read parameters */
   btx_populate_params(common_data);
   bt_value_get_ref(common_data->params);
 
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
+  /* Call initialize_processing*/
+  btx_call_callbacks_initialize_component((void *)common_data,
+                                          &common_data->usr_data);
+  /* Call read callbacks */
+  btx_call_callbacks_read_params(common_data, common_data->usr_data,
+                                 common_data->btx_params);
 
   /* Set the component's user data to our private data structure */
   bt_self_component_set_data(
@@ -468,6 +472,9 @@ filter_message_iterator_initialize(
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
   common_data_t *common_data = bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
+
+  /* Finalize Component */
+  btx_call_callbacks_finalize_component(common_data, common_data->usr_data);
 
   btx_streams_put_ref(common_data->downstream_trace); // ??
   /* We allocate it, we need to put ref */
