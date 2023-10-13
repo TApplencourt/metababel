@@ -24,10 +24,6 @@ module Babeltrace2Gen
     def bt_set_conditionally(guard)
       yield guard ? 'BT_TRUE' : 'BT_FALSE' unless guard.nil?
     end
-
-    def is_cast_to_struct?
-      @cast_type && @cast_type.match?(/^struct \w+$/)
-    end
   end
 
   module BTLocator
@@ -370,9 +366,9 @@ module Babeltrace2Gen
     include BTMatch
     using HashRefinements
 
-    BT_MATCH_ATTRS = %i[type cast_type]
+    BT_MATCH_ATTRS = %i[type cast_type cast_type_is_struct]
 
-    attr_accessor :cast_type, :type
+    attr_accessor :cast_type_is_struct, :cast_type, :type
 
     def initialize(parent:)
       @parent = parent
@@ -408,6 +404,8 @@ module Babeltrace2Gen
       raise "No #{key} in FIELD_CLASS_NAME_MAP" unless h.include?(key) || is_match_model
 
       cast_type = model.delete(:cast_type)
+      cast_type_is_struct = model.delete(:cast_type_is_struct)
+
       fc = h.include?(key) ? h[key].from_h(parent, model) : BTFieldClass::Default.new(parent: parent)
 
       # Since key (:type) can be a string or a regex, we store
@@ -415,6 +413,7 @@ module Babeltrace2Gen
       # in place of comparing field objects.
       fc.type = key
       fc.cast_type = cast_type if cast_type
+      fc.cast_type_is_struct = cast_type_is_struct if cast_type_is_struct
       fc
     end
 
@@ -448,8 +447,8 @@ module Babeltrace2Gen
     def get_setter(field:, arg_variables:)
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'set'
       variable = bt_get_variable(arg_variables).name
-      cast_func = @cast_type ? "(#{self.class.instance_variable_get(:@bt_type)})" : ''
-      pr "#{bt_func_get}(#{field}, #{cast_func}#{variable});"
+      # We always explicitly cast to the proper bebeltrace type when sending messsages.
+      pr "#{bt_func_get}(#{field}, (#{self.class.instance_variable_get(:@bt_type)})#{variable});"
     end
   end
 
@@ -592,7 +591,7 @@ module Babeltrace2Gen
     end
 
     def get_getter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless is_cast_to_struct?
+      return super(field: field, arg_variables: arg_variables) unless @cast_type_is_struct
 
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
@@ -602,7 +601,7 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless is_cast_to_struct?
+      return super(field: field, arg_variables: arg_variables) unless @cast_type_is_struct
 
       variable = bt_get_variable(arg_variables).name
 
