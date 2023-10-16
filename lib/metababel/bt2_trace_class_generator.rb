@@ -753,7 +753,7 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = [:members]
 
-    def initialize(parent:, members: [], absent: false)
+    def initialize(parent:, members: [], absent: nil)
       @parent = parent
       @absent = absent
       @members = members.collect { |m| BTMemberClass.new(parent: self, **m) }
