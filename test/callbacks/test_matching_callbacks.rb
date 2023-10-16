@@ -245,3 +245,26 @@ class TestMatchingEventNameArgNameArgTypeAndArgCastType < Test::Unit::TestCase
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/10.btx_log.out'
   end
 end
+
+class TestMatchEventsWithAbsentPayloadField < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/11.btx_model.yaml',
+        btx_log_path: './test/callbacks/cases_matching_callbacks/11.btx_log.in',
+      },
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/11.btx_model.yaml',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/11.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/11.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/11.callbacks.c',
+      },
+    ]
+  end
+end

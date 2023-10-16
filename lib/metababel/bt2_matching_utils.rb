@@ -20,6 +20,13 @@ module Babeltrace2Gen
         next true if match_attr.nil?
 
         self_attr = send(attr_sym)
+
+        # If structure is absent in the model, then match.
+        # TODO: We can place this as a special case of Structure type
+        # But we will need to duplicate the same lines of code to
+        # place a new one.
+        next true if match_attr.instance_variable_get(:@absent) && self_attr.nil?
+
         # Not matching because in the match but not in the model
         next false if self_attr.nil?
 

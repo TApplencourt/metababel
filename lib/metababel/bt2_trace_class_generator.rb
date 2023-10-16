@@ -744,12 +744,18 @@ module Babeltrace2Gen
     include BTMatchMembers
     extend BTFromH
 
-    attr_reader :members
+    # :absent used for matching purposes.
+    # In some cases, we need to tell the matching mechanism that a given
+    # structure (common_field, payload, etc) is not present in the model
+    # and we need to consider it as a match. For instance, match all the
+    # events matching name 'X regex' that do not have payload_field.
+    attr_reader :members, :absent
 
     BT_MATCH_ATTRS = [:members]
 
-    def initialize(parent:, members: [])
+    def initialize(parent:, members: [], absent: false)
       @parent = parent
+      @absent = absent
       @members = members.collect { |m| BTMemberClass.new(parent: self, **m) }
     end
 
