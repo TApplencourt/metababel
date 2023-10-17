@@ -33,14 +33,13 @@ void btx_push_message_<%= e.name_sanitized %>(
         btx_handle<%= ', int64_t _timestamp' if e.default_clock_class %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
 <% end %>
 
+<% if options[:enable_on_downstream_callback] %>
 void btx_push_message(void *btx_handle, const bt_message *message);
-
-// Downstream callbacks
-
 typedef void on_downstream_message_callback_f(void *btx_handle, void *usr_data,
                                               const bt_message *message);
 void btx_register_on_downstream_message_callback(
     void *btx_handle, on_downstream_message_callback_f *callback);
+<% end %>
 
 #ifdef __cplusplus
 }

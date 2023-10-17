@@ -272,6 +272,10 @@ OptionParser.new do |opts|
   opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
     options[:usr_data_header] = p
   end
+
+  opts.on('--enable-on-downstream-callback', '[Optional] Enable on downstream message callback .') do |p|
+    options[:enable_on_downstream_callback] = p
+  end
 end.parse!
 
 raise OptionParser::MissingArgument if options[:component_type].nil?
