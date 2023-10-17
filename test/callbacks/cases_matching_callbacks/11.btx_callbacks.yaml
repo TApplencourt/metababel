@@ -6,8 +6,6 @@
     :payload_field_class:
       :type: structure
       :absent: false
-  - :name: ^event_[1-2]$
-    :callback_name: usr_event_2
-    :payload_field_class:
-      :type: structure
-      :absent: true
+  - :callback_name: usr_event_2
+    :expression: |
+      all - usr_event_1
