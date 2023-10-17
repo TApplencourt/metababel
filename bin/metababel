@@ -186,8 +186,8 @@ def wrote_creates(folder, t)
         stream_classes: t.stream_classes,
         event_name: event_name }
 
-  erb_render_and_save(d, 'downstream.h', folder)
-  erb_render_and_save(d, 'downstream.c', folder)
+  erb_render_and_save(d.update(options: options), 'downstream.h', folder)
+  erb_render_and_save(d.update(options: options), 'downstream.c', folder)
 end
 
 def wrote_component(options, d, folder)
