@@ -166,7 +166,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   erb_render_and_save(d, 'upstream.c', folder)
 end
 
-def wrote_creates(folder, t)
+def wrote_creates(folder, t, options)
   event_name = '_event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
@@ -326,7 +326,7 @@ if %w[SOURCE FILTER].include?(options[:component_type])
   y = YAML.load_file(options[:downstream])
   validate_model(y)
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_creates(folder, t)
+  wrote_creates(folder, t, options)
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
