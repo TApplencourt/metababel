@@ -95,6 +95,45 @@ end
 class GeneratedArg < Struct.new(:type, :name)
 end
 
+def get_dispatch_type(m, dispatchers)
+  em, default_clock_class = m
+  matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
+    extracted_args = dispatcher.event.match?(em)
+    [dispatcher, extracted_args] if extracted_args
+  end.transpose
+
+  if !matched_dispatchers or matched_dispatchers.empty?
+    raise "No event matched '#{em.callback_name}', at least one matching event required."
+  end
+
+  # Verify same signature
+  unique_signatures = signatures.uniq
+  unless unique_signatures.size == 1
+    signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
+    raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
+  end
+
+  # Modify the dispatcher to add the new dispatchType
+  name_sanitized = sanitize(em.callback_name)
+  dispatch_type_args = []
+  if default_clock_class and default_clock_class.fetch(
+    :extract, true
+  )
+    dispatch_type_args += [GeneratedArg.new('int64_t',
+                                            '_timestamp')]
+  end
+  dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
+  dispatch_type_args += signatures.pop
+  dispatch_type = DispatchType.new(
+    name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
+
+  matched_dispatchers.each do |dispatcher|
+    dispatcher.dispatch_types << dispatch_type
+  end
+
+  dispatch_type
+end
+
 # We preprent an empty new line from the body as a hack, to correct the indentation
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
@@ -125,95 +164,26 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
 
   automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
 
-  matching_dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+  matching_array = []
+  expression_array = []
 
-    # Skipt expression based event matching
-    next nil unless em.expression.nil?
-
-    matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
-      extracted_args = dispatcher.event.match?(em)
-      [dispatcher, extracted_args] if extracted_args
-    end.transpose
-
-    if !matched_dispatchers or matched_dispatchers.empty?
-      raise "No event matched '#{em.callback_name}', at least one matching event required."
+  trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+    if em.expression
+      expression_array << [em, default_clock_class]
+    else
+      matching_array << [em, default_clock_class]
     end
+  end
 
-    # Verify same signature
-    unique_signatures = signatures.uniq
-    unless unique_signatures.size == 1
-      signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
-      raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
-    end
+  matching_dispatch_types = matching_array.map { |m| get_dispatch_type(m, dispatchers) }
 
-    # Modify the dispatcher to add the new dispatchType
-    name_sanitized = sanitize(em.callback_name)
-    dispatch_type_args = []
-    if default_clock_class and default_clock_class.fetch(
-      :extract, true
-    )
-      dispatch_type_args += [GeneratedArg.new('int64_t',
-                                              '_timestamp')]
-    end
-    dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
-    dispatch_type_args += signatures.pop
-    dispatch_type = DispatchType.new(
-      name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
+  context = matching_dispatch_types.map { |dt| [dt.name, dt.matched_dispatchers.to_set] }.to_h
+  context["all"] = dispatchers.to_set
 
-    matched_dispatchers.each do |dispatcher|
-      dispatcher.dispatch_types << dispatch_type
-    end
-
-    dispatch_type
-  end.compact
-
-  expression_dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
-
-    # Skipt non-expression based event matching.
-    next nil unless em.expression
-
-    context = matching_dispatch_types.map { |dt| [dt.name, dt.matched_dispatchers.to_set] }.to_h
-    context["all"] = dispatchers.to_set
-
-    matched_dispatchers = OpenStruct.new(context).instance_eval(em.expression).to_a
-
-    signatures = matched_dispatchers.filter_map do |dispatcher|
-      extracted_args = dispatcher.event.match?(em)
-      raise "Events matched in a set operation must match." unless extracted_args
-      extracted_args
-    end
-
-    if !matched_dispatchers or matched_dispatchers.empty?
-      raise "No event matched '#{em.callback_name}', at least one matching event required."
-    end
-
-    # Verify same signature
-    unique_signatures = signatures.uniq
-    unless unique_signatures.size == 1
-      signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
-      raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
-    end
-
-    # Modify the dispatcher to add the new dispatchType
-    name_sanitized = sanitize(em.callback_name)
-    dispatch_type_args = []
-    if default_clock_class and default_clock_class.fetch(
-      :extract, true
-    )
-      dispatch_type_args += [GeneratedArg.new('int64_t',
-                                              '_timestamp')]
-    end
-    dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
-    dispatch_type_args += signatures.pop
-    dispatch_type = DispatchType.new(
-      name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
-
-    matched_dispatchers.each do |dispatcher|
-      dispatcher.dispatch_types << dispatch_type
-    end
-
-    dispatch_type
-  end.compact
+  expression_dispatch_types = expression_array.map do |em, default_clock_class|
+    matched_dispatchers = OpenStruct.new(context).instance_eval(em.expression)
+    get_dispatch_type([em, default_clock_class],matched_dispatchers)
+  end
 
   d = { dispatchers: dispatchers,
         dispatch_types: automatic_dispatch_types + matching_dispatch_types + expression_dispatch_types,
