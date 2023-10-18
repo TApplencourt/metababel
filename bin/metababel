@@ -165,7 +165,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
 
   context = { "all" => dispatchers.to_set }
   dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
-    matched_dispatchers = em.expression ? OpenStruct.new(context).instance_eval(em.expression) : context["all"]
+    matched_dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context["all"]
     raise "Nil or empty event set for '#{em.set_id}'." unless matched_dispatchers.is_a?(Set)
 
     dt = get_dispatch_type(em, default_clock_class, matched_dispatchers)

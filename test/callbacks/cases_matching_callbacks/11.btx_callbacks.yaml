@@ -13,5 +13,5 @@
         :type: integer_unsigned
   :event_classes:
   - :set_id: event_set_2
-    :expression: |
+    :domain: |
       event_set_1
