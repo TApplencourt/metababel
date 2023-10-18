@@ -66,8 +66,7 @@ module Babeltrace2Gen
         return false
       end
 
-      # Filter one we need to extract
-      args_matched.zip(match_members).filter_map { |obj, match_obj| obj if match_obj.extract }
+      args_matched
     end
   end
 end

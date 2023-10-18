@@ -115,12 +115,9 @@ def get_dispatch_type(em, default_clock_class, dispatchers, context)
   # Modify the dispatcher to add the new dispatchType
   name_sanitized = sanitize(em.set_id)
   dispatch_type_args = []
-  if default_clock_class and default_clock_class.fetch(
-    :extract, true
-  )
-    dispatch_type_args += [GeneratedArg.new('int64_t',
-                                            '_timestamp')]
-  end
+
+  dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
+
   dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
   dispatch_type_args += signatures.pop
   dispatch_type = DispatchType.new(

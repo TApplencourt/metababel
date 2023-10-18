@@ -729,13 +729,12 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = %i[name field_class]
 
-    attr_reader :parent, :name, :field_class, :extract
+    attr_reader :parent, :name, :field_class
 
-    def initialize(parent:, field_class:, name: nil, extract: true)
+    def initialize(parent:, field_class:, name: nil)
       @parent = parent
       @name = name # Name can be nil in the matching callbacks
       @field_class = BTFieldClass.from_h(self, field_class)
-      @extract = extract
     end
 
     def get_arg
@@ -939,13 +938,12 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = %i[name type]
 
-    attr_accessor :name, :type, :extract
+    attr_accessor :name, :type
 
-    def initialize(parent:, name:, type:, extract: true)
+    def initialize(parent:, name:, type:)
       @parent = parent
       @name = name
       @type = type
-      @extract = extract
     end
 
     def self.from_h(parent, model)
