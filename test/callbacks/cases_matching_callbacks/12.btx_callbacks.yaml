@@ -1,11 +1,12 @@
 :stream_classes:
 - :name: sc
   :event_classes:
-  - :name: ^event_[1-2]$
-    :callback_name: usr_event_1
-  - :callback_name: usr_event_2
+  - :callback_name: event_set_1
+    :name: ^event_[1-2]$
+
+  - :callback_name: event_set_2
     :expression: |
-      usr_event_1
+      event_set_1
     :payload_field_class:
       :type: structure
       :members:

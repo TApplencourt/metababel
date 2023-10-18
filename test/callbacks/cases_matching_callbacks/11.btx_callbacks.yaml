@@ -1,8 +1,9 @@
 :stream_classes:
 - :name: sc
   :event_classes:
-  - :name: ^event_1$
-    :callback_name: usr_event_1
+  - :callback_name: event_set_1
+    :name: ^event_1$
+
 - :name: sc
   :event_common_context_field_class:
     :type: structure
@@ -11,6 +12,6 @@
       :field_class:
         :type: integer_unsigned
   :event_classes:
-  - :callback_name: usr_event_2
+  - :callback_name: event_set_2
     :expression: |
-      usr_event_1
+      event_set_1

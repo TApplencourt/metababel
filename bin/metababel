@@ -164,11 +164,13 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
 
   context = { "all" => dispatchers.to_set }
-
   dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
-    matched_dispatchers = em.expression ? OpenStruct.new(context).instance_eval(em.expression) :  context["all"]
+    matched_dispatchers = em.expression ? OpenStruct.new(context).instance_eval(em.expression) : context["all"]
+    raise "Nil or empty event set for '#{em.callback_name}'." unless matched_dispatchers.is_a?(Set)
+
     dt = get_dispatch_type(em, default_clock_class, matched_dispatchers)
     context[dt.name] = dt.matched_dispatchers.to_set
+
     dt
   end
 
