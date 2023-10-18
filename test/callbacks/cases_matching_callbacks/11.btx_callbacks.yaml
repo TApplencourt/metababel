@@ -3,7 +3,14 @@
   :event_classes:
   - :name: ^event_1$
     :callback_name: usr_event_1
+- :name: sc
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: ^cf_1$
+      :field_class:
+        :type: integer_unsigned
+  :event_classes:
   - :callback_name: usr_event_2
     :expression: |
-      all - usr_event_1
-
+      usr_event_1

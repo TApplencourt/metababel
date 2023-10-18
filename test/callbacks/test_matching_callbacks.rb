@@ -246,7 +246,9 @@ class TestMatchingEventNameArgNameArgTypeAndArgCastType < Test::Unit::TestCase
   end
 end
 
-class TestMatchEventsWithAbsentPayloadField < Test::Unit::TestCase
+class TestMatchFieldInEventsSubset < Test::Unit::TestCase
+  # We match a subset of events in usr_event_1. We extract not argument.
+  # We reuse the events matched in usr_event_1. We extract an argument.
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -264,6 +266,28 @@ class TestMatchEventsWithAbsentPayloadField < Test::Unit::TestCase
         btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/11.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/11.btx_callbacks.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/11.callbacks.c',
+      },
+    ]
+  end
+end
+
+class TestAllEventsInSubsetOperationsShouldMatch < Test::Unit::TestCase
+  # We match a subset of events in usr_event_1.
+  # We reuse the events matched in usr_event_1. 
+  # We try to extract an argument that is only present in one of the events.
+  # We expect this test to fail at code generation since all the events in a subset must match.
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'FILTER',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/12.btx_model.yaml',
+        btx_component_downstream_model: './test/callbacks/cases_matching_callbacks/12.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/12.btx_callbacks.yaml',
+        btx_metababel_generation_fail: true,
       },
     ]
   end

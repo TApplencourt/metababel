@@ -21,12 +21,6 @@ module Babeltrace2Gen
 
         self_attr = send(attr_sym)
 
-        # Check if the absent keyword exists, match in either case:
-        # 1) the attr_sym is present (absent = false) in the matching and in the model.
-        # 2) the attr_sym is absent (absent = true) in the matching and the model.
-        absent = match_attr.instance_variable_get(:@absent)
-        next true if absent.nil? ? false : (absent == self_attr.nil?)
-
         # Not matching because in the match but not in the model
         next false if self_attr.nil?
 

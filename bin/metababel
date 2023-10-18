@@ -95,8 +95,7 @@ end
 class GeneratedArg < Struct.new(:type, :name)
 end
 
-def get_dispatch_type(m, dispatchers)
-  em, default_clock_class = m
+def get_dispatch_type(em, default_clock_class, dispatchers)
   matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
     extracted_args = dispatcher.event.match?(em)
     [dispatcher, extracted_args] if extracted_args
@@ -164,29 +163,17 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
 
   automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
 
-  matching_array = []
-  expression_array = []
+  context = { "all" => dispatchers.to_set }
 
-  trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
-    if em.expression
-      expression_array << [em, default_clock_class]
-    else
-      matching_array << [em, default_clock_class]
-    end
-  end
-
-  matching_dispatch_types = matching_array.map { |m| get_dispatch_type(m, dispatchers) }
-
-  context = matching_dispatch_types.map { |dt| [dt.name, dt.matched_dispatchers.to_set] }.to_h
-  context["all"] = dispatchers.to_set
-
-  expression_dispatch_types = expression_array.map do |em, default_clock_class|
-    matched_dispatchers = OpenStruct.new(context).instance_eval(em.expression)
-    get_dispatch_type([em, default_clock_class],matched_dispatchers)
+  dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+    matched_dispatchers = em.expression ? OpenStruct.new(context).instance_eval(em.expression) :  context["all"]
+    dt = get_dispatch_type(em, default_clock_class, matched_dispatchers)
+    context[dt.name] = dt.matched_dispatchers.to_set
+    dt
   end
 
   d = { dispatchers: dispatchers,
-        dispatch_types: automatic_dispatch_types + matching_dispatch_types + expression_dispatch_types,
+        dispatch_types: automatic_dispatch_types + dispatch_types,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
