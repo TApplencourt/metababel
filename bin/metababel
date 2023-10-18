@@ -95,7 +95,7 @@ end
 class GeneratedArg < Struct.new(:type, :name)
 end
 
-def get_dispatch_type(em, default_clock_class, dispatchers)
+def get_dispatch_type(em, default_clock_class, dispatchers, context)
   matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
     extracted_args = dispatcher.event.match?(em)
     [dispatcher, extracted_args] if extracted_args
@@ -126,11 +126,14 @@ def get_dispatch_type(em, default_clock_class, dispatchers)
   dispatch_type = DispatchType.new(
     name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
 
-  matched_dispatchers.each do |dispatcher|
-    dispatcher.dispatch_types << dispatch_type
-  end
+  # Update context for further events filtering outside this function call
+  context[dispatch_type.name] = dispatch_type.matched_dispatchers.to_set
 
-  dispatch_type
+  # Implicit nil return is provided when rendering is not required.
+  if em.register
+    matched_dispatchers.each { |dispatcher| dispatcher.dispatch_types << dispatch_type }
+    dispatch_type
+  end
 end
 
 # We preprent an empty new line from the body as a hack, to correct the indentation
@@ -168,11 +171,9 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     matched_dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context["all"]
     raise "Nil or empty event set for '#{em.set_id}'." unless matched_dispatchers.is_a?(Set)
 
-    dt = get_dispatch_type(em, default_clock_class, matched_dispatchers)
-    context[dt.name] = dt.matched_dispatchers.to_set
-
-    dt
-  end
+    # We mutate matched_dispatchers, context.
+    get_dispatch_type(em, default_clock_class, matched_dispatchers, context)
+  end.compact
 
   d = { dispatchers: dispatchers,
         dispatch_types: automatic_dispatch_types + dispatch_types,

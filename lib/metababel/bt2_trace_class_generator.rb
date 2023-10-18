@@ -247,13 +247,14 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = %i[parent name specific_context_field_class payload_field_class]
 
-    attr_reader :name, :specific_context_field_class, :payload_field_class, :set_id, :domain
+    attr_reader :name, :specific_context_field_class, :payload_field_class, :set_id, :domain, :register
 
     def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil,
-                   set_id: nil, domain: nil)
+                   set_id: nil, domain: nil, register: true)
 
       @set_id = set_id
       @domain = domain
+      @register = register
 
       @parent = parent
       @name = name

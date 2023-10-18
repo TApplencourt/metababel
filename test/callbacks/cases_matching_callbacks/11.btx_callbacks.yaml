@@ -2,8 +2,8 @@
 - :name: sc
   :event_classes:
   - :set_id: event_set_1
+    :register: false
     :name: ^event_1$
-
 - :name: sc
   :event_common_context_field_class:
     :type: structure
