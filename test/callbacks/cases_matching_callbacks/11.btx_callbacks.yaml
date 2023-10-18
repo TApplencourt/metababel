@@ -1,7 +1,7 @@
 :stream_classes:
 - :name: sc
   :event_classes:
-  - :callback_name: event_set_1
+  - :set_id: event_set_1
     :name: ^event_1$
 
 - :name: sc
@@ -12,6 +12,6 @@
       :field_class:
         :type: integer_unsigned
   :event_classes:
-  - :callback_name: event_set_2
+  - :set_id: event_set_2
     :expression: |
       event_set_1

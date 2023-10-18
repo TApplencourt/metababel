@@ -1,5 +1,6 @@
 :stream_classes:
 - :name: ^sc$
   :event_classes:
-  - :name: \S*_[1-2]
-    :callback_name: usr_event
+  - :set_id: usr_event
+    :name: \S*_[1-2]
+    

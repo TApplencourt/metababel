@@ -1,10 +1,10 @@
 :stream_classes:
 - :name: sc
   :event_classes:
-  - :callback_name: event_set_1
+  - :set_id: event_set_1
     :name: ^event_[1-2]$
 
-  - :callback_name: event_set_2
+  - :set_id: event_set_2
     :expression: |
       event_set_1
     :payload_field_class:

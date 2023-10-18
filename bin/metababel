@@ -102,18 +102,18 @@ def get_dispatch_type(em, default_clock_class, dispatchers)
   end.transpose
 
   if !matched_dispatchers or matched_dispatchers.empty?
-    raise "No event matched '#{em.callback_name}', at least one matching event required."
+    raise "No event matched '#{em.set_id}', at least one matching event required."
   end
 
   # Verify same signature
   unique_signatures = signatures.uniq
   unless unique_signatures.size == 1
     signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
-    raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
+    raise "Conflicting signatures for '#{em.set_id}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
   end
 
   # Modify the dispatcher to add the new dispatchType
-  name_sanitized = sanitize(em.callback_name)
+  name_sanitized = sanitize(em.set_id)
   dispatch_type_args = []
   if default_clock_class and default_clock_class.fetch(
     :extract, true
@@ -166,7 +166,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   context = { "all" => dispatchers.to_set }
   dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
     matched_dispatchers = em.expression ? OpenStruct.new(context).instance_eval(em.expression) : context["all"]
-    raise "Nil or empty event set for '#{em.callback_name}'." unless matched_dispatchers.is_a?(Set)
+    raise "Nil or empty event set for '#{em.set_id}'." unless matched_dispatchers.is_a?(Set)
 
     dt = get_dispatch_type(em, default_clock_class, matched_dispatchers)
     context[dt.name] = dt.matched_dispatchers.to_set
@@ -323,9 +323,9 @@ if options.key?(:callbacks)
   data[:match] = true
   trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
   callback_types += trace_matcher.map_event_classes do |e|
-    raise "Key ':callback_name' required when matching events." unless e.callback_name
+    raise "Key ':set_id' required when matching events." unless e.set_id
 
-    "matching_#{sanitize(e.callback_name)}"
+    "matching_#{sanitize(e.set_id)}"
   end
 end
 

@@ -1,8 +1,8 @@
 :stream_classes:
 - :name: ^sc$
   :event_classes:
-  - :name: ^event_[1-2]$
-    :callback_name: usr_event
+  - :set_id: usr_event
+    :name: ^event_[1-2]$
     :payload_field_class:
       :type: structure
       :members:
