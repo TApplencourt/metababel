@@ -77,17 +77,11 @@ def erb_render_and_save(vars,
 end
 
 class Babeltrace2Gen::BTTraceClass
-  def map_event_classes_with_index
+  def filter_map_event_classes_with_index
     @stream_classes.map.with_index do |s, index_stream_class|
-      s.event_classes.map.with_index do |e, index_event_class|
+      s.event_classes.filter_map.with_index do |e, index_event_class|
         yield(e, index_stream_class, index_event_class, s.default_clock_class)
       end
-    end.flatten(1)
-  end
-
-  def map_event_classes(&block)
-    @stream_classes.map do |s|
-      s.event_classes.map(&block)
     end.flatten(1)
   end
 end
@@ -95,7 +89,11 @@ end
 class GeneratedArg < Struct.new(:type, :name)
 end
 
-def get_dispatch_type(em, default_clock_class, dispatchers, context)
+def get_dispatch_type(em, default_clock_class, context)
+
+  dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context["all"]
+  raise "Nil or empty event set for '#{em.set_id}'." unless dispatchers.is_a?(Set)
+
   matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
     extracted_args = dispatcher.event.match?(em)
     [dispatcher, extracted_args] if extracted_args
@@ -123,14 +121,15 @@ def get_dispatch_type(em, default_clock_class, dispatchers, context)
   dispatch_type = DispatchType.new(
     name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers)
 
-  # Update context for further events filtering outside this function call
+  # Update context for further events filtering.
   context[dispatch_type.name] = dispatch_type.matched_dispatchers.to_set
 
-  # Implicit nil return is provided when rendering is not required.
-  if em.register
-    matched_dispatchers.each { |dispatcher| dispatcher.dispatch_types << dispatch_type }
-    dispatch_type
-  end
+  # Exclude unnecessary rendering.
+  return false unless em.register
+
+  matched_dispatchers.each { |dispatcher| dispatcher.dispatch_types << dispatch_type }
+
+  dispatch_type
 end
 
 # We preprent an empty new line from the body as a hack, to correct the indentation
@@ -140,7 +139,7 @@ end
 def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   event_name = '_event'
 
-  dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  dispatchers = trace_model.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -164,16 +163,13 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
 
   context = { "all" => dispatchers.to_set }
-  dispatch_types = trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
-    matched_dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context["all"]
-    raise "Nil or empty event set for '#{em.set_id}'." unless matched_dispatchers.is_a?(Set)
-
-    # We mutate matched_dispatchers, context.
-    get_dispatch_type(em, default_clock_class, matched_dispatchers, context)
-  end.compact
+  matching_dispatch_types = trace_matching_model.filter_map_event_classes_with_index do |em, _, _, default_clock_class|
+    # We mutate context across iterations.
+    get_dispatch_type(em, default_clock_class, context)
+  end
 
   d = { dispatchers: dispatchers,
-        dispatch_types: automatic_dispatch_types + dispatch_types,
+        dispatch_types: automatic_dispatch_types + matching_dispatch_types,
         event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
@@ -182,7 +178,7 @@ end
 
 def wrote_creates(folder, t)
   event_name = '_event'
-  downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+  downstream_events = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_name, arg_variables: arg_variables)
@@ -320,11 +316,13 @@ if options.key?(:callbacks)
   data = YAML.load_file(options[:callbacks])
   data[:match] = true
   trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
-  callback_types += trace_matcher.map_event_classes do |e|
-    raise "Key ':set_id' required when matching events." unless e.set_id
 
-    "matching_#{sanitize(e.set_id)}"
+  event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
+    raise "Key ':set_id' required for matching events." unless em.set_id
+    em.register
   end
+
+  callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
 end
 
 d[:callback_types] = callback_types

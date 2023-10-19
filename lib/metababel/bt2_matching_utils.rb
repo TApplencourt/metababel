@@ -64,9 +64,9 @@ module Babeltrace2Gen
       # Not all match mernbers found a matchings
       elsif args_matched.uniq.length != match_members.length
         return false
+      else
+        return args_matched
       end
-
-      args_matched
     end
   end
 end

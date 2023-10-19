@@ -1,0 +1,6 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :set_id: event_set_1
+    :register: false
+    :name: ^event_1$
