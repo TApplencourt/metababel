@@ -247,11 +247,14 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = %i[parent name specific_context_field_class payload_field_class]
 
-    attr_reader :name, :specific_context_field_class, :payload_field_class, :callback_name
+    attr_reader :name, :specific_context_field_class, :payload_field_class, :set_id, :domain, :register
 
     def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil,
-                   callback_name: nil)
-      @callback_name = callback_name
+                   set_id: nil, domain: nil, register: true)
+
+      @set_id = set_id
+      @domain = domain
+      @register = register
 
       @parent = parent
       @name = name
@@ -726,13 +729,12 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = %i[name field_class]
 
-    attr_reader :parent, :name, :field_class, :extract
+    attr_reader :parent, :name, :field_class
 
-    def initialize(parent:, field_class:, name: nil, extract: true)
+    def initialize(parent:, field_class:, name: nil)
       @parent = parent
       @name = name # Name can be nil in the matching callbacks
       @field_class = BTFieldClass.from_h(self, field_class)
-      @extract = extract
     end
 
     def get_arg
@@ -744,12 +746,18 @@ module Babeltrace2Gen
     include BTMatchMembers
     extend BTFromH
 
-    attr_reader :members
+    # :absent used for matching purposes.
+    # In some cases, we need to tell the matching mechanism that a given
+    # structure (common_field, payload, etc) is not present in the model
+    # and we need to consider it as a match. For instance, match all the
+    # events matching name 'X regex' that do not have payload_field.
+    attr_reader :members, :absent
 
     BT_MATCH_ATTRS = [:members]
 
-    def initialize(parent:, members: [])
+    def initialize(parent:, members: [], absent: nil)
       @parent = parent
+      @absent = absent
       @members = members.collect { |m| BTMemberClass.new(parent: self, **m) }
     end
 
@@ -930,13 +938,12 @@ module Babeltrace2Gen
 
     BT_MATCH_ATTRS = %i[name type]
 
-    attr_accessor :name, :type, :extract
+    attr_accessor :name, :type
 
-    def initialize(parent:, name:, type:, extract: true)
+    def initialize(parent:, name:, type:)
       @parent = parent
       @name = name
       @type = type
-      @extract = extract
     end
 
     def self.from_h(parent, model)

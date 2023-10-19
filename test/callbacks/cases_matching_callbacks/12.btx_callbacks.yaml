@@ -1,0 +1,16 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :set_id: event_set_1
+    :register: false
+    :name: ^event_[1-2]$
+  - :set_id: event_set_2
+    :register: true
+    :domain: |
+      event_set_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: string

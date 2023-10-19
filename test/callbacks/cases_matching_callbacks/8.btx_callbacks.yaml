@@ -1,4 +1,4 @@
 :stream_classes:
 - :name: ^sc$
   :event_classes:
-  - :callback_name: usr_event
+  - :set_id: usr_event

@@ -7,5 +7,5 @@
 :stream_classes:
 - :name: ^sc$
   :event_classes:
-  - :name: ^event$
-    :callback_name: usr_event
+  - :set_id: usr_event
+    :name: ^event$

@@ -20,6 +20,7 @@ module Babeltrace2Gen
         next true if match_attr.nil?
 
         self_attr = send(attr_sym)
+
         # Not matching because in the match but not in the model
         next false if self_attr.nil?
 
@@ -56,17 +57,16 @@ module Babeltrace2Gen
 
       # We didn't match anything
       if args_matched.empty? || args_matched.uniq.length != match_members.length
-        return false
+        false
       # Same arguments in the model have been matched twice
       elsif args_matched.uniq.length != args_matched.length
         raise "Members '#{args_matched.uniq.map(&:name)}' matched multiple times in '#{match_members.map(&:name)}'. "
       # Not all match mernbers found a matchings
       elsif args_matched.uniq.length != match_members.length
-        return false
+        false
+      else
+        args_matched
       end
-
-      # Filter one we need to extract
-      args_matched.zip(match_members).filter_map { |obj, match_obj| obj if match_obj.extract }
     end
   end
 end

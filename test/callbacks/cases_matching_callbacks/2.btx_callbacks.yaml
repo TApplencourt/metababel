@@ -1,7 +1,9 @@
 :stream_classes:
 - :name: ^sc$
   :event_classes:
-  - :name: ^event$
-    :callback_name: usr_foo_event
-  - :name: ^event$
-    :callback_name: usr_bar_event
+  - :set_id: usr_foo_event
+    :name: ^event$
+    
+  - :set_id: usr_bar_event
+    :name: ^event$
+    

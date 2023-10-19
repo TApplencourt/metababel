@@ -1,0 +1,11 @@
+:stream_classes:
+- :name: sc
+  :event_common_context_field_class:
+    :type: structure
+    :members:
+    - :name: cf_1
+      :field_class:
+        :type: integer_unsigned
+  :event_classes:
+  - :name: event_1
+  - :name: event_2
