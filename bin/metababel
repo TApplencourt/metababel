@@ -128,7 +128,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
 
-    matcher = Matcher.new(e.name_sanitized, evt_args, 'generic', [])
+    matcher = Matcher.new(e.name, evt_args, 'generic', [])
     dispatcher = Dispatcher.new(
       e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
       arg_variables.fetch('outputs_allocated', []), [matcher], e
@@ -145,15 +145,13 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     matched_dispatchers, args = get_matched_dispatchers_and_signature(dispatchers, em)
 
     # Modify the dispatcher to add the new dispatchType
-    name_sanitized = sanitize(em.callback_name)
     matcher_args = []
     matcher_args << GeneratedArg.new('int64_t', '_timestamp') if default_clock_class
     matcher_args << GeneratedArg.new('const char *', '_event_class_name')
     matcher_args += args
 
-
     # Create the matcher and add it to the list of dispatchers 
-    matcher = Matcher.new(name_sanitized, matcher_args, "matching_#{name_sanitized}",
+    matcher = Matcher.new(em.callback_name, matcher_args, "matching_#{sanitize(em.callback_name)}",
                           matched_dispatchers)
 
     matched_dispatchers.each do |dispatcher|
