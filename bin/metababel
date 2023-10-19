@@ -88,17 +88,39 @@ end
 
 GeneratedArg = Struct.new(:type, :name)
 
+# From a matching event, get the list of dispatcher who match
+def get_matched_dispatchers_and_signature(dispatchers, em)
+    matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
+      extracted_args = dispatcher.event.match?(em)
+      [dispatcher, extracted_args] if extracted_args
+    end.transpose
+
+    # Veirfy that at least one matching
+    if !matched_dispatchers or matched_dispatchers.empty?
+      raise "No event matched '#{em.callback_name}', at least one matching event required."
+    end
+
+    # Verify same signature
+    unique_signatures = signatures.uniq
+    unless unique_signatures.size == 1
+      signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
+      raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
+    end
+
+    [matched_dispatchers, signatures.pop]
+end
+
 # We preprent an empty new line from the body as a hack, to correct the indentation
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
 # in the body string is already indented
 # But we clean the white space empty line afterward \o/
 def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
-  event_name = '_event'
+  event_var_name = '_event'
 
   dispatchers = trace_model.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
-      e.get_getter(event: event_name, arg_variables: arg_variables)
+      e.get_getter(event: event_var_name, arg_variables: arg_variables)
     end
 
     # automatic event dispatcher
@@ -117,34 +139,20 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   end
 
   matchers = dispatchers.flat_map(&:matchers)
+
   matchers += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
-    matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
-      extracted_args = dispatcher.event.match?(em)
-      [dispatcher, extracted_args] if extracted_args
-    end.transpose
-
-    if !matched_dispatchers or matched_dispatchers.empty?
-      raise "No event matched '#{em.callback_name}', at least one matching event required."
-    end
-
-    # Verify same signature
-    unique_signatures = signatures.uniq
-    unless unique_signatures.size == 1
-      signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
-      raise "Conflicting signatures for '#{em.callback_name}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
-    end
+    # Get the matching dispachers
+    matched_dispatchers, args = get_matched_dispatchers_and_signature(dispatchers, em)
 
     # Modify the dispatcher to add the new dispatchType
     name_sanitized = sanitize(em.callback_name)
     matcher_args = []
-    if default_clock_class and default_clock_class.fetch(
-      :extract, true
-    )
-      matcher_args += [GeneratedArg.new('int64_t',
-                                              '_timestamp')]
-    end
-    matcher_args += [GeneratedArg.new('const char *', '_event_class_name')]
-    matcher_args += signatures.pop
+    matcher_args << GeneratedArg.new('int64_t', '_timestamp') if default_clock_class
+    matcher_args << GeneratedArg.new('const char *', '_event_class_name')
+    matcher_args += args
+
+
+    # Create the matcher and add it to the list of dispatchers 
     matcher = Matcher.new(name_sanitized, matcher_args, "matching_#{name_sanitized}",
                           matched_dispatchers)
 
@@ -155,18 +163,18 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     matcher
   end
 
-  d = { dispatchers: dispatchers, matchers: matchers, event_name: event_name }
+  d = { dispatchers: dispatchers, matchers: matchers, event_name: event_var_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
 end
 
 def wrote_creates(folder, t, options)
-  event_name = '_event'
+  event_var_name = '_event'
   downstream_events = t.map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
     arg_variables = {}
     body = Babeltrace2Gen.context(indent: 1) do
-      e.get_setter(event: event_name, arg_variables: arg_variables)
+      e.get_setter(event: event_var_name, arg_variables: arg_variables)
     end
     Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
                    default_clock_class)
@@ -179,10 +187,11 @@ def wrote_creates(folder, t, options)
   d = { body_declarator_classes: body_declarator_classes,
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,
-        event_name: event_name }
+        event_name: event_var_name,
+        options: options }
 
-  erb_render_and_save(d.update(options: options), 'downstream.h', folder)
-  erb_render_and_save(d.update(options: options), 'downstream.c', folder)
+  erb_render_and_save(d, 'downstream.h', folder)
+  erb_render_and_save(d, 'downstream.c', folder)
 end
 
 def wrote_component(options, d, folder)
