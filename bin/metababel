@@ -231,69 +231,74 @@ def wrote_component(options, d, folder)
   erb_render_and_save(d2.update(d), 'component.c', folder)
 end
 
-# Display help if no arguments.
-ARGV << '-h' if ARGV.empty?
+def parse_cli
+  # Display help if no arguments.
+  ARGV << '-h' if ARGV.empty?
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = 'Usage: example.rb [options]'
+  options = {}
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: example.rb [options]'
 
-  opts.on('-h', '--help', 'Prints this help') do
-    puts opts
-    exit
-  end
+    opts.on('-h', '--help', 'Prints this help') do
+      puts opts
+      exit
+    end
 
-  opts.on('-v', '--version', 'Prints this help') do
-    puts "Ruby: #{RUBY_VERSION}"
-    puts "Metababel: #{Metababel::VERSION}"
-    exit
-  end
+    opts.on('-v', '--version', 'Prints this help') do
+      puts "Ruby: #{RUBY_VERSION}"
+      puts "Metababel: #{Metababel::VERSION}"
+      exit
+    end
 
-  opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
-    options[:component_type] = p
-  end
+    opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
+      options[:component_type] = p
+    end
 
-  opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 yaml file.') do |p|
-    options[:upstreams] = p
-  end
+    opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 yaml file.') do |p|
+      options[:upstreams] = p
+    end
 
-  opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
-    options[:downstream] = p
-  end
+    opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
+      options[:downstream] = p
+    end
 
-  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
-    options[:plugin_name] = p
-  end
+    opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
+      options[:plugin_name] = p
+    end
 
-  opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
-    options[:component_name] = p
-  end
+    opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
+      options[:component_name] = p
+    end
 
-  opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
-    options[:params] = p
-  end
+    opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
+      options[:params] = p
+    end
 
-  opts.on('--callbacks PATH', '[Optional] Name of YAML defining matching callbacks.') do |p|
-    options[:callbacks] = p
-  end
+    opts.on('--callbacks PATH', '[Optional] Name of YAML defining matching callbacks.') do |p|
+      options[:callbacks] = p
+    end
 
-  opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
-    options[:folder] = p
-  end
+    opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
+      options[:folder] = p
+    end
 
-  opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
-    options[:usr_data_header] = p
-  end
+    opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
+      options[:usr_data_header] = p
+    end
 
-  opts.on('--enable-on-downstream-callback', '[Optional] Enable on downstream message callback .') do |p|
-    options[:enable_on_downstream_callback] = p
-  end
-end.parse!
+    opts.on('--enable-on-downstream-callback', '[Optional] Enable on downstream message callback .') do |p|
+      options[:enable_on_downstream_callback] = p
+    end
+  end.parse!
 
-raise OptionParser::MissingArgument if options[:component_type].nil?
+  raise OptionParser::MissingArgument if options[:component_type].nil?
 
-options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
-options[:component_name] ||= 'btx'
+  options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
+  options[:component_name] ||= 'btx'
+  options
+end
+
+options = parse_cli()
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
@@ -324,14 +329,13 @@ if options.key?(:callbacks)
   trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
   callback_types += trace_matcher.map_event_classes do |e|
     raise "Key ':callback_name' required when matching events." unless e.callback_name
-
     "matching_#{sanitize(e.callback_name)}"
   end
 end
 
 d[:callback_types] = callback_types
-
 wrote_component(options, d, folder)
+
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
   y = load_files(options[:downstream]) 
