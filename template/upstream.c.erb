@@ -17,7 +17,7 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   <% end %>
 
   <%# Since now event is a variable, we need to check if the body will render variables that accesses it.  %>
-  <% if not dispatcher.body.empty? %>
+  <% unless dispatcher.body.empty? %>
   const bt_event *<%= event_name %> =
       bt_message_event_borrow_event_const(upstream_message);
   <%= "\n" + dispatcher.body %>
@@ -51,8 +51,8 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   <%= "free(#{s.name});" %>
   <% end %>
 }
-
 <% end %>
+
 <% dispatchers.each do |dispatcher| %>
 void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
     void *btx_handle, const char *id, void *callback) {
@@ -81,8 +81,8 @@ void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
 
   <% end %>
 }
-
 <% end %>
+
 <% dispatch_types.each do |dispatch_type| %>
 void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
     void *btx_handle,
@@ -92,8 +92,8 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
       btx_handle, "<%= dispatch_type.id %>", (void *)callback);
   <% end %>
 }
-
 <% end %>
+
 void btx_delete_dispatchers(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {

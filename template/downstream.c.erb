@@ -56,14 +56,13 @@ void btx_downstream_push_message(
   on_downstream_message_callback_f *p =
       (on_downstream_message_callback_f *)message_iterator_private_data
           ->common_data->on_downstream_message_callback;
-  if (p)
+  if (p) {
     p(((void *)message_iterator_private_data),
       message_iterator_private_data->common_data->usr_data, message);
-  else
-    _btx_push_message(message_iterator_private_data, message);
-  <% else %>
-  _btx_push_message(message_iterator_private_data, message);
+    return;
+  }
   <% end %>
+  _btx_push_message(message_iterator_private_data, message);
 }
 
 bt_trace_class *
