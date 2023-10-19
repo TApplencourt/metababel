@@ -8,12 +8,8 @@ require 'fileutils'
 
 def validate_model(yaml)
   # Stream and event classes must have a 'name' as minimum requirement.
-  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                                        d.key?(:name) && d[:event_classes].all? do |d2|
-                                                          d2.key?(:name)
-                                                        end
-                                                      end
-
+  cond = yaml[:stream_classes].all?{ |d| d.key?(:name) && d[:event_classes].all? { |d2| d2.key?(:name) }}
+  raise "Missing 'name' attr in model #{yaml}" unless cond 
   # Event class name must be unique
   events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
   raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
@@ -48,7 +44,7 @@ class Hash
   end
 end
 
-DispatchType = Struct.new(:name, :args, :id, :matched_dispatchers) do
+Matcher = Struct.new(:name, :args, :id, :dispatchers) do
   def name_sanitized
     sanitize(name)
   end
@@ -56,7 +52,7 @@ end
 
 Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
                         :index_event_class, :default_clock_class,
-                        :args_to_free, :dispatch_types,
+                        :args_to_free, :matchers,
                         :event) do
   def name_sanitized
     sanitize(name)
@@ -111,18 +107,18 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
 
-    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
+    matcher = Matcher.new(e.name_sanitized, evt_args, 'generic', [])
     dispatcher = Dispatcher.new(
       e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
-      arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
+      arg_variables.fetch('outputs_allocated', []), [matcher], e
     )
-    dispatch_type.matched_dispatchers << dispatcher
+    matcher.dispatchers << dispatcher
 
     dispatcher
   end
 
-  dispatch_types = dispatchers.flat_map(&:dispatch_types)
-  dispatch_types += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+  matchers = dispatchers.flat_map(&:matchers)
+  matchers += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
     matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
       extracted_args = dispatcher.event.match?(em)
       [dispatcher, extracted_args] if extracted_args
@@ -141,26 +137,26 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
 
     # Modify the dispatcher to add the new dispatchType
     name_sanitized = sanitize(em.callback_name)
-    dispatch_type_args = []
+    matcher_args = []
     if default_clock_class and default_clock_class.fetch(
       :extract, true
     )
-      dispatch_type_args += [GeneratedArg.new('int64_t',
+      matcher_args += [GeneratedArg.new('int64_t',
                                               '_timestamp')]
     end
-    dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
-    dispatch_type_args += signatures.pop
-    dispatch_type = DispatchType.new(name_sanitized, dispatch_type_args, "matching_#{name_sanitized}",
-                                     matched_dispatchers)
+    matcher_args += [GeneratedArg.new('const char *', '_event_class_name')]
+    matcher_args += signatures.pop
+    matcher = Matcher.new(name_sanitized, matcher_args, "matching_#{name_sanitized}",
+                          matched_dispatchers)
 
     matched_dispatchers.each do |dispatcher|
-      dispatcher.dispatch_types << dispatch_type
+      dispatcher.matchers << matcher
     end
 
-    dispatch_type
+    matcher
   end
 
-  d = { dispatchers: dispatchers, dispatch_types: dispatch_types, event_name: event_name }
+  d = { dispatchers: dispatchers, matchers: matchers, event_name: event_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
