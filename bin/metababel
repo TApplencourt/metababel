@@ -13,6 +13,15 @@ def validate_model(yaml)
   # Event class name must be unique
   events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
   raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
+  yaml
+end
+
+def load_files(files)
+  y = [files].flatten.reduce({}) do |y_, upstream|
+    # Need to specialize for merging arrays
+    y_.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
+  end
+  validate_model(y)
 end
 
 def sanitize(str)
@@ -208,7 +217,7 @@ def wrote_component(options, d, folder)
                                         [GeneratedArg.new('void *', 'usr_data')])]
   end
 
-  if options[:component_type] == 'SOURCE'
+  if %w[SOURCE].include?(options[:component_type])
     static_callbacks << Dispatcher.new('push_usr_messages',
                                        [GeneratedArg.new('void *', 'usr_data'),
                                         GeneratedArg.new('btx_source_status_t*', 'status')])
@@ -325,21 +334,14 @@ d[:callback_types] = callback_types
 wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
-
-  y = YAML.load_file(options[:downstream])
-  validate_model(y)
-  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_creates(folder, t, options)
+  y = load_files(options[:downstream]) 
+  trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  wrote_creates(folder, trace_model, options)
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
-
-  y = options[:upstreams].reduce({}) do |y_, upstream|
-    # Need to specialize for merging arrays
-    y_.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
-  end
-  validate_model(y)
+  y = load_files(options[:upstreams])
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_event_dispatchers(folder, trace_model, trace_matcher)
 end
