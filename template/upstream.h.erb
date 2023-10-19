@@ -9,14 +9,14 @@ typedef void(dispatcher_t)(callbacks_t *callbacks, common_data_t *common_data,
                            const bt_message *upstream_message);
 
 <%# The Function who register the callbacks to the dispatcher %>
-<% matchers.each do |matcher| %>
-typedef void <%= matcher.name_sanitized %>_callback_f(
+<% callback_types.each do |callback_type| %>
+typedef void <%= callback_type.name_sanitized %>_callback_f(
     void *btx_handle,
     void *
-        usr_data<%= matcher.args.map{ |s| s.type }.join_with_prefix(', ') %>);
+        usr_data<%= callback_type.args.map{ |s| s.type }.join_with_prefix(', ') %>);
 
-void btx_register_callbacks_<%= matcher.name_sanitized %>(
-    void *btx_handle, <%= matcher.name_sanitized %>_callback_f *callback);
+void btx_register_callbacks_<%= callback_type.name_sanitized %>(
+    void *btx_handle, <%= callback_type.name_sanitized %>_callback_f *callback);
 
 <% end %>
 void btx_delete_dispatchers(common_data_t *common_data);

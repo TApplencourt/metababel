@@ -53,7 +53,10 @@ class Hash
   end
 end
 
-Matcher = Struct.new(:name, :args, :id, :dispatchers) do
+EventSet = Struct.new(:name, :events)
+Event = Struct.new(:name, :callbacks_types)
+
+CallbackType = Struct.new(:name, :args, :id, :dispatchers) do
   def name_sanitized
     sanitize(name)
   end
@@ -61,7 +64,7 @@ end
 
 Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
                         :index_event_class, :default_clock_class,
-                        :args_to_free, :matchers,
+                        :args_to_free, :callback_types,
                         :event) do
   def name_sanitized
     sanitize(name)
@@ -137,40 +140,40 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
 
-    matcher = Matcher.new(e.name, evt_args, 'generic', [])
+    callback_type = CallbackType.new(e.name, evt_args, 'generic', [])
     dispatcher = Dispatcher.new(
       e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
-      arg_variables.fetch('outputs_allocated', []), [matcher], e
+      arg_variables.fetch('outputs_allocated', []), [callback_type], e
     )
-    matcher.dispatchers << dispatcher
+    callback_type.dispatchers << dispatcher
 
     dispatcher
   end
 
-  matchers = dispatchers.flat_map(&:matchers)
+  callback_types = dispatchers.flat_map(&:callback_types)
 
-  matchers += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
+  callback_types += trace_matching_model.map_event_classes_with_index do |em, _, _, default_clock_class|
     # Get the matching dispachers
     matched_dispatchers, args = get_matched_dispatchers_and_signature(dispatchers, em)
 
     # Modify the dispatcher to add the new dispatchType
-    matcher_args = []
-    matcher_args << GeneratedArg.new('int64_t', '_timestamp') if default_clock_class
-    matcher_args << GeneratedArg.new('const char *', '_event_class_name')
-    matcher_args += args
+    callback_type_args = []
+    callback_type_args << GeneratedArg.new('int64_t', '_timestamp') if default_clock_class
+    callback_type_args << GeneratedArg.new('const char *', '_event_class_name')
+    callback_type_args += args
 
-    # Create the matcher and add it to the list of dispatchers 
-    matcher = Matcher.new(em.callback_name, matcher_args, "matching_#{sanitize(em.callback_name)}",
+    # Create the callback_type and add it to the list of dispatchers 
+    callback_type = CallbackType.new(em.callback_name, callback_type_args, "matching_#{sanitize(em.callback_name)}",
                           matched_dispatchers)
 
     matched_dispatchers.each do |dispatcher|
-      dispatcher.matchers << matcher
+      dispatcher.callback_types << callback_type
     end
 
-    matcher
+    callback_type
   end
 
-  d = { dispatchers: dispatchers, matchers: matchers, event_name: event_var_name }
+  d = { dispatchers: dispatchers, callback_types: callback_types, event_name: event_var_name }
 
   erb_render_and_save(d, 'upstream.h', folder)
   erb_render_and_save(d, 'upstream.c', folder)
@@ -318,16 +321,16 @@ if options.key?(:params)
 end
 
 erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
-erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
+erb_render_and_save(d, 'metababel.h', folder, prefix: '')
 
 callback_types = ['generic']
-trace_matcher = Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
+trace_callback_type = Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
 
 if options.key?(:callbacks)
   data = YAML.load_file(options[:callbacks])
   data[:match] = true
-  trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
-  callback_types += trace_matcher.map_event_classes do |e|
+  trace_callback_type = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
+  callback_types += trace_callback_type.map_event_classes do |e|
     raise "Key ':callback_name' required when matching events." unless e.callback_name
     "matching_#{sanitize(e.callback_name)}"
   end
@@ -347,5 +350,5 @@ if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
   y = load_files(options[:upstreams])
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, trace_model, trace_matcher)
+  wrote_event_dispatchers(folder, trace_model, trace_callback_type)
 end
