@@ -57,15 +57,15 @@ module Babeltrace2Gen
 
       # We didn't match anything
       if args_matched.empty? || args_matched.uniq.length != match_members.length
-        return false
+        false
       # Same arguments in the model have been matched twice
       elsif args_matched.uniq.length != args_matched.length
         raise "Members '#{args_matched.uniq.map(&:name)}' matched multiple times in '#{match_members.map(&:name)}'. "
       # Not all match mernbers found a matchings
       elsif args_matched.uniq.length != match_members.length
-        return false
+        false
       else
-        return args_matched
+        args_matched
       end
     end
   end
