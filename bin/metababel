@@ -86,8 +86,7 @@ class Babeltrace2Gen::BTTraceClass
   end
 end
 
-class GeneratedArg < Struct.new(:type, :name)
-end
+GeneratedArg = Struct.new(:type, :name)
 
 # We preprent an empty new line from the body as a hack, to correct the indentation
 # Indeeed the <%= body %> will be indented, but we don't don't want it,
