@@ -148,7 +148,7 @@ def get_dispatch_type(em, default_clock_class, context)
     [dispatcher, extracted_args] if extracted_args
   end.transpose
 
-  if !matched_dispatchers or matched_dispatchers.empty?
+  if !matched_dispatchers || matched_dispatchers.empty?
     raise "No event matched '#{em.set_id}', at least one matching event required."
   end
 
