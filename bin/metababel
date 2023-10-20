@@ -185,28 +185,9 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
   erb_render_and_save(d, 'upstream.c', folder)
 end
 
-def wrote_creates(folder, t)
-  event_name = '_event'
-  downstream_events = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
-    arg_variables = {}
-    body = Babeltrace2Gen.context(indent: 1) do
-      e.get_setter(event: event_name, arg_variables: arg_variables)
-    end
-    Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
-                   default_clock_class)
-  end
-
-  body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
-    t.get_declarator(variable: '_trace_class', self_component: '_self_component')
-  end
-
-  d = { body_declarator_classes: body_declarator_classes,
-        downstream_events: downstream_events,
-        stream_classes: t.stream_classes,
-        event_name: event_name }
-
-  erb_render_and_save(d, 'downstream.h', folder)
-  erb_render_and_save(d, 'downstream.c', folder)
+def wrote_creates(cb, folder)
+  erb_render_and_save(cb.get_context(['downstream']), 'downstream.h', folder)
+  erb_render_and_save(cb.get_context(['downstream']), 'downstream.c', folder)
 end
 
 def wrote_component(cb, folder)
@@ -357,36 +338,53 @@ class ContextBuilder
     { 'static_callback_types' => static_callbacks }
   end
 
+  def downstream
+    y = load_models(@cli_options[:downstream])
+    t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+
+    event_name = '_event'
+    downstream_events = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+      arg_variables = {}
+      body = Babeltrace2Gen.context(indent: 1) do
+        e.get_setter(event: event_name, arg_variables: arg_variables)
+      end
+      Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
+                     default_clock_class)
+    end
+
+    body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
+      t.get_declarator(variable: '_trace_class', self_component: '_self_component')
+    end
+
+    { body_declarator_classes: body_declarator_classes,
+      downstream_events: downstream_events,
+      stream_classes: t.stream_classes,
+      event_name: event_name }
+  end
+
   def get_context(list_symbols)
     d = {}
     d.update(options) if list_symbols.include?('options')
     d.update(params) if list_symbols.include?('params')
     d.update(callback_types) if list_symbols.include?('callback_types')
     d.update(static_callback_types) if list_symbols.include?('static_callback_types')
+    d.update(downstream) if list_symbols.include?('downstream')
     d
   end
 end
 
 context_builder = ContextBuilder.new(options)
 
-d = { options: options, params_declaration: nil, params_definition: nil }
-
 erb_render_and_save(context_builder.get_context(%w[params options]), "#{options[:component_type].downcase}.c",
                     base_folder, out_name: 'main.c')
 erb_render_and_save(context_builder.get_context(['options']), 'metababel.h', folder, prefix: '')
-
-trace_matcher = context_builder.trace_matcher
-
-d[:callback_types] = context_builder.callback_types[:callback_types]
 
 wrote_component(context_builder, folder)
 
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 
-  y = load_models(options[:downstream])
-  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_creates(folder, t)
+  wrote_creates(context_builder, folder)
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
@@ -394,5 +392,6 @@ if %w[FILTER SINK].include?(options[:component_type])
 
   y = load_models(options[:upstreams])
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+  trace_matcher = context_builder.trace_matcher
   wrote_event_dispatchers(folder, trace_model, trace_matcher)
 end
