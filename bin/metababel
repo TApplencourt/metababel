@@ -209,34 +209,11 @@ def wrote_creates(folder, t)
   erb_render_and_save(d, 'downstream.c', folder)
 end
 
-def wrote_component(options, d, folder)
-  static_callbacks = [Dispatcher.new('initialize_component',
-                                     [GeneratedArg.new('void **', 'usr_data_p')]),
-                      Dispatcher.new('finalize_component',
-                                     [GeneratedArg.new('void *', 'usr_data')]),
-                      Dispatcher.new('read_params',
-                                     [GeneratedArg.new('void *', 'usr_data'),
-                                      GeneratedArg.new('btx_params_t *', 'usr_params')])]
-  # Usefull to push message
-  if %w[SOURCE FILTER].include?(options[:component_type])
-    static_callbacks += [Dispatcher.new('initialize_processing',
-                                        [GeneratedArg.new('void *', 'usr_data_p')]),
-                         Dispatcher.new('finalize_processing',
-                                        [GeneratedArg.new('void *', 'usr_data')])]
-  end
-
-  if options[:component_type] == 'SOURCE'
-    static_callbacks << Dispatcher.new('push_usr_messages',
-                                       [GeneratedArg.new('void *', 'usr_data'),
-                                        GeneratedArg.new('btx_source_status_t*', 'status')])
-  end
-
-  d2 = { event_name: 'dummy_event',
-         static_callback_types: static_callbacks,
-         options: options }
-
-  erb_render_and_save(d2.update(d), 'component.h', folder)
-  erb_render_and_save(d2.update(d), 'component.c', folder)
+def wrote_component(cb, folder)
+  erb_render_and_save(cb.get_context(%w[options params callback_types static_callback_types]), 'component.h',
+                      folder)
+  erb_render_and_save(cb.get_context(%w[options params callback_types static_callback_types]), 'component.c',
+                      folder)
 end
 
 def parse_argv
@@ -309,41 +286,101 @@ base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin
 folder = "#{base_folder}/metababel"
 FileUtils.mkdir_p(folder)
 
+class ContextBuilder
+  def initialize(o)
+    @cli_options = o
+  end
+
+  def options
+    { options: @cli_options }
+  end
+
+  def params
+    if @cli_options.key?(:params)
+      y = YAML.load_file(@cli_options[:params])
+      c = Babeltrace2Gen::BTValueCLass.from_h(y)
+      body = Babeltrace2Gen.context(indent: 1) do
+        c.get('_usr_params', '_params')
+      end
+      { params_declaration: c.get_struct_definition('_params'),
+        params_definition: body }
+    else
+      { params_declaration: nil, params_definition: nil }
+    end
+  end
+
+  def trace_matcher
+    if @cli_options.key?(:callbacks)
+      data = YAML.load_file(@cli_options[:callbacks])
+      data[:match] = true
+      Babeltrace2Gen::BTTraceClass.from_h(nil, data)
+    else
+      Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
+    end
+  end
+
+  def callback_types
+    callback_types = ['generic']
+    if @cli_options.key?(:callbacks)
+      event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
+        raise "Key ':set_id' required for matching events." unless em.set_id
+
+        em.register
+      end
+      callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
+    end
+    { callback_types: callback_types }
+  end
+
+  def static_callback_types
+    static_callbacks = [Dispatcher.new('initialize_component',
+                                       [GeneratedArg.new('void **', 'usr_data_p')]),
+                        Dispatcher.new('finalize_component',
+                                       [GeneratedArg.new('void *', 'usr_data')]),
+                        Dispatcher.new('read_params',
+                                       [GeneratedArg.new('void *', 'usr_data'),
+                                        GeneratedArg.new('btx_params_t *', 'usr_params')])]
+    # Usefull to push message
+    if %w[SOURCE FILTER].include?(@cli_options[:component_type])
+      static_callbacks += [Dispatcher.new('initialize_processing',
+                                          [GeneratedArg.new('void *', 'usr_data_p')]),
+                           Dispatcher.new('finalize_processing',
+                                          [GeneratedArg.new('void *', 'usr_data')])]
+    end
+
+    if %w[SOURCE].include?(@cli_options[:component_type])
+      static_callbacks << Dispatcher.new('push_usr_messages',
+                                         [GeneratedArg.new('void *', 'usr_data'),
+                                          GeneratedArg.new('btx_source_status_t*', 'status')])
+
+    end
+    { 'static_callback_types' => static_callbacks }
+  end
+
+  def get_context(list_symbols)
+    d = {}
+    d.update(options) if list_symbols.include?('options')
+    d.update(params) if list_symbols.include?('params')
+    d.update(callback_types) if list_symbols.include?('callback_types')
+    d.update(static_callback_types) if list_symbols.include?('static_callback_types')
+    d
+  end
+end
+
+context_builder = ContextBuilder.new(options)
+
 d = { options: options, params_declaration: nil, params_definition: nil }
 
-if options.key?(:params)
-  y = YAML.load_file(options[:params])
-  c = Babeltrace2Gen::BTValueCLass.from_h(y)
-  body = Babeltrace2Gen.context(indent: 1) do
-    c.get('_usr_params', '_params')
-  end
-  d[:params_declaration] = c.get_struct_definition('_params')
-  d[:params_definition] = body
-end
+erb_render_and_save(context_builder.get_context(%w[params options]), "#{options[:component_type].downcase}.c",
+                    base_folder, out_name: 'main.c')
+erb_render_and_save(context_builder.get_context(['options']), 'metababel.h', folder, prefix: '')
 
-erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
-erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
+trace_matcher = context_builder.trace_matcher
 
-callback_types = ['generic']
-trace_matcher = Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
+d[:callback_types] = context_builder.callback_types[:callback_types]
 
-if options.key?(:callbacks)
-  data = YAML.load_file(options[:callbacks])
-  data[:match] = true
-  trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
+wrote_component(context_builder, folder)
 
-  event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
-    raise "Key ':set_id' required for matching events." unless em.set_id
-
-    em.register
-  end
-
-  callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
-end
-
-d[:callback_types] = callback_types
-
-wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
 
