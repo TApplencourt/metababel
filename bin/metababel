@@ -191,9 +191,9 @@ def wrote_creates(cb, folder)
 end
 
 def wrote_component(cb, folder)
-  erb_render_and_save(cb.get_context(%w[options params callback_types static_callback_types]), 'component.h',
+  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.h',
                       folder)
-  erb_render_and_save(cb.get_context(%w[options params callback_types static_callback_types]), 'component.c',
+  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.c',
                       folder)
 end
 
@@ -310,10 +310,7 @@ class ContextBuilder
       end
       callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
     end
-    { callback_types: callback_types }
-  end
 
-  def static_callback_types
     static_callbacks = [Dispatcher.new('initialize_component',
                                        [GeneratedArg.new('void **', 'usr_data_p')]),
                         Dispatcher.new('finalize_component',
@@ -335,7 +332,8 @@ class ContextBuilder
                                           GeneratedArg.new('btx_source_status_t*', 'status')])
 
     end
-    { 'static_callback_types' => static_callbacks }
+    { callback_types: callback_types,
+      static_callback_types: static_callbacks }
   end
 
   def downstream
