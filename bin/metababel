@@ -311,7 +311,7 @@ class ContextBuilder
     t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
 
     event_name = '_event'
-    dispatchers = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+    dispatchers, automatic_dispatch_types = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
       arg_variables = {}
       body = Babeltrace2Gen.context(indent: 1) do
         e.get_getter(event: event_name, arg_variables: arg_variables)
@@ -329,10 +329,8 @@ class ContextBuilder
       )
       dispatch_type.matched_dispatchers << dispatcher
 
-      dispatcher
-    end
-
-    automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
+      [dispatcher, dispatch_type]
+    end.transpose
 
     context = { 'all' => dispatchers.to_set }
     matching_dispatch_types = trace_matcher.filter_map_event_classes_with_index do |em, _, _, default_clock_class|
