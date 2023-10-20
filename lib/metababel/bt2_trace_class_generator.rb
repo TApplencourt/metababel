@@ -691,11 +691,15 @@ module Babeltrace2Gen
       end
     end
 
+    def bt_get_variable(arg_variables, is_array: false)
+      super(arg_variables, is_array: true)
+    end
+
     def get_setter(field:, arg_variables:)
       field_class, id = resolve_path(@length_field_path)
       length_field = field_class[id]
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_field.name});"
-      usr_var = bt_get_variable(arg_variables, is_array: true)
+      usr_var = bt_get_variable(arg_variables)
       pr "for(uint64_t _i=0; _i < #{length_field.name} ; _i++)"
       scope do
         v = "#{field}_e"
@@ -736,7 +740,7 @@ module Babeltrace2Gen
     end
 
     def get_arg
-      GeneratedArg.new(@field_class.class.instance_variable_get(:@bt_type), @name)
+      @field_class.bt_get_variable({})
     end
   end
 

@@ -53,16 +53,13 @@ class Hash
   end
 end
 
-EventSet = Struct.new(:name, :events)
-Event = Struct.new(:name, :callbacks_types)
-
-CallbackType = Struct.new(:name, :args, :id, :dispatchers) do
+Event = Struct.new(:name, :args, :id, :dispatchers) do
   def name_sanitized
     sanitize(name)
   end
 end
 
-Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
+EventSet = Struct.new(:name, :args, :body, :index_stream_class,
                         :index_event_class, :default_clock_class,
                         :args_to_free, :callback_types,
                         :event) do
@@ -140,8 +137,8 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
     evt_args += arg_variables.fetch('outputs', [])
 
-    callback_type = CallbackType.new(e.name, evt_args, 'generic', [])
-    dispatcher = Dispatcher.new(
+    callback_type = Event.new(e.name, evt_args, 'generic', [])
+    dispatcher = EventSet.new(
       e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
       arg_variables.fetch('outputs_allocated', []), [callback_type], e
     )
@@ -163,7 +160,7 @@ def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
     callback_type_args += args
 
     # Create the callback_type and add it to the list of dispatchers 
-    callback_type = CallbackType.new(em.callback_name, callback_type_args, "matching_#{sanitize(em.callback_name)}",
+    callback_type = Event.new(em.callback_name, callback_type_args, "matching_#{sanitize(em.callback_name)}",
                           matched_dispatchers)
 
     matched_dispatchers.each do |dispatcher|
@@ -186,7 +183,7 @@ def wrote_creates(folder, t, options)
     body = Babeltrace2Gen.context(indent: 1) do
       e.get_setter(event: event_var_name, arg_variables: arg_variables)
     end
-    Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
+    EventSet.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
                    default_clock_class)
   end
 
@@ -205,23 +202,23 @@ def wrote_creates(folder, t, options)
 end
 
 def wrote_component(options, d, folder)
-  static_callbacks = [Dispatcher.new('initialize_component',
+  static_callbacks = [EventSet.new('initialize_component',
                                      [GeneratedArg.new('void **', 'usr_data_p')]),
-                      Dispatcher.new('finalize_component',
+                      EventSet.new('finalize_component',
                                      [GeneratedArg.new('void *', 'usr_data')]),
-                      Dispatcher.new('read_params',
+                      EventSet.new('read_params',
                                      [GeneratedArg.new('void *', 'usr_data'),
                                       GeneratedArg.new('btx_params_t *', 'usr_params')])]
   # Usefull to push message
   if %w[SOURCE FILTER].include?(options[:component_type])
-    static_callbacks += [Dispatcher.new('initialize_processing',
+    static_callbacks += [EventSet.new('initialize_processing',
                                         [GeneratedArg.new('void *', 'usr_data_p')]),
-                         Dispatcher.new('finalize_processing',
+                         EventSet.new('finalize_processing',
                                         [GeneratedArg.new('void *', 'usr_data')])]
   end
 
   if %w[SOURCE].include?(options[:component_type])
-    static_callbacks << Dispatcher.new('push_usr_messages',
+    static_callbacks << EventSet.new('push_usr_messages',
                                        [GeneratedArg.new('void *', 'usr_data'),
                                         GeneratedArg.new('btx_source_status_t*', 'status')])
   end
