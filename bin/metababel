@@ -232,10 +232,11 @@ def wrote_component(options, d, folder)
   end
 
   d2 = { event_name: 'dummy_event',
-         static_callback_types: static_callbacks }
+         static_callback_types: static_callbacks,
+         options: options }
 
-  erb_render_and_save(d2.update(d).update(options: options), 'component.h', folder)
-  erb_render_and_save(d2.update(d).update(options: options), 'component.c', folder)
+  erb_render_and_save(d2.update(d), 'component.h', folder)
+  erb_render_and_save(d2.update(d), 'component.c', folder)
 end
 
 def parse_argv
