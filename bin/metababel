@@ -8,23 +8,6 @@ require 'fileutils'
 require 'set'
 require 'ostruct'
 
-def validate_model(yaml)
-  # Stream and event classes must have a 'name' as minimum requirement.
-  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                                        d.key?(:name) && d[:event_classes].all? do |d2|
-                                                          d2.key?(:name)
-                                                        end
-                                                      end
-
-  # Event class name must be unique
-  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
-  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
-end
-
-def sanitize(str)
-  str.gsub(/[^0-9A-Za-z-]/, '_')
-end
-
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -48,6 +31,31 @@ class Hash
   def deep_merge(other_hash, &block)
     dup.deep_merge!(other_hash, &block)
   end
+end
+
+def validate_model(yaml)
+  # Stream and event classes must have a 'name' as minimum requirement.
+  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                                        d.key?(:name) && d[:event_classes].all? do |d2|
+                                                          d2.key?(:name)
+                                                        end
+                                                      end
+
+  # Event class name must be unique
+  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
+  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
+  yaml
+end
+
+def load_models(models)
+  yaml = [models].flatten
+                 .map { |f| YAML.load_file(f) }
+                 .reduce({}){ |s,y| s.deep_merge(y) { |_key, old, new| old + new } }
+  validate_model(yaml)
+end
+
+def sanitize(str)
+  str.gsub(/[^0-9A-Za-z-]/, '_')
 end
 
 DispatchType = Struct.new(:name, :args, :id, :matched_dispatchers) do
@@ -331,21 +339,14 @@ d[:callback_types] = callback_types
 wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
-
-  y = YAML.load_file(options[:downstream])
-  validate_model(y)
+  y =load_models(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
-
-  y = options[:upstreams].reduce({}) do |y_, upstream|
-    # Need to specialize for merging arrays
-    y_.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
-  end
-  validate_model(y)
+  y =load_models(options[:upstreams])
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_event_dispatchers(folder, trace_model, trace_matcher)
 end
