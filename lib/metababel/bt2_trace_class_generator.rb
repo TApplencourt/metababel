@@ -424,7 +424,7 @@ module Babeltrace2Gen
       raise NotImplementedError, self.class
     end
 
-    def bt_get_variable(arg_variables, is_array: false)
+    def bt_get_variable(arg_variables = {}, is_array: false)
       internal = arg_variables.fetch('internal', [])
       return internal.shift unless internal.empty?
 
@@ -737,8 +737,8 @@ module Babeltrace2Gen
       @field_class = BTFieldClass.from_h(self, field_class)
     end
 
-    def get_arg
-      GeneratedArg.new(@field_class.class.instance_variable_get(:@bt_type), @name)
+    def bt_get_variable()
+      @field_class.bt_get_variable()
     end
   end
 
@@ -956,13 +956,13 @@ module Babeltrace2Gen
 
     def get_getter(trace:, arg_variables:)
       var_name = @name
-      arg_variables.fetch_append('outputs', get_arg)
+      arg_variables.fetch_append('outputs', bt_get_variable)
       bt_func_get = self.class.instance_variable_get(:@bt_func)
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
       pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
     end
 
-    def get_arg
+    def bt_get_variable()
       GeneratedArg.new(self.class.instance_variable_get(:@bt_type), @name)
     end
   end
