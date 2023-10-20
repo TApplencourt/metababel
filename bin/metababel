@@ -33,28 +33,6 @@ class Hash
   end
 end
 
-def validate_model(yaml)
-  # Stream and event classes must have a 'name' as minimum requirement.
-  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                                        d.key?(:name) && d[:event_classes].all? do |d2|
-                                                          d2.key?(:name)
-                                                        end
-                                                      end
-
-  # Event class name must be unique
-  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
-  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
-
-  yaml
-end
-
-def load_models(models)
-  yaml = [models].flatten
-                 .map { |f| YAML.load_file(f) }
-                 .reduce({}) { |s, y| s.deep_merge(y) { |_key, old, new| old + new } }
-  validate_model(yaml)
-end
-
 def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
@@ -95,107 +73,7 @@ class Babeltrace2Gen::BTTraceClass
   end
 end
 
-class GeneratedArg < Struct.new(:type, :name)
-end
-
-def get_dispatch_type(em, default_clock_class, context)
-  dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context['all']
-  raise "Nil or empty event set for '#{em.set_id}'." unless dispatchers.is_a?(Set)
-
-  matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
-    extracted_args = dispatcher.event.match?(em)
-    [dispatcher, extracted_args] if extracted_args
-  end.transpose
-
-  if !matched_dispatchers or matched_dispatchers.empty?
-    raise "No event matched '#{em.set_id}', at least one matching event required."
-  end
-
-  # Verify same signature
-  unique_signatures = signatures.uniq
-  unless unique_signatures.size == 1
-    signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
-    raise "Conflicting signatures for '#{em.set_id}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
-  end
-
-  # Modify the dispatcher to add the new dispatchType
-  name_sanitized = sanitize(em.set_id)
-  dispatch_type_args = []
-
-  dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
-
-  dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
-  dispatch_type_args += signatures.pop
-  dispatch_type = DispatchType.new(
-    name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers
-  )
-
-  # Update context for further events filtering.
-  context[dispatch_type.name] = dispatch_type.matched_dispatchers.to_set
-
-  # Exclude unnecessary rendering.
-  return false unless em.register
-
-  matched_dispatchers.each { |dispatcher| dispatcher.dispatch_types << dispatch_type }
-
-  dispatch_type
-end
-
-# We preprent an empty new line from the body as a hack, to correct the indentation
-# Indeeed the <%= body %> will be indented, but we don't don't want it,
-# in the body string is already indented
-# But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
-  event_name = '_event'
-
-  dispatchers = trace_model.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
-    arg_variables = {}
-    body = Babeltrace2Gen.context(indent: 1) do
-      e.get_getter(event: event_name, arg_variables: arg_variables)
-    end
-
-    # automatic event dispatcher
-    evt_args = []
-    evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
-    evt_args += arg_variables.fetch('outputs', [])
-
-    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
-    dispatcher = Dispatcher.new(
-      e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
-      arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
-    )
-    dispatch_type.matched_dispatchers << dispatcher
-
-    dispatcher
-  end
-
-  automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
-
-  context = { 'all' => dispatchers.to_set }
-  matching_dispatch_types = trace_matching_model.filter_map_event_classes_with_index do |em, _, _, default_clock_class|
-    # We mutate context across iterations.
-    get_dispatch_type(em, default_clock_class, context)
-  end
-
-  d = { dispatchers: dispatchers,
-        dispatch_types: automatic_dispatch_types + matching_dispatch_types,
-        event_name: event_name }
-
-  erb_render_and_save(d, 'upstream.h', folder)
-  erb_render_and_save(d, 'upstream.c', folder)
-end
-
-def wrote_creates(cb, folder)
-  erb_render_and_save(cb.get_context(['downstream']), 'downstream.h', folder)
-  erb_render_and_save(cb.get_context(['downstream']), 'downstream.c', folder)
-end
-
-def wrote_component(cb, folder)
-  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.h',
-                      folder)
-  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.c',
-                      folder)
-end
+GeneratedArg = Struct.new(:type, :name)
 
 def parse_argv
   # Display help if no arguments.
@@ -261,6 +139,49 @@ def parse_argv
   options
 end
 
+def get_dispatch_type(em, default_clock_class, context)
+  dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context['all']
+  raise "Nil or empty event set for '#{em.set_id}'." unless dispatchers.is_a?(Set)
+
+  matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
+    extracted_args = dispatcher.event.match?(em)
+    [dispatcher, extracted_args] if extracted_args
+  end.transpose
+
+  if !matched_dispatchers or matched_dispatchers.empty?
+    raise "No event matched '#{em.set_id}', at least one matching event required."
+  end
+
+  # Verify same signature
+  unique_signatures = signatures.uniq
+  unless unique_signatures.size == 1
+    signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
+    raise "Conflicting signatures for '#{em.set_id}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
+  end
+
+  # Modify the dispatcher to add the new dispatchType
+  name_sanitized = sanitize(em.set_id)
+  dispatch_type_args = []
+
+  dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
+
+  dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
+  dispatch_type_args += signatures.pop
+  dispatch_type = DispatchType.new(
+    name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers
+  )
+
+  # Update context for further events filtering.
+  context[dispatch_type.name] = dispatch_type.matched_dispatchers.to_set
+
+  # Exclude unnecessary rendering.
+  return false unless em.register
+
+  matched_dispatchers.each { |dispatcher| dispatcher.dispatch_types << dispatch_type }
+
+  dispatch_type
+end
+
 options = parse_argv
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
@@ -270,6 +191,28 @@ FileUtils.mkdir_p(folder)
 class ContextBuilder
   def initialize(o)
     @cli_options = o
+  end
+
+  def validate_model(yaml)
+    # Stream and event classes must have a 'name' as minimum requirement.
+    raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                                          d.key?(:name) && d[:event_classes].all? do |d2|
+                                                            d2.key?(:name)
+                                                          end
+                                                        end
+
+    # Event class name must be unique
+    events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
+    raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
+
+    yaml
+  end
+
+  def load_models(models)
+    yaml = [models].flatten
+                   .map { |f| YAML.load_file(f) }
+                   .reduce({}) { |s, y| s.deep_merge(y) { |_key, old, new| old + new } }
+    validate_model(yaml)
   end
 
   def options
@@ -337,8 +280,15 @@ class ContextBuilder
   end
 
   def downstream
+    raise 'Missing downstream model' unless @cli_options[:downstream]
+
     y = load_models(@cli_options[:downstream])
     t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+
+    # We preprent an empty new line from the body as a hack, to correct the indentation
+    # Indeeed the <%= body %> will be indented, but we don't don't want it,
+    # in the body string is already indented
+    # But we clean the white space empty line afterward \o/
 
     event_name = '_event'
     downstream_events = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
@@ -360,6 +310,47 @@ class ContextBuilder
       event_name: event_name }
   end
 
+  def upstream
+    raise 'Missing upstreams models' unless @cli_options[:upstreams]
+
+    y = load_models(@cli_options[:upstreams])
+    t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+
+    event_name = '_event'
+    dispatchers = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+      arg_variables = {}
+      body = Babeltrace2Gen.context(indent: 1) do
+        e.get_getter(event: event_name, arg_variables: arg_variables)
+      end
+
+      # automatic event dispatcher
+      evt_args = []
+      evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
+      evt_args += arg_variables.fetch('outputs', [])
+
+      dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
+      dispatcher = Dispatcher.new(
+        e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
+        arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
+      )
+      dispatch_type.matched_dispatchers << dispatcher
+
+      dispatcher
+    end
+
+    automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
+
+    context = { 'all' => dispatchers.to_set }
+    matching_dispatch_types = trace_matcher.filter_map_event_classes_with_index do |em, _, _, default_clock_class|
+      # We mutate context across iterations.
+      get_dispatch_type(em, default_clock_class, context)
+    end
+
+    { dispatchers: dispatchers,
+      dispatch_types: automatic_dispatch_types + matching_dispatch_types,
+      event_name: event_name }
+  end
+
   def get_context(list_symbols)
     d = {}
     d.update(options) if list_symbols.include?('options')
@@ -367,8 +358,26 @@ class ContextBuilder
     d.update(callback_types) if list_symbols.include?('callback_types')
     d.update(static_callback_types) if list_symbols.include?('static_callback_types')
     d.update(downstream) if list_symbols.include?('downstream')
+    d.update(upstream) if list_symbols.include?('upstream')
     d
   end
+end
+
+def wrote_event_dispatchers(cb, folder)
+  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', folder)
+  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', folder)
+end
+
+def wrote_creates(cb, folder)
+  erb_render_and_save(cb.get_context(['downstream']), 'downstream.h', folder)
+  erb_render_and_save(cb.get_context(['downstream']), 'downstream.c', folder)
+end
+
+def wrote_component(cb, folder)
+  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.h',
+                      folder)
+  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.c',
+                      folder)
 end
 
 context_builder = ContextBuilder.new(options)
@@ -378,18 +387,5 @@ erb_render_and_save(context_builder.get_context(%w[params options]), "#{options[
 erb_render_and_save(context_builder.get_context(['options']), 'metababel.h', folder, prefix: '')
 
 wrote_component(context_builder, folder)
-
-if %w[SOURCE FILTER].include?(options[:component_type])
-  raise 'Missing downstream model' unless options[:downstream]
-
-  wrote_creates(context_builder, folder)
-end
-
-if %w[FILTER SINK].include?(options[:component_type])
-  raise 'Missing upstream models' unless options[:upstreams]
-
-  y = load_models(options[:upstreams])
-  trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  trace_matcher = context_builder.trace_matcher
-  wrote_event_dispatchers(folder, trace_model, trace_matcher)
-end
+wrote_creates(context_builder, folder) if %w[SOURCE FILTER].include?(options[:component_type])
+wrote_event_dispatchers(context_builder, folder) if %w[FILTER SINK].include?(options[:component_type])
