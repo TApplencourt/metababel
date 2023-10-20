@@ -44,13 +44,14 @@ def validate_model(yaml)
   # Event class name must be unique
   events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
   raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
+
   yaml
 end
 
 def load_models(models)
   yaml = [models].flatten
                  .map { |f| YAML.load_file(f) }
-                 .reduce({}){ |s,y| s.deep_merge(y) { |_key, old, new| old + new } }
+                 .reduce({}) { |s, y| s.deep_merge(y) { |_key, old, new| old + new } }
   validate_model(yaml)
 end
 
@@ -339,14 +340,16 @@ d[:callback_types] = callback_types
 wrote_component(options, d, folder)
 if %w[SOURCE FILTER].include?(options[:component_type])
   raise 'Missing downstream model' unless options[:downstream]
-  y =load_models(options[:downstream])
+
+  y = load_models(options[:downstream])
   t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_creates(folder, t)
 end
 
 if %w[FILTER SINK].include?(options[:component_type])
   raise 'Missing upstream models' unless options[:upstreams]
-  y =load_models(options[:upstreams])
+
+  y = load_models(options[:upstreams])
   trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
   wrote_event_dispatchers(folder, trace_model, trace_matcher)
 end
