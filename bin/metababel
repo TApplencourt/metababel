@@ -62,6 +62,16 @@ Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
   end
 end
 
+StaticDispatcher = Struct.new(:name, :args) do
+  def name_sanitized
+    sanitize(name)
+  end
+
+  def no_btx_handle
+    true
+  end
+end
+
 GeneratedArg = Struct.new(:type, :name)
 
 def erb_render_and_save(vars,
@@ -269,11 +279,11 @@ class ContextBuilder
         callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
       end
 
-      static_callbacks = [Dispatcher.new('initialize_component',
+      static_callbacks = [StaticDispatcher.new('initialize_component',
                                          [GeneratedArg.new('void **', 'usr_data_p')]),
-                          Dispatcher.new('finalize_component',
+                          StaticDispatcher.new('finalize_component',
                                          [GeneratedArg.new('void *', 'usr_data')]),
-                          Dispatcher.new('read_params',
+                          StaticDispatcher.new('read_params',
                                          [GeneratedArg.new('void *', 'usr_data'),
                                           GeneratedArg.new('btx_params_t *', 'usr_params')])]
       # Usefull to push message

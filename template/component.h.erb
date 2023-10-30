@@ -169,7 +169,8 @@ void btx_register_usr_callbacks(void *btx_handle);
 
 <% static_callback_types.each do |e| %>
 typedef void <%= e.name_sanitized %>_static_callback_f(
-    void *btx_handle, <%= e.args.map{ |s| s.type }.join(", ") %>);
+  <%= "void *btx_handle," unless e.no_btx_handle %>
+  <%= e.args.map{ |s| s.type }.join(", ") %>);
 
 <%# The Function who register the callbacks to the dispatcher %>
 void btx_register_callbacks_<%= e.name_sanitized %>(

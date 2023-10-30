@@ -8,11 +8,11 @@ struct data_s {
 
 typedef struct data_s data_t;
 
-void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
+void btx_initialize_usr_data(void **usr_data) {
   *usr_data = calloc(1, sizeof(data_t));
 }
 
-void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
+void btx_finalize_usr_data(void *usr_data) {
   data_t *data = (data_t *)usr_data;
   assert(data->usr_event_count == 2);
   assert(data->btx_event_count == 1);
