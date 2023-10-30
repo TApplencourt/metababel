@@ -152,7 +152,9 @@ def get_dispatch_type(em, default_clock_class, context)
     raise "No event matched '#{em.set_id}', at least one matching event required."
   end
 
-  # Verify same signature
+  # Verify the uniqueness of signatures.
+  # Note that `s.type` takes into account the `cast_type` 
+  #   (see TestMatchingConflictingSignatures for more details) 
   unique_signatures = signatures.uniq
   unless unique_signatures.size == 1
     signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
