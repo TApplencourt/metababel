@@ -379,14 +379,14 @@ class ContextBuilder
   end
 end
 
-def wrote_event_dispatchers(cb)
+def wrote_upstream(cb)
   erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
   erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', cb.folder)
 end
 
-def wrote_creates(cb)
-  erb_render_and_save(cb.get_context(['downstream']), 'downstream.h', cb.folder)
-  erb_render_and_save(cb.get_context(['downstream']), 'downstream.c', cb.folder)
+def wrote_downstream(cb)
+  erb_render_and_save(cb.get_context(%w[downstream]), 'downstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[downstream]), 'downstream.c', cb.folder)
 end
 
 def wrote_component(cb)
@@ -396,13 +396,20 @@ def wrote_component(cb)
                       cb.folder)
 end
 
+def wrote_main(cb)
+  erb_render_and_save(cb.get_context(%w[params options]), "#{cb.cli_options[:component_type].downcase}.c",
+                      cb.base_folder, out_name: 'main.c')
+end
+
+def wrote_header(cb)
+  erb_render_and_save(cb.get_context(%w[options]), 'metababel.h',
+                      cb.folder, prefix: '')
+end
+
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 context_builder = ContextBuilder.new
-
-erb_render_and_save(context_builder.get_context(%w[params options]), "#{context_builder.cli_options[:component_type].downcase}.c",
-                    context_builder.base_folder, out_name: 'main.c')
-erb_render_and_save(context_builder.get_context(['options']), 'metababel.h', context_builder.folder, prefix: '')
-
+wrote_header(context_builder)
+wrote_main(context_builder)
 wrote_component(context_builder)
-wrote_creates(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
-wrote_event_dispatchers(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
+wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
+wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
