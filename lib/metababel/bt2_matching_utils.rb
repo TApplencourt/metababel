@@ -52,7 +52,7 @@ module Babeltrace2Gen
         end
 
         # If not argument matched, then nil; otherwise, return the matched member.
-        matches.pop.get_arg unless matches.empty?
+        matches.pop.bt_get_variable unless matches.empty?
       end
 
       # We didn't match anything
