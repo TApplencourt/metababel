@@ -6,9 +6,9 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
-        gem: [true, false]
+        build_gem: [true, false]
         ruby: [ruby2.7, ruby]
-    name: ${{matrix.compiler}}, ${{matrix.ruby}}, gem? ${{matrix.gem}}
+    name: Check with ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}
     runs-on: ${{ matrix.ruby == 'ruby2.7' && 'ubuntu-20.04' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v3
@@ -24,14 +24,14 @@ jobs:
           gem build metababel
           sudo gem install metababel
           echo "METABABEL_INSTALL=1" >> $GITHUB_ENV
-        if: ${{ matrix.gem == true }}
+        if: ${{ matrix.build_gem == true }}
       - name: Run tests
         run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test
       - name: Run tests with Valgrind
         env:
           METABABEL_VALGRIND: 1
         run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test
-        if: ${{ matrix.gem == false }}
+        if: ${{ matrix.build_gem == false }}
   example:
     runs-on: ubuntu-latest
     name: Check with example
