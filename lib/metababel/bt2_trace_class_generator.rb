@@ -424,7 +424,7 @@ module Babeltrace2Gen
       raise NotImplementedError, self.class
     end
 
-    def bt_get_variable(arg_variables = {}, is_array: false)
+    def bt_get_variable(arg_variables, is_array: false)
       internal = arg_variables.fetch('internal', [])
       return internal.shift unless internal.empty?
 
@@ -738,7 +738,7 @@ module Babeltrace2Gen
     end
 
     def bt_get_variable()
-      @field_class.bt_get_variable()
+      @field_class.bt_get_variable({})
     end
   end
 

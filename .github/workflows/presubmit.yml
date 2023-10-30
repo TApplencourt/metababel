@@ -6,9 +6,10 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
-        gem: [true, false]
-    name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}
-    runs-on: ubuntu-latest
+        build_gem: [true, false]
+        ruby: [ruby2.7, ruby]
+    name: 'Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}'
+    runs-on: ${{ matrix.ruby == 'ruby2.7' && 'ubuntu-20.04' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v3
       - run: |
@@ -16,21 +17,21 @@ jobs:
           sudo apt-get update
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ${{matrix.compiler}} ruby babeltrace2 libbabeltrace2-dev valgrind
+          packages: ${{matrix.compiler}} ${{matrix.ruby}} babeltrace2 libbabeltrace2-dev valgrind
           version: 1.0
       - name: Install Gem
         run: |
           gem build metababel
           sudo gem install metababel
           echo "METABABEL_INSTALL=1" >> $GITHUB_ENV
-        if: ${{ matrix.gem == true }}
+        if: ${{ matrix.build_gem == true }}
       - name: Run tests
         run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test
       - name: Run tests with Valgrind
         env:
           METABABEL_VALGRIND: 1
         run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test
-        if: ${{ matrix.gem == false }}
+        if: ${{ matrix.build_gem == false }}
   example:
     runs-on: ubuntu-latest
     name: Check with example
@@ -41,7 +42,7 @@ jobs:
           sudo apt-get update
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ${{matrix.compiler}} ruby babeltrace2 libbabeltrace2-dev
+          packages: ${{matrix.compiler}} ${{matrix.ruby}} babeltrace2 libbabeltrace2-dev
           version: 1.0
       - run: |
           cd example
