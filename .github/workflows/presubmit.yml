@@ -8,7 +8,7 @@ jobs:
         compiler: [gcc, clang]
         gem: [true, false]
         ruby_version: [ruby2.7, ruby]
-    name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}, ${{matrix.ruby}
+    name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}, ${{matrix.ruby}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
