@@ -33,6 +33,16 @@ class Hash
   end
 end
 
+class Babeltrace2Gen::BTTraceClass
+  def filter_map_event_classes_with_index
+    @stream_classes.map.with_index do |s, index_stream_class|
+      s.event_classes.filter_map.with_index do |e, index_event_class|
+        yield(e, index_stream_class, index_event_class, s.default_clock_class)
+      end
+    end.flatten(1)
+  end
+end
+
 def sanitize(str)
   str.gsub(/[^0-9A-Za-z-]/, '_')
 end
@@ -52,6 +62,8 @@ Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
   end
 end
 
+GeneratedArg = Struct.new(:type, :name)
+
 def erb_render_and_save(vars,
                         basename, out_folder, out_name: nil, prefix: 'btx_')
   template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
@@ -62,18 +74,6 @@ def erb_render_and_save(vars,
   str = ERB.new(template, trim_mode: '<>').result_with_hash(vars).gsub(/^ +$\n/, '')
   File.write(File.join(out_folder, "#{prefix}#{out_name || basename}"), str)
 end
-
-class Babeltrace2Gen::BTTraceClass
-  def filter_map_event_classes_with_index
-    @stream_classes.map.with_index do |s, index_stream_class|
-      s.event_classes.filter_map.with_index do |e, index_event_class|
-        yield(e, index_stream_class, index_event_class, s.default_clock_class)
-      end
-    end.flatten(1)
-  end
-end
-
-GeneratedArg = Struct.new(:type, :name)
 
 def parse_argv
   # Display help if no arguments.
@@ -182,31 +182,45 @@ def get_dispatch_type(em, default_clock_class, context)
   dispatch_type
 end
 
-class ContextBuilder
-  def initialize(o)
-    @cli_options = o
-  end
-
-  def validate_model(yaml)
-    # Stream and event classes must have a 'name' as minimum requirement.
-    raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                                          d.key?(:name) && d[:event_classes].all? do |d2|
-                                                            d2.key?(:name)
-                                                          end
+def validate_model(yaml)
+  # Stream and event classes must have a 'name' as minimum requirement.
+  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                                        d.key?(:name) && d[:event_classes].all? do |d2|
+                                                          d2.key?(:name)
                                                         end
+                                                      end
 
-    # Event class name must be unique
-    events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
-    raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
+  # Event class name must be unique
+  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
+  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
 
-    yaml
+  yaml
+end
+
+def load_models(models)
+  yaml = [models].flatten
+                 .map { |f| YAML.load_file(f) }
+                 .reduce({}) { |s, y| s.deep_merge(y) { |_key, old, new| old + new } }
+  validate_model(yaml)
+end
+
+class ContextBuilder
+  attr_accessor :cli_options
+
+  def initialize
+    @cli_options = parse_argv
   end
 
-  def load_models(models)
-    yaml = [models].flatten
-                   .map { |f| YAML.load_file(f) }
-                   .reduce({}) { |s, y| s.deep_merge(y) { |_key, old, new| old + new } }
-    validate_model(yaml)
+  def base_folder
+    f = @cli_options[:folder] || "#{@cli_options[:component_type]}.#{@cli_options[:plugin_name]}.#{@cli_options[:component_name]}"
+    FileUtils.mkdir_p(f)
+    f
+  end
+
+  def folder
+    f = "#{base_folder}/metababel"
+    FileUtils.mkdir_p(f)
+    f
   end
 
   def options
@@ -355,35 +369,30 @@ class ContextBuilder
   end
 end
 
-def wrote_event_dispatchers(cb, folder)
-  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', folder)
-  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', folder)
+def wrote_event_dispatchers(cb)
+  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', cb.folder)
 end
 
-def wrote_creates(cb, folder)
-  erb_render_and_save(cb.get_context(['downstream']), 'downstream.h', folder)
-  erb_render_and_save(cb.get_context(['downstream']), 'downstream.c', folder)
+def wrote_creates(cb)
+  erb_render_and_save(cb.get_context(['downstream']), 'downstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(['downstream']), 'downstream.c', cb.folder)
 end
 
-def wrote_component(cb, folder)
+def wrote_component(cb)
   erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.h',
-                      folder)
+                      cb.folder)
   erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.c',
-                      folder)
+                      cb.folder)
 end
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
-options = parse_argv
-base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
-folder = "#{base_folder}/metababel"
-FileUtils.mkdir_p(folder)
+context_builder = ContextBuilder.new
 
-context_builder = ContextBuilder.new(options)
+erb_render_and_save(context_builder.get_context(%w[params options]), "#{context_builder.cli_options[:component_type].downcase}.c",
+                    context_builder.base_folder, out_name: 'main.c')
+erb_render_and_save(context_builder.get_context(['options']), 'metababel.h', context_builder.folder, prefix: '')
 
-erb_render_and_save(context_builder.get_context(%w[params options]), "#{options[:component_type].downcase}.c",
-                    base_folder, out_name: 'main.c')
-erb_render_and_save(context_builder.get_context(['options']), 'metababel.h', folder, prefix: '')
-
-wrote_component(context_builder, folder)
-wrote_creates(context_builder, folder) if %w[SOURCE FILTER].include?(options[:component_type])
-wrote_event_dispatchers(context_builder, folder) if %w[FILTER SINK].include?(options[:component_type])
+wrote_component(context_builder)
+wrote_creates(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
+wrote_event_dispatchers(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
