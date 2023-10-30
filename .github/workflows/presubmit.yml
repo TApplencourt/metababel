@@ -7,7 +7,8 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         gem: [true, false]
-    name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}
+        ruby_version: [ruby2.7, ruby]
+    name: Check with ${{matrix.compiler}}, gem? ${{matrix.gem}}, ${{matrix.ruby}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -16,7 +17,7 @@ jobs:
           sudo apt-get update
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ${{matrix.compiler}} ruby babeltrace2 libbabeltrace2-dev valgrind
+          packages: ${{matrix.compiler}} ${{matrix.ruby}} babeltrace2 libbabeltrace2-dev valgrind
           version: 1.0
       - name: Install Gem
         run: |
@@ -41,7 +42,7 @@ jobs:
           sudo apt-get update
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ${{matrix.compiler}} ruby babeltrace2 libbabeltrace2-dev
+          packages: ${{matrix.compiler}} ${{matrix.ruby}} babeltrace2 libbabeltrace2-dev
           version: 1.0
       - run: |
           cd example
