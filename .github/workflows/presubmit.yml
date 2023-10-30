@@ -8,7 +8,7 @@ jobs:
         compiler: [gcc, clang]
         build_gem: [true, false]
         ruby: [ruby2.7, ruby]
-    name: Check with ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}
+    name: Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}
     runs-on: ${{ matrix.ruby == 'ruby2.7' && 'ubuntu-20.04' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v3
