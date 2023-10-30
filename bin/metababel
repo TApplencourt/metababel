@@ -60,6 +60,10 @@ Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
   def name_sanitized
     sanitize(name)
   end
+
+  def no_btx_handle
+    false
+  end
 end
 
 StaticDispatcher = Struct.new(:name, :args) do
