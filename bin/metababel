@@ -8,23 +8,6 @@ require 'fileutils'
 require 'set'
 require 'ostruct'
 
-def validate_model(yaml)
-  # Stream and event classes must have a 'name' as minimum requirement.
-  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
-                                                        d.key?(:name) && d[:event_classes].all? do |d2|
-                                                          d2.key?(:name)
-                                                        end
-                                                      end
-
-  # Event class name must be unique
-  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
-  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
-end
-
-def sanitize(str)
-  str.gsub(/[^0-9A-Za-z-]/, '_')
-end
-
 class Array
   def join_with_prefix(sep)
     empty? ? '' : "#{sep}#{join(sep)}"
@@ -50,6 +33,20 @@ class Hash
   end
 end
 
+class Babeltrace2Gen::BTTraceClass
+  def filter_map_event_classes_with_index
+    @stream_classes.map.with_index do |s, index_stream_class|
+      s.event_classes.filter_map.with_index do |e, index_event_class|
+        yield(e, index_stream_class, index_event_class, s.default_clock_class)
+      end
+    end.flatten(1)
+  end
+end
+
+def sanitize(str)
+  str.gsub(/[^0-9A-Za-z-]/, '_')
+end
+
 DispatchType = Struct.new(:name, :args, :id, :matched_dispatchers) do
   def name_sanitized
     sanitize(name)
@@ -65,6 +62,8 @@ Dispatcher = Struct.new(:name, :args, :body, :index_stream_class,
   end
 end
 
+GeneratedArg = Struct.new(:type, :name)
+
 def erb_render_and_save(vars,
                         basename, out_folder, out_name: nil, prefix: 'btx_')
   template = File.read(File.join(__dir__, "../template/#{basename}.erb"))
@@ -76,17 +75,68 @@ def erb_render_and_save(vars,
   File.write(File.join(out_folder, "#{prefix}#{out_name || basename}"), str)
 end
 
-class Babeltrace2Gen::BTTraceClass
-  def filter_map_event_classes_with_index
-    @stream_classes.map.with_index do |s, index_stream_class|
-      s.event_classes.filter_map.with_index do |e, index_event_class|
-        yield(e, index_stream_class, index_event_class, s.default_clock_class)
-      end
-    end.flatten(1)
-  end
-end
+def parse_argv
+  # Display help if no arguments.
+  ARGV << '-h' if ARGV.empty?
 
-class GeneratedArg < Struct.new(:type, :name)
+  options = {}
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: example.rb [options]'
+
+    opts.on('-h', '--help', 'Prints this help') do
+      puts opts
+      exit
+    end
+
+    opts.on('-v', '--version', 'Prints this help') do
+      puts "Ruby: #{RUBY_VERSION}"
+      puts "Metababel: #{Metababel::VERSION}"
+      exit
+    end
+
+    opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
+      options[:component_type] = p
+    end
+
+    opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 yaml file.') do |p|
+      options[:upstreams] = p
+    end
+
+    opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
+      options[:downstream] = p
+    end
+
+    opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
+      options[:plugin_name] = p
+    end
+
+    opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
+      options[:component_name] = p
+    end
+
+    opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
+      options[:params] = p
+    end
+
+    opts.on('--callbacks PATH', '[Optional] Name of YAML defining matching callbacks.') do |p|
+      options[:callbacks] = p
+    end
+
+    opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
+      options[:folder] = p
+    end
+
+    opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
+      options[:usr_data_header] = p
+    end
+  end.parse!
+
+  raise OptionParser::MissingArgument if options[:component_type].nil?
+
+  options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
+  options[:component_name] ||= 'btx'
+
+  options
 end
 
 def get_dispatch_type(em, default_clock_class, context)
@@ -98,7 +148,7 @@ def get_dispatch_type(em, default_clock_class, context)
     [dispatcher, extracted_args] if extracted_args
   end.transpose
 
-  if !matched_dispatchers or matched_dispatchers.empty?
+  if !matched_dispatchers || matched_dispatchers.empty?
     raise "No event matched '#{em.set_id}', at least one matching event required."
   end
 
@@ -132,220 +182,234 @@ def get_dispatch_type(em, default_clock_class, context)
   dispatch_type
 end
 
-# We preprent an empty new line from the body as a hack, to correct the indentation
-# Indeeed the <%= body %> will be indented, but we don't don't want it,
-# in the body string is already indented
-# But we clean the white space empty line afterward \o/
-def wrote_event_dispatchers(folder, trace_model, trace_matching_model)
-  event_name = '_event'
+def validate_model(yaml)
+  # Stream and event classes must have a 'name' as minimum requirement.
+  raise "Missing 'name' attr in model #{yaml}" unless yaml[:stream_classes].all? do |d|
+                                                        d.key?(:name) && d[:event_classes].all? do |d2|
+                                                          d2.key?(:name)
+                                                        end
+                                                      end
 
-  dispatchers = trace_model.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
-    arg_variables = {}
-    body = Babeltrace2Gen.context(indent: 1) do
-      e.get_getter(event: event_name, arg_variables: arg_variables)
-    end
+  # Event class name must be unique
+  events = yaml[:stream_classes].flat_map { |sc| sc[:event_classes] }.map { |e| e[:name] }
+  raise "Duplicated 'event' in model #{yaml}" unless events.length == events.uniq.length
 
-    # automatic event dispatcher
-    evt_args = []
-    evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
-    evt_args += arg_variables.fetch('outputs', [])
-
-    dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
-    dispatcher = Dispatcher.new(
-      e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
-      arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
-    )
-    dispatch_type.matched_dispatchers << dispatcher
-
-    dispatcher
-  end
-
-  automatic_dispatch_types = dispatchers.flat_map(&:dispatch_types)
-
-  context = { 'all' => dispatchers.to_set }
-  matching_dispatch_types = trace_matching_model.filter_map_event_classes_with_index do |em, _, _, default_clock_class|
-    # We mutate context across iterations.
-    get_dispatch_type(em, default_clock_class, context)
-  end
-
-  d = { dispatchers: dispatchers,
-        dispatch_types: automatic_dispatch_types + matching_dispatch_types,
-        event_name: event_name }
-
-  erb_render_and_save(d, 'upstream.h', folder)
-  erb_render_and_save(d, 'upstream.c', folder)
+  yaml
 end
 
-def wrote_creates(folder, t)
-  event_name = '_event'
-  downstream_events = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
-    arg_variables = {}
-    body = Babeltrace2Gen.context(indent: 1) do
-      e.get_setter(event: event_name, arg_variables: arg_variables)
+def load_models(models)
+  yaml = [models].flatten
+                 .map { |f| YAML.load_file(f) }
+                 .reduce({}) { |s, y| s.deep_merge(y) { |_key, old, new| old + new } }
+  validate_model(yaml)
+end
+
+class ContextBuilder
+  attr_accessor :cli_options
+
+  def initialize
+    @cli_options = parse_argv
+  end
+
+  def base_folder
+    @base_folder ||= begin
+      f = @cli_options[:folder] || "#{@cli_options[:component_type]}.#{@cli_options[:plugin_name]}.#{@cli_options[:component_name]}"
+      FileUtils.mkdir_p(f)
+      f
     end
-    Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
-                   default_clock_class)
   end
 
-  body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
-    t.get_declarator(variable: '_trace_class', self_component: '_self_component')
+  def folder
+    @folder ||= begin
+      f = "#{base_folder}/metababel"
+      FileUtils.mkdir_p(f)
+      f
+    end
   end
 
-  d = { body_declarator_classes: body_declarator_classes,
+  def options
+    { options: @cli_options }
+  end
+
+  def params
+    @params ||= if @cli_options.key?(:params)
+                  y = YAML.load_file(@cli_options[:params])
+                  c = Babeltrace2Gen::BTValueCLass.from_h(y)
+                  body = Babeltrace2Gen.context(indent: 1) do
+                    c.get('_usr_params', '_params')
+                  end
+                  { params_declaration: c.get_struct_definition('_params'),
+                    params_definition: body }
+                else
+                  { params_declaration: nil, params_definition: nil }
+                end
+  end
+
+  def trace_matcher
+    @trace_matcher ||= if @cli_options.key?(:callbacks)
+                         data = YAML.load_file(@cli_options[:callbacks])
+                         data[:match] = true
+                         Babeltrace2Gen::BTTraceClass.from_h(nil, data)
+                       else
+                         Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
+                       end
+  end
+
+  def callback_types
+    @callback_types ||= begin
+      callback_types = ['generic']
+      if @cli_options.key?(:callbacks)
+        event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
+          raise "Key ':set_id' required for matching events." unless em.set_id
+
+          em.register
+        end
+        callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
+      end
+
+      static_callbacks = [Dispatcher.new('initialize_component',
+                                         [GeneratedArg.new('void **', 'usr_data_p')]),
+                          Dispatcher.new('finalize_component',
+                                         [GeneratedArg.new('void *', 'usr_data')]),
+                          Dispatcher.new('read_params',
+                                         [GeneratedArg.new('void *', 'usr_data'),
+                                          GeneratedArg.new('btx_params_t *', 'usr_params')])]
+      # Usefull to push message
+      if %w[SOURCE FILTER].include?(@cli_options[:component_type])
+        static_callbacks += [Dispatcher.new('initialize_processing',
+                                            [GeneratedArg.new('void *', 'usr_data_p')]),
+                             Dispatcher.new('finalize_processing',
+                                            [GeneratedArg.new('void *', 'usr_data')])]
+      end
+
+      if %w[SOURCE].include?(@cli_options[:component_type])
+        static_callbacks << Dispatcher.new('push_usr_messages',
+                                           [GeneratedArg.new('void *', 'usr_data'),
+                                            GeneratedArg.new('btx_source_status_t*', 'status')])
+
+      end
+      { callback_types: callback_types,
+        static_callback_types: static_callbacks }
+    end
+  end
+
+  def downstream
+    @downstream ||= begin
+      raise 'Missing downstream model' unless @cli_options[:downstream]
+
+      y = load_models(@cli_options[:downstream])
+      t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+
+      # We preprent an empty new line from the body as a hack, to correct the indentation
+      # Indeeed the <%= body %> will be indented, but we don't don't want it,
+      # in the body string is already indented
+      # But we clean the white space empty line afterward \o/
+
+      event_name = '_event'
+      downstream_events = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+        arg_variables = {}
+        body = Babeltrace2Gen.context(indent: 1) do
+          e.get_setter(event: event_name, arg_variables: arg_variables)
+        end
+        Dispatcher.new(e.name, arg_variables.fetch('outputs', []), "\n" + body, index_stream_class, index_event_class,
+                       default_clock_class)
+      end
+
+      body_declarator_classes = "\n" + Babeltrace2Gen.context(indent: 1) do
+        t.get_declarator(variable: '_trace_class', self_component: '_self_component')
+      end
+
+      { body_declarator_classes: body_declarator_classes,
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,
         event_name: event_name }
+    end
+  end
 
-  erb_render_and_save(d, 'downstream.h', folder)
-  erb_render_and_save(d, 'downstream.c', folder)
+  def upstream
+    @upstream ||= begin
+      raise 'Missing upstreams models' unless @cli_options[:upstreams]
+
+      y = load_models(@cli_options[:upstreams])
+      t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
+
+      event_name = '_event'
+      dispatchers, automatic_dispatch_types = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
+        arg_variables = {}
+        body = Babeltrace2Gen.context(indent: 1) do
+          e.get_getter(event: event_name, arg_variables: arg_variables)
+        end
+
+        # automatic event dispatcher
+        evt_args = []
+        evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
+        evt_args += arg_variables.fetch('outputs', [])
+
+        dispatch_type = DispatchType.new(e.name_sanitized, evt_args, 'generic', [])
+        dispatcher = Dispatcher.new(
+          e.name, evt_args, body, index_stream_class, index_event_class, default_clock_class,
+          arg_variables.fetch('outputs_allocated', []), [dispatch_type], e
+        )
+        dispatch_type.matched_dispatchers << dispatcher
+
+        [dispatcher, dispatch_type]
+      end.transpose
+
+      context = { 'all' => dispatchers.to_set }
+      matching_dispatch_types = trace_matcher.filter_map_event_classes_with_index do |em, _, _, default_clock_class|
+        # We mutate context across iterations.
+        get_dispatch_type(em, default_clock_class, context)
+      end
+
+      { dispatchers: dispatchers,
+        dispatch_types: automatic_dispatch_types + matching_dispatch_types,
+        event_name: event_name }
+    end
+  end
+
+  def get_context(list_symbols)
+    d = {}
+    d.update(options) if list_symbols.include?('options')
+    d.update(params) if list_symbols.include?('params')
+    d.update(callback_types) if list_symbols.include?('callback_types')
+    d.update(static_callback_types) if list_symbols.include?('static_callback_types')
+    d.update(downstream) if list_symbols.include?('downstream')
+    d.update(upstream) if list_symbols.include?('upstream')
+    d
+  end
 end
 
-def wrote_component(options, d, folder)
-  static_callbacks = [Dispatcher.new('initialize_component',
-                                     [GeneratedArg.new('void **', 'usr_data_p')]),
-                      Dispatcher.new('finalize_component',
-                                     [GeneratedArg.new('void *', 'usr_data')]),
-                      Dispatcher.new('read_params',
-                                     [GeneratedArg.new('void *', 'usr_data'),
-                                      GeneratedArg.new('btx_params_t *', 'usr_params')])]
-  # Usefull to push message
-  if %w[SOURCE FILTER].include?(options[:component_type])
-    static_callbacks += [Dispatcher.new('initialize_processing',
-                                        [GeneratedArg.new('void *', 'usr_data_p')]),
-                         Dispatcher.new('finalize_processing',
-                                        [GeneratedArg.new('void *', 'usr_data')])]
-  end
-
-  if options[:component_type] == 'SOURCE'
-    static_callbacks << Dispatcher.new('push_usr_messages',
-                                       [GeneratedArg.new('void *', 'usr_data'),
-                                        GeneratedArg.new('btx_source_status_t*', 'status')])
-  end
-
-  d2 = { event_name: 'dummy_event',
-         static_callback_types: static_callbacks }
-
-  erb_render_and_save(d2.update(d).update(options: options), 'component.h', folder)
-  erb_render_and_save(d2.update(d).update(options: options), 'component.c', folder)
+def wrote_upstream(cb)
+  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', cb.folder)
 end
 
-# Display help if no arguments.
-ARGV << '-h' if ARGV.empty?
+def wrote_downstream(cb)
+  erb_render_and_save(cb.get_context(%w[downstream]), 'downstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[downstream]), 'downstream.c', cb.folder)
+end
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = 'Usage: example.rb [options]'
+def wrote_component(cb)
+  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.h',
+                      cb.folder)
+  erb_render_and_save(cb.get_context(%w[options params callback_types]), 'component.c',
+                      cb.folder)
+end
 
-  opts.on('-h', '--help', 'Prints this help') do
-    puts opts
-    exit
-  end
+def wrote_main(cb)
+  erb_render_and_save(cb.get_context(%w[params options]), "#{cb.cli_options[:component_type].downcase}.c",
+                      cb.base_folder, out_name: 'main.c')
+end
 
-  opts.on('-v', '--version', 'Prints this help') do
-    puts "Ruby: #{RUBY_VERSION}"
-    puts "Metababel: #{Metababel::VERSION}"
-    exit
-  end
-
-  opts.on('-t', '--component TYPE', '[Mandatory] Node within a trace processing graph.') do |p|
-    options[:component_type] = p
-  end
-
-  opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 yaml file.') do |p|
-    options[:upstreams] = p
-  end
-
-  opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
-    options[:downstream] = p
-  end
-
-  opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
-    options[:plugin_name] = p
-  end
-
-  opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
-    options[:component_name] = p
-  end
-
-  opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
-    options[:params] = p
-  end
-
-  opts.on('--callbacks PATH', '[Optional] Name of YAML defining matching callbacks.') do |p|
-    options[:callbacks] = p
-  end
-
-  opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
-    options[:folder] = p
-  end
-
-  opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
-    options[:usr_data_header] = p
-  end
-end.parse!
-
-raise OptionParser::MissingArgument if options[:component_type].nil?
-
-options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
-options[:component_name] ||= 'btx'
+def wrote_header(cb)
+  erb_render_and_save(cb.get_context(%w[options]), 'metababel.h',
+                      cb.folder, prefix: '')
+end
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
-base_folder = options[:folder] || "#{options[:component_type]}.#{options[:plugin_name]}.#{options[:component_name]}"
-folder = "#{base_folder}/metababel"
-FileUtils.mkdir_p(folder)
-
-d = { options: options, params_declaration: nil, params_definition: nil }
-
-if options.key?(:params)
-  y = YAML.load_file(options[:params])
-  c = Babeltrace2Gen::BTValueCLass.from_h(y)
-  body = Babeltrace2Gen.context(indent: 1) do
-    c.get('_usr_params', '_params')
-  end
-  d[:params_declaration] = c.get_struct_definition('_params')
-  d[:params_definition] = body
-end
-
-erb_render_and_save(d, "#{options[:component_type].downcase}.c", base_folder, out_name: 'main.c')
-erb_render_and_save({ options: options }, 'metababel.h', folder, prefix: '')
-
-callback_types = ['generic']
-trace_matcher = Babeltrace2Gen::BTTraceClass.new(parent: nil, stream_classes: [])
-
-if options.key?(:callbacks)
-  data = YAML.load_file(options[:callbacks])
-  data[:match] = true
-  trace_matcher = Babeltrace2Gen::BTTraceClass.from_h(nil, data)
-
-  event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
-    raise "Key ':set_id' required for matching events." unless em.set_id
-
-    em.register
-  end
-
-  callback_types += event_classes.map { |em| "matching_#{sanitize(em.set_id)}" }
-end
-
-d[:callback_types] = callback_types
-
-wrote_component(options, d, folder)
-if %w[SOURCE FILTER].include?(options[:component_type])
-  raise 'Missing downstream model' unless options[:downstream]
-
-  y = YAML.load_file(options[:downstream])
-  validate_model(y)
-  t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_creates(folder, t)
-end
-
-if %w[FILTER SINK].include?(options[:component_type])
-  raise 'Missing upstream models' unless options[:upstreams]
-
-  y = options[:upstreams].reduce({}) do |y_, upstream|
-    # Need to specialize for merging arrays
-    y_.deep_merge(YAML.load_file(upstream)) { |_key, old, new| old + new }
-  end
-  validate_model(y)
-  trace_model = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
-  wrote_event_dispatchers(folder, trace_model, trace_matcher)
-end
+context_builder = ContextBuilder.new
+wrote_header(context_builder)
+wrote_main(context_builder)
+wrote_component(context_builder)
+wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
+wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
