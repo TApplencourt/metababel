@@ -9,7 +9,7 @@ jobs:
         gem: [true, false]
         ruby: [ruby2.7, ruby]
     name: ${{matrix.compiler}}, ${{matrix.ruby}}, gem? ${{matrix.gem}}
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.ruby == 'ruby2.7' && ubuntu-20.04 || ubuntu-latest }}
     steps:
       - uses: actions/checkout@v3
       - run: |
