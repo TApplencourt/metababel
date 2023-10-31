@@ -238,15 +238,14 @@ def get_dispatch_type(em, default_clock_class, context)
   end
 
   # Modify the dispatcher to add the new dispatchType
-  name_sanitized = sanitize(em.set_id)
+  name = em.set_id
   dispatch_type_args = []
-
   dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
-
   dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
   dispatch_type_args += signatures.pop
+
   dispatch_type = DispatchType.new(
-    name_sanitized, dispatch_type_args, "matching_#{name_sanitized}", matched_dispatchers
+    name, dispatch_type_args, "matching_#{sanitize(name)}", matched_dispatchers
   )
 
   # Update context for further events filtering.
@@ -408,10 +407,8 @@ class ContextBuilder
       dispatchers, automatic_dispatch_types = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
         dispatcher =  Dispatcher.new(e, event_name, 'getter', index_stream_class, index_event_class,
                                      default_clock_class)
-        dispatch_type = DispatchType.new(e.name, dispatcher.args, 'generic', [])
-
+        dispatch_type = DispatchType.new(e.name, dispatcher.args, 'generic', [dispatcher])
         dispatcher.dispatch_types << dispatch_type
-        dispatch_type.matched_dispatchers << dispatcher
 
         [dispatcher, dispatch_type]
       end.transpose
