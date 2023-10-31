@@ -28,6 +28,7 @@ void btx_call_callbacks_<%= e.name_sanitized %>(
   <%= e.name_sanitized %>_static_callback_f *p =
       common_data->static_callbacks-><%= e.name_sanitized %>;
   if (p)
-    p(((void *)common_data), <%= e.args.map{ |s| s.name }.join(", ") %>);
+    p( <%= "(void *)common_data," unless e.no_btx_handle %>
+       <%= e.args.map{ |s| s.name }.join(", ") %>);
 }
 <% end %>

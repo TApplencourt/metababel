@@ -11,11 +11,11 @@ struct usr_data_s {
 };
 typedef struct usr_data_s usr_data_t;
 
-void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
+void btx_initialize_usr_data(void **usr_data) {
   *usr_data = (usr_data_t *)calloc(1, sizeof(usr_data_t));
 }
 
-void btx_read_params(void *btx_handle, void *usr_data,
+void btx_read_params(void *usr_data,
                      btx_params_t *usr_params) {
   usr_data_t *data = (usr_data_t *)usr_data;
   data->file = fopen(usr_params->path, "r");
@@ -61,7 +61,7 @@ void btx_push_usr_messages(void *btx_handle, void *usr_data,
   *status = BTX_SOURCE_OK;
 }
 
-void btx_finalize_usr_data(void *btx_handle, void *usr_data) {
+void btx_finalize_usr_data(void *usr_data) {
   usr_data_t *data = (usr_data_t *)usr_data;
   /* Close the input file */
   fclose(data->file);

@@ -7,12 +7,12 @@ struct data_s {
 
 typedef struct data_s data_t;
 
-void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
+void btx_initialize_usr_data(void **usr_data) {
   *usr_data = (data_t *)calloc(1, sizeof(data_t));
   ((data_t *)(*usr_data))->count = 4;
 }
 
-void btx_finalize_usr_data(void *btx_handle, void *usr_data) { free(usr_data); }
+void btx_finalize_usr_data(void *usr_data) { free(usr_data); }
 
 void btx_push_usr_messages(void *btx_handle, void *usr_data,
                            btx_source_status_t *status) {

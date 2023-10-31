@@ -17,10 +17,10 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   <% end %>
 
   <%# Since now event is a variable, we need to check if the body will render variables that accesses it.  %>
-  <% if not dispatcher.body.empty? %>
+  <% if not dispatcher.body.strip.empty? %>
   const bt_event *<%= event_name %> =
       bt_message_event_borrow_event_const(upstream_message);
-  <%= "\n" + dispatcher.body %>
+  <%= dispatcher.body %>
   <% end %>
   <% if dispatcher.default_clock_class %>
   const bt_clock_snapshot *clock_snapshot =
