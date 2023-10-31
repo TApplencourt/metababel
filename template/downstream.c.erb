@@ -20,8 +20,8 @@ void btx_downstream_move_messages(
   }
 }
 
-static void inline
-_btx_push_message(btx_message_iterator_t *message_iterator_private_data,
+static inline
+void _btx_push_message(btx_message_iterator_t *message_iterator_private_data,
                   const bt_message *message) {
 
   struct el *elt;
