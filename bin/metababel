@@ -174,11 +174,11 @@ def parse_argv
       options[:component_type] = p
     end
 
-    opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 yaml file.') do |p|
+    opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 YAML files for the upstream model.') do |p|
       options[:upstreams] = p
     end
 
-    opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 yaml file.') do |p|
+    opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 YAML file for the downstream model.') do |p|
       options[:downstream] = p
     end
 
@@ -190,12 +190,12 @@ def parse_argv
       options[:component_name] = p
     end
 
-    opts.on('--params PATH', '[Optional] Name of YAML params definition.') do |p|
+    opts.on('--params PATH', '[Optional] Paht to the bt2 YAML params definition.') do |p|
       options[:params] = p
     end
 
-    opts.on('--callbacks PATH', '[Optional] Name of YAML defining matching callbacks.') do |p|
-      options[:callbacks] = p
+    opts.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.') do |p|
+      options[:matching] = p
     end
 
     opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
@@ -323,8 +323,8 @@ class ContextBuilder
   end
 
   def trace_matcher
-    @trace_matcher ||= if @cli_options.key?(:callbacks)
-                         data = YAML.load_file(@cli_options[:callbacks])
+    @trace_matcher ||= if @cli_options.key?(:matching)
+                         data = YAML.load_file(@cli_options[:matching])
                          data[:match] = true
                          Babeltrace2Gen::BTTraceClass.from_h(nil, data)
                        else
@@ -335,7 +335,7 @@ class ContextBuilder
   def callback_types
     @callback_types ||= begin
       callback_types = ['generic']
-      if @cli_options.key?(:callbacks)
+      if @cli_options.key?(:matching)
         event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
           raise "Key ':set_id' required for matching events." unless em.set_id
 

@@ -37,7 +37,7 @@ def get_component_generation_command(component)
     btx_component_downstream_model: '-d',
     btx_component_upstream_model: '-u',
     btx_component_usr_header_file: '-i',
-    btx_component_callbacks: '--callbacks',
+    btx_component_callbacks: '-m',
   }
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
 
