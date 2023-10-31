@@ -17,6 +17,7 @@ class TestCallAutomaticCallbackWithTimestamp < Test::Unit::TestCase
         btx_component_upstream_model: './test/callbacks/cases_automatic_callbacks/1.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_automatic_callbacks/1.btx_model.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_automatic_callbacks/1.callbacks.c',
+        btx_component_enable_callbacks: 'on_downstream',
       },
     ]
 
@@ -41,6 +42,7 @@ class TestCallTwoCallbacksForOneEvent < Test::Unit::TestCase
         btx_component_upstream_model: './test/callbacks/cases_automatic_callbacks/2.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_automatic_callbacks/2.btx_model.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_automatic_callbacks/2.callbacks.c',
+        btx_component_enable_callbacks: 'on_downstream',
       },
     ]
 

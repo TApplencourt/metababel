@@ -156,6 +156,9 @@ def parse_argv
   ARGV << '-h' if ARGV.empty?
 
   options = {}
+
+  options[:disable_callbaks] = ['on_downstream'].to_set
+
   OptionParser.new do |opts|
     opts.banner = 'Usage: example.rb [options]'
 
@@ -205,6 +208,11 @@ def parse_argv
     opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
       options[:usr_data_header] = p
     end
+
+    opts.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type') do |p|
+      options[:disable_callbaks] -= p.to_set
+    end
+
   end.parse!
 
   raise OptionParser::MissingArgument if options[:component_type].nil?
@@ -443,8 +451,8 @@ def wrote_upstream(cb)
 end
 
 def wrote_downstream(cb)
-  erb_render_and_save(cb.get_context(%w[downstream]), 'downstream.h', cb.folder)
-  erb_render_and_save(cb.get_context(%w[downstream]), 'downstream.c', cb.folder)
+  erb_render_and_save(cb.get_context(%w[downstream options]), 'downstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[downstream options]), 'downstream.c', cb.folder)
 end
 
 def wrote_component(cb)

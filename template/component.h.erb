@@ -63,8 +63,9 @@ struct el {
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
+  <% unless options[:disable_callbaks].include?('on_downstream') %>
   void *on_downstream_message_callback;
-
+  <% end %>
   void *usr_data;
   const bt_value *params;
   btx_params_t *btx_params;
@@ -104,7 +105,9 @@ typedef enum btx_source_status_e btx_source_status_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
+  <% unless options[:disable_callbaks].include?('on_downstream') %>
   void *on_downstream_message_callback;
+  <% end %>
 
   void *usr_data;
   const bt_value *params;
