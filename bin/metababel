@@ -408,7 +408,7 @@ class ContextBuilder
       dispatchers, automatic_dispatch_types = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
         dispatcher =  Dispatcher.new(e, event_name, 'getter', index_stream_class, index_event_class,
                                      default_clock_class)
-        dispatch_type = DispatchType.new(e.name_sanitized, dispatcher.args, 'generic', [])
+        dispatch_type = DispatchType.new(e.name, dispatcher.args, 'generic', [])
 
         dispatcher.dispatch_types << dispatch_type
         dispatch_type.matched_dispatchers << dispatcher
