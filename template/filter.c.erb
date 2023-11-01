@@ -340,9 +340,11 @@ filter_initialize(bt_self_component_filter *self_component_filter,
                   const bt_value *params, void *initialize_method_data) {
 
   /* Allocate a private data structure */
-  common_data_t *common_data = calloc(1, sizeof(common_data_t));
-  common_data->static_callbacks = calloc(1, sizeof(static_callbacks_t));
-  common_data->btx_params = calloc(1, sizeof(btx_params_t));
+  common_data_t *common_data =
+      (common_data_t *)calloc(1, sizeof(common_data_t));
+  common_data->static_callbacks =
+      (static_callbacks_t *)calloc(1, sizeof(static_callbacks_t));
+  common_data->btx_params = (btx_params_t *)calloc(1, sizeof(btx_params_t));
   common_data->params = params;
 
   /* Read parameters */
