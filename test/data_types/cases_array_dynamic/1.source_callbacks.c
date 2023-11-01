@@ -1,7 +1,9 @@
 #include <metababel/metababel.h>
 
-void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t *status) {
-  btx_push_message_event(btx_handle, 3, (long int  []){ 1, 2, 3 });
+void btx_push_usr_messages(void *btx_handle, void *usr_data,
+                           btx_source_status_t *status) {
+  long int foo[] = { 1, 2, 3 };
+  btx_push_message_event(btx_handle, 3, foo);
   *status = BTX_SOURCE_END;
 }
 

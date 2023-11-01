@@ -1,5 +1,5 @@
 struct MyStruct {
-    char *dummy;
+    const char *dummy;
 };
 
 typedef struct MyStruct usr_struct_t;
