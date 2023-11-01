@@ -352,8 +352,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
   /* Call initialize_processing*/
-  btx_call_callbacks_initialize_component((void *)common_data,
-                                          &common_data->usr_data);
+  btx_call_callbacks_initialize_component(common_data, &common_data->usr_data);
   /* Call read callbacks */
   btx_call_callbacks_read_params(common_data, common_data->usr_data,
                                  common_data->btx_params);
@@ -436,7 +435,7 @@ filter_message_iterator_initialize(
       (btx_message_iterator_t *)calloc(1, sizeof(btx_message_iterator_t));
 
   /* Retrieve the component's private data from its user data */
-  common_data_t *common_data = bt_self_component_get_data(
+  common_data_t *common_data = (common_data_t *)bt_self_component_get_data(
       bt_self_message_iterator_borrow_component(self_message_iterator));
 
   /* Save a link to the self_message_iterator */
@@ -476,7 +475,7 @@ filter_message_iterator_initialize(
 }
 
 static void filter_finalize(bt_self_component_filter *self_component_filter) {
-  common_data_t *common_data = bt_self_component_get_data(
+  common_data_t *common_data = (common_data_t *)bt_self_component_get_data(
       bt_self_component_filter_as_self_component(self_component_filter));
 
   /* Finalize Component */
