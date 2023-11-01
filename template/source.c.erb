@@ -26,6 +26,9 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
       (btx_message_iterator_t *)bt_self_message_iterator_get_data(
           self_message_iterator);
 
+  // Avoid C++ crosses initialization warning
+  btx_source_status_t status;
+
   /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
    * not put any message into the message array */
   switch (message_iterator_private_data->state) {
@@ -47,7 +50,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
     }
 
-    btx_source_status_t status = BTX_SOURCE_END;
+    status = BTX_SOURCE_END;
 
     btx_call_callbacks_push_usr_messages(
         message_iterator_private_data->common_data,
