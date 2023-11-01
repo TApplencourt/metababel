@@ -37,7 +37,8 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   {
     if (callbacks-><%= dispatch_type.id %>) {
       void **_p = NULL;
-      while ((_p = utarray_next(callbacks-><%= dispatch_type.id %>, _p))) {
+      while ((
+          _p = (void **)utarray_next(callbacks-><%= dispatch_type.id %>, _p))) {
         (*((<%= dispatch_type.name_sanitized %>_callback_f **)(_p)))(
             (void *)common_data,
             common_data
