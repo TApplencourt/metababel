@@ -28,7 +28,8 @@ filter_message_iterator_next_finalizing(
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
 
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   /* No more messages, we can stop the plugin, and transition to END  */
   if (!message_iterator_private_data->queue) {
@@ -55,7 +56,8 @@ filter_message_iterator_next_processing_sending(
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   /* This should never append. When transitioning to sending,
      we check that we have some messages to send */
@@ -167,7 +169,8 @@ filter_message_iterator_next_processing_reading(
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   common_data_t *common_data = message_iterator_private_data->common_data;
 
@@ -229,7 +232,8 @@ filter_message_iterator_next_processing(
     bt_message_array_const messages, uint64_t capacity, uint64_t *count) {
 
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   switch (message_iterator_private_data->processing_state) {
   case BTX_FILTER_PROCESSING_STATE_READING:
@@ -257,7 +261,8 @@ filter_message_iterator_next_initializing(
 
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   /* Begining of Stream */
   btx_push_messages_stream_beginning(self_message_iterator,
@@ -293,7 +298,8 @@ filter_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   switch (message_iterator_private_data->state) {
   case BTX_FILTER_STATE_INITIALIZING:
@@ -494,7 +500,8 @@ static void filter_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   {
     struct el *elt, *tmp;

@@ -23,7 +23,8 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
 
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   /* When you return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END, you must
    * not put any message into the message array */
@@ -196,7 +197,8 @@ static void source_message_iterator_finalize(
     bt_self_message_iterator *self_message_iterator) {
   /* Retrieve our private data from the message iterator's user data */
   btx_message_iterator_t *message_iterator_private_data =
-      bt_self_message_iterator_get_data(self_message_iterator);
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          self_message_iterator);
 
   struct el *elt, *tmp;
   DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
