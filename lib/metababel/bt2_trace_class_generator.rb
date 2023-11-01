@@ -609,7 +609,7 @@ module Babeltrace2Gen
       variable = bt_get_variable(arg_variables).name
 
       pr "// Dump data to a temporal string."
-      pr "char *#{field}_temp = malloc(sizeof(#{variable}));"
+      pr "char *#{field}_temp = (char *)malloc(sizeof(#{variable}));"
       pr "assert(#{field}_temp != NULL && \"Out of memory\");"
       pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
       pr ""

@@ -2,7 +2,7 @@
 
 struct data_s {
   uint64_t i;
-  int count;
+  uint64_t count;
 };
 
 typedef struct data_s data_t;
