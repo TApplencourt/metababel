@@ -85,9 +85,11 @@ source_initialize(bt_self_component_source *self_component_source,
                   bt_self_component_source_configuration *configuration,
                   const bt_value *params, void *initialize_method_data) {
   /* Allocate a private data structure */
-  common_data_t *common_data = calloc(1, sizeof(common_data_t));
-  common_data->static_callbacks = calloc(1, sizeof(static_callbacks_t));
-  common_data->btx_params = calloc(1, sizeof(btx_params_t));
+  common_data_t *common_data =
+      (common_data_t *)calloc(1, sizeof(common_data_t));
+  common_data->static_callbacks =
+      (static_callbacks_t *)calloc(1, sizeof(static_callbacks_t));
+  common_data->btx_params = (btx_params_t *)calloc(1, sizeof(btx_params_t));
   common_data->params = params;
 
   /* Read parameters */
@@ -142,7 +144,7 @@ source_message_iterator_initialize(
     bt_self_component_port_output *self_port) {
   /* Allocate a private data structure */
   btx_message_iterator_t *message_iterator_private_data =
-      calloc(1, sizeof(btx_message_iterator_t));
+      (btx_message_iterator_t *)calloc(1, sizeof(btx_message_iterator_t));
 
   message_iterator_private_data->state = BTX_SOURCE_STATE_INITIALIZING;
 

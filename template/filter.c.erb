@@ -427,7 +427,7 @@ filter_message_iterator_initialize(
     bt_self_component_port_output *self_port_output) {
   /* Allocate a private data structure */
   btx_message_iterator_t *message_iterator_private_data =
-      calloc(1, sizeof(btx_message_iterator_t));
+      (btx_message_iterator_t *)calloc(1, sizeof(btx_message_iterator_t));
 
   /* Retrieve the component's private data from its user data */
   common_data_t *common_data = bt_self_component_get_data(

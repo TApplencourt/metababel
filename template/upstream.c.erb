@@ -66,7 +66,7 @@ void btx_generic_register_callback_<%= dispatcher.name_sanitized %>(
     s = (name_to_dispatcher_t *)malloc(sizeof(name_to_dispatcher_t));
     s->name = "<%= dispatcher.name %>";
     s->dispatcher = (void *)&btx_dispatch_<%= dispatcher.name_sanitized %>;
-    s->callbacks = calloc(1, sizeof(callbacks_t));
+    s->callbacks = (callbacks_t *)calloc(1, sizeof(callbacks_t));
     // 2. Register it
     HASH_ADD_KEYPTR(hh, *name_to_dispatcher, s->name, strlen(s->name), s);
   }
