@@ -5,7 +5,7 @@ jobs:
   build-and-check:
     strategy:
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc, clang, g++]
         build_gem: [true, false]
         ruby: [ruby2.7, ruby]
     name: 'Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}'
