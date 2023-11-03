@@ -62,7 +62,8 @@ class BaseDispatch
   alias eql? ==
 
   def hash
-    instance_variables.reduce(0) { |a, b| a ^ instance_variable_get(b).hash }
+    @hash ||=
+      instance_variables.reduce(0) { |a, b| a ^ instance_variable_get(b).hash }
   end
 end
 
@@ -229,7 +230,13 @@ def parse_argv
 end
 
 def get_dispatch_type(em, default_clock_class, context)
-  dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context['all']
+
+  begin
+    dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context['all']
+  rescue StandardError
+    raise "Be sure your domain '#{em.domain}' is a valid ruby expresion and all set_id have been defined. Current defined set_id: #{context.keys}"
+  end
+
   raise "Nil or empty event set for '#{em.set_id}'." unless dispatchers.is_a?(Set)
 
   matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
