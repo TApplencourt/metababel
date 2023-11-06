@@ -1,0 +1,13 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :set_id: event_set_A
+    :register: false
+    :name: ^event_*
+  - :set_id: event_set_B
+    :register: false
+    :name: ^event_*
+  - :set_id: event_set
+    # expected to be an empty set
+    :domain: |
+      event_set_A - event_set_B

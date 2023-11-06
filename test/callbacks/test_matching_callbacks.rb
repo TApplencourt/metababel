@@ -301,3 +301,25 @@ class TestUnRegisteredEventsMatchingRendering < Test::Unit::TestCase
     ]
   end
 end
+
+class TestMatchDifferenceOperatorConsistency < Test::Unit::TestCase
+  # Verify that (setA - setB).size = 0 since both are the same.
+  # We are validating a condition that makes objects hash to be different
+  # event when we think they are equal since we are mutating the object' reference.
+  # We beleive this happend since we are using a catching mechanism.
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/14.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/14.btx_callbacks.yaml',
+        btx_file_usr_callbacks: './test/callbacks/cases_matching_callbacks/14.callbacks.c',
+        btx_compilation_should_fail: true,
+      },
+    ]
+  end
+end
