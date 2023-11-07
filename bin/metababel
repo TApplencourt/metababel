@@ -234,7 +234,7 @@ def get_dispatch_type(em, default_clock_class, context)
   begin
     dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context['all']
   rescue StandardError
-    raise "Be sure your domain '#{em.domain}' is a valid ruby expresion and all set_id have been defined. Current defined set_id: #{context.keys}"
+    raise "Please ensure the domain '#{em.domain}' uses valid ruby expressions and all set_id have been previously defined. Current defined set_ids: #{context.keys}."
   end
 
   raise "Nil or empty event set for '#{em.set_id}'." unless dispatchers.is_a?(Set)
