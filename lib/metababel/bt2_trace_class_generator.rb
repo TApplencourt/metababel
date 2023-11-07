@@ -731,10 +731,13 @@ module Babeltrace2Gen
 
     attr_reader :parent, :name, :field_class
 
-    def initialize(parent:, field_class:, name: nil)
+    def initialize(parent:, field_class: nil, name: nil)
       @parent = parent
+      is_match_model = parent.rec_trace_class.match
+      raise ArgumentError.new("missing keyword: :name") unless name || is_match_model
+      raise ArgumentError.new("missing keyword: :field_class") unless field_class || is_match_model
       @name = name # Name can be nil in the matching callbacks
-      @field_class = BTFieldClass.from_h(self, field_class)
+      @field_class = BTFieldClass.from_h(self, field_class || {} )
     end
 
     def bt_get_variable()
