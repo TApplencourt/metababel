@@ -62,8 +62,11 @@ class BaseDispatch
   alias eql? ==
 
   def hash
-    @hash ||=
-      instance_variables.reduce(0) { |a, b| a ^ instance_variable_get(b).hash }
+    # Remove cycle in dependency, and memos
+    blacklist = %i[@dispatch_types @matched_dispatchers @body_args]
+    instance_variables.filter_map do |i|
+      instance_variable_get(i).hash unless blacklist.include?(i)
+    end.reduce(:^)
   end
 end
 
@@ -103,8 +106,8 @@ class Dispatcher < BaseDispatch
     @index_stream_class = index_stream_class
     @index_event_class = index_event_class
     @default_clock_class = default_clock_class
-    @dispatch_types = []
     @name = event.name
+    @dispatch_types = []
   end
 
   def body_args
@@ -230,13 +233,12 @@ def parse_argv
 end
 
 def get_dispatch_type(em, default_clock_class, context)
-
   begin
     dispatchers = em.domain ? OpenStruct.new(context).instance_eval(em.domain) : context['all']
   rescue StandardError
     raise "Please ensure the domain '#{em.domain}' uses valid ruby expressions and all set_id have been previously defined. Current defined set_ids: #{context.keys}."
   end
-
+  raise 'Metababel Hash Set problem' unless (dispatchers - dispatchers).empty?
   raise "Nil or empty event set for '#{em.set_id}'." unless dispatchers.is_a?(Set)
 
   matched_dispatchers, signatures = dispatchers.filter_map do |dispatcher|
