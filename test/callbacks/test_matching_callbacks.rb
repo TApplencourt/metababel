@@ -301,3 +301,21 @@ class TestUnRegisteredEventsMatchingRendering < Test::Unit::TestCase
     ]
   end
 end
+
+class TestHashAreGood < Test::Unit::TestCase
+  # Verify that an unregistered 'set_id' is not included in the rendering.
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/14.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/14.btx_callbacks.yaml',
+        btx_compilation_should_fail: true, # No callbacks, no nothing. This tests metababel
+      },
+    ]
+  end
+end

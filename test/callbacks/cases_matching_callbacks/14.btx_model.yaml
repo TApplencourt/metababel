@@ -1,0 +1,22 @@
+:stream_classes:
+- :name: thapi_ze
+  :default_clock_class: {}
+  :event_classes:
+  - :name: lttng_ust_ze:zeInit_entry
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: flags
+        :field_class:
+          :cast_type: ze_init_flags_t
+          :type: integer_unsigned
+          :field_value_range: 32
+  - :name: lttng_ust_ze:zeInit_exit
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: zeResult
+        :field_class:
+          :cast_type: ze_result_t
+          :type: integer_signed
+          :field_value_range: 32

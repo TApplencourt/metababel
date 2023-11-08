@@ -1,0 +1,11 @@
+:stream_classes:
+- :default_clock_class: {}
+  :event_classes:
+  - :set_id: entries
+    :name: "_entry$"
+  - :set_id: exits
+    :name: "_exit$"
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: ^zeResult$
