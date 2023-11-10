@@ -101,9 +101,9 @@ void btx_unregister_callbacks(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
-    <% dispatch_types.map(&:id).uniq.each do |name| %>
-    if (current->callbacks-><%= name %>)
-      utarray_free(current->callbacks-><%= name %>);
+    <% callback_types.each do |id| %>
+    if (current->callbacks-><%= id %>)
+      utarray_free(current->callbacks-><%= id %>);
     <% end %>
     free(current->callbacks);
     free(current);
