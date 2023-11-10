@@ -126,7 +126,7 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
   btx_call_callbacks_finalize_component(common_data, common_data->usr_data);
 
   // Delete name_to_dispatcher
-  btx_delete_dispatchers(common_data);
+  btx_unregister_callbacks(common_data);
 
   // We allocate it, we need to free it
   free(common_data->btx_params);

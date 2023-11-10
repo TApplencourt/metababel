@@ -55,10 +55,9 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
 
 <% end %>
 
-void btx_supergeneric_register_callback(void *btx_handle,
-                                        const char *dispatcher_name,
-                                        void *btx_dispatch_p, const char *id,
-                                        void *callback) {
+static void bt_register_callbacks(void *btx_handle, const char *dispatcher_name,
+                                  void *btx_dispatch_p, const char *id,
+                                  void *callback) {
 
   name_to_dispatcher_t *s = NULL;
 
@@ -91,15 +90,14 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
     void *btx_handle,
     <%= dispatch_type.name_sanitized %>_callback_f *callback) {
   <% dispatch_type.matched_dispatchers.each do |dispatcher| %>
-  btx_supergeneric_register_callback(
-      btx_handle, "<%= dispatcher.name %>",
-      (void *)&btx_dispatch_<%= dispatcher.name_sanitized %>,
-      "<%= dispatch_type.id %>", (void *)callback);
+  bt_register_callbacks(btx_handle, "<%= dispatcher.name %>",
+                        (void *)&btx_dispatch_<%= dispatcher.name_sanitized %>,
+                        "<%= dispatch_type.id %>", (void *)callback);
   <% end %>
 }
 <% end %>
 
-void btx_delete_dispatchers(common_data_t *common_data) {
+void btx_unregister_callbacks(common_data_t *common_data) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
