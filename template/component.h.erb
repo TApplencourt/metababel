@@ -169,6 +169,7 @@ struct common_data_s {
 <% end %>
 
 void btx_register_usr_callbacks(void *btx_handle);
+void btx_unregister_callbacks(common_data_t *common_data);
 
 <% static_callback_types.each do |e| %>
 typedef void <%= e.name_sanitized %>_static_callback_f(

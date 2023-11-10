@@ -96,16 +96,3 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
   <% end %>
 }
 <% end %>
-
-void btx_unregister_callbacks(common_data_t *common_data) {
-  name_to_dispatcher_t *current, *tmp;
-  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
-    HASH_DEL(common_data->name_to_dispatcher, current);
-    <% callback_types.each do |id| %>
-    if (current->callbacks-><%= id %>)
-      utarray_free(current->callbacks-><%= id %>);
-    <% end %>
-    free(current->callbacks);
-    free(current);
-  }
-}

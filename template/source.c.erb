@@ -176,19 +176,13 @@ static void source_finalize(bt_self_component_source *self_component_source) {
   btx_call_callbacks_finalize_component(common_data, common_data->usr_data);
 
   btx_streams_put_ref(common_data->downstream_trace); // ??
-  // We allocate it, we need to put ref
+  /* We allocate it, we need to put ref */
   bt_trace_put_ref(common_data->downstream_trace);
 
-  // Delete name_to_dispatcher
-  name_to_dispatcher_t *current, *tmp;
-  HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
-    HASH_DEL(common_data->name_to_dispatcher, current);
-    utarray_free(current->callbacks->automatic);
-    free(current->callbacks);
-    free(current);
-  }
+  /* Delete name_to_dispatchers */
+  btx_unregister_callbacks(common_data);
 
-  // We allocate it, we need to free it
+  /* We allocate it, we need to free it */
   free(common_data->btx_params);
   free(common_data->static_callbacks);
   bt_value_put_ref(common_data->params);
