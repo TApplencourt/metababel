@@ -183,7 +183,7 @@ static void source_finalize(bt_self_component_source *self_component_source) {
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
-    utarray_free(current->callbacks->generic);
+    utarray_free(current->callbacks->automatic);
     free(current->callbacks);
     free(current);
   }
