@@ -461,7 +461,7 @@ end
 
 def wrote_upstream(cb)
   erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
-  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream callback_types]), 'upstream.c', cb.folder)
 end
 
 def wrote_downstream(cb)

@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'open3'
+require 'fileutils'
 
 module Assertions
   def assert_file_exists(file_path)
