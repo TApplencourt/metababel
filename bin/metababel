@@ -356,7 +356,7 @@ class ContextBuilder
 
   def callback_types
     @callback_types ||= begin
-      callback_types = ['generic']
+      callback_types = ['automatic']
       if @cli_options.key?(:matching)
         event_classes = trace_matcher.stream_classes.map(&:event_classes).flatten(1).filter do |em|
           raise "Key ':set_id' required for matching events." unless em.set_id
@@ -429,7 +429,7 @@ class ContextBuilder
       dispatchers, automatic_dispatch_types = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
         dispatcher =  Dispatcher.new(e, event_name, 'getter', index_stream_class, index_event_class,
                                      default_clock_class)
-        dispatch_type = DispatchType.new(e.name, dispatcher.args, 'generic', [dispatcher])
+        dispatch_type = DispatchType.new(e.name, dispatcher.args, 'automatic', [dispatcher])
         dispatcher.dispatch_types << dispatch_type
 
         [dispatcher, dispatch_type]
@@ -461,7 +461,7 @@ end
 
 def wrote_upstream(cb)
   erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
-  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.c', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream callback_types]), 'upstream.c', cb.folder)
 end
 
 def wrote_downstream(cb)

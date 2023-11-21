@@ -19,7 +19,7 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
     void *btx_handle, <%= dispatch_type.name_sanitized %>_callback_f *callback);
 
 <% end %>
-void btx_delete_dispatchers(common_data_t *common_data);
+void btx_unregister_callbacks(common_data_t *common_data);
 
 #ifdef __cplusplus
 }
