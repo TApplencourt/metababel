@@ -158,72 +158,96 @@ end
 
 def parse_argv
   # Display help if no arguments.
-  ARGV << '-h' if ARGV.empty?
-
   options = {}
+  subtext = <<~HELP
+    Available commands:
+
+       generate-plugin  Generate metababel plugin (default)
+  HELP
 
   options[:disable_callbaks] = ['on_downstream'].to_set
+  general = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
 
-  OptionParser.new do |opts|
-    opts.banner = 'Usage: example.rb [options]'
-
-    opts.on('-h', '--help', 'Prints this help') do
+    opts.on('-h', '--help', 'Show this help and quit') do
       puts opts
       exit
     end
 
-    opts.on('-v', '--version', 'Prints this help') do
+    opts.on('-v', '--version', 'Show version and quit') do
       puts "Ruby: #{RUBY_VERSION}"
       puts "Metababel: #{Metababel::VERSION}"
       exit
     end
+    opts.separator ''
+    opts.separator subtext
+  end
 
-    opts.on('-t', '--component TYPE',
-            '[Mandatory] Node within a trace processing graph [one of: SINK, SOURCE, FILTER].') do |p|
-      l = %w[SOURCE FILTER SINK]
-      h = Abbrev.abbrev(l)
-      raise "Invalid component type, should be #{l} (case insentitive)" unless h.include?(p.upcase)
+  subcommands = {
+    'generate-plugin' => OptionParser.new do |opts|
+                           opts.banner = "Usage: #{$PROGRAM_NAME} generate-plugin [options]"
 
-      options[:component_type] = h[p.upcase]
-    end
+                           opts.on('-t', '--component TYPE',
+                                   '[Mandatory] Node within a trace processing graph [one of: SINK, SOURCE, FILTER].') do |p|
+                             l = %w[SOURCE FILTER SINK]
+                             h = Abbrev.abbrev(l)
+                             unless h.include?(p.upcase)
+                               raise "Invalid component type, should be #{l} (case insentitive)"
+                             end
 
-    opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 YAML files for the upstream model.') do |p|
-      options[:upstreams] = p
-    end
+                             options[:component_type] = h[p.upcase]
+                           end
 
-    opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 YAML file for the downstream model.') do |p|
-      options[:downstream] = p
-    end
+                           opts.on('-u', '--upstreams PATH', Array,
+                                   '[Mandatory] Path to the bt2 YAML files for the upstream model.') do |p|
+                             options[:upstreams] = p
+                           end
 
-    opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
-      options[:plugin_name] = p
-    end
+                           opts.on('-d', '--downstream PATH',
+                                   '[Optional] Path to the bt2 YAML file for the downstream model.') do |p|
+                             options[:downstream] = p
+                           end
 
-    opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
-      options[:component_name] = p
-    end
+                           opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
+                             options[:plugin_name] = p
+                           end
 
-    opts.on('--params PATH', '[Optional] Paht to the bt2 YAML params definition.') do |p|
-      options[:params] = p
-    end
+                           opts.on('-c', '--component-name PATH',
+                                   '[Optional] Name of the bt2 componant created.') do |p|
+                             options[:component_name] = p
+                           end
 
-    opts.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.') do |p|
-      options[:matching] = p
-    end
+                           opts.on('--params PATH', '[Optional] Paht to the bt2 YAML params definition.') do |p|
+                             options[:params] = p
+                           end
 
-    opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
-      options[:folder] = p
-    end
+                           opts.on('-m', '--matching PATH',
+                                   '[Optional] Path to bt2 YAML matching-callbacks definitions.') do |p|
+                             options[:matching] = p
+                           end
 
-    opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
-      options[:usr_data_header] = p
-    end
+                           opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
+                             options[:folder] = p
+                           end
 
-    opts.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type') do |p|
-      options[:disable_callbaks] -= p.to_set
-    end
-  end.parse!
+                           opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
+                             options[:usr_data_header] = p
+                           end
 
+                           opts.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type') do |p|
+                             options[:disable_callbaks] -= p.to_set
+                           end
+                         end,
+  }
+
+  if ARGV.empty?
+    ARGV.prepend('-h')
+  elsif ARGV[0].start_with?('-')
+    ARGV.prepend('generate-plugin') unless ARGV[0].start_with?('-h')
+  end
+
+  general.order!
+  subcommands[ARGV.shift].order!
   raise OptionParser::MissingArgument if options[:component_type].nil?
 
   options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
