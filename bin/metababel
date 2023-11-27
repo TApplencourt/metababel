@@ -182,8 +182,7 @@ def parse_argv
                   )
   end
 
-  options[:generate_plugin] = {}
-  options[:generate_plugin][:disable_callbaks] = ['on_downstream'].to_set
+  options[:disable_callbaks] = ['on_downstream'].to_set
 
   subcommands = {
     'generate-plugin' => OptionParser.new do |opts|
@@ -270,7 +269,7 @@ def parse_argv
   subcommand = ARGV.shift
   subcommands[subcommand].order!
 
-  options['subcommand'] = subcommand
+  options[:subcommand] = subcommand
   if subcommand == 'generate-plugin'
     raise('Mising Component Type') if options[:component_type].nil?
 
@@ -549,12 +548,12 @@ end
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 context_builder = ContextBuilder.new
-if context_builder.cli_options['subcommand'] == 'generate-plugin'
+if context_builder.cli_options[:subcommand] == 'generate-plugin'
   wrote_header(context_builder)
   wrote_main(context_builder)
   wrote_component(context_builder)
   wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
   wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
-elsif context_builder.cli_options['subcommand'] == 'list-matched-events'
+elsif context_builder.cli_options[:subcommand] == 'list-matched-events'
   print_matching_events(context_builder)
 end
