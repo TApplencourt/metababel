@@ -176,7 +176,8 @@ def parse_argv
     opts.separator(<<~HELP
       Available commands:
 
-         generate-plugin  Generate metababel plugin (default)
+         generate-plugin      Generate metababel plugin (default)
+         list-matched-events  List the events matched
     HELP
                   )
   end
@@ -196,49 +197,67 @@ def parse_argv
                                raise "Invalid component type, should be #{l} (case insentitive)"
                              end
 
-                             options[:generate_plugin][:component_type] = h[p.upcase]
+                             options[:component_type] = h[p.upcase]
                            end
 
                            opts.on('-u', '--upstreams PATH', Array,
                                    '[Mandatory] Path to the bt2 YAML files for the upstream model') do |p|
-                             options[:generate_plugin][:upstreams] = p
+                             options[:upstreams] = p
                            end
 
                            opts.on('-d', '--downstream PATH',
                                    '[Optional] Path to the bt2 YAML file for the downstream model') do |p|
-                             options[:generate_plugin][:downstream] = p
+                             options[:downstream] = p
                            end
 
                            opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created') do |p|
-                             options[:generate_plugin][:plugin_name] = p
+                             options[:plugin_name] = p
                            end
 
                            opts.on('-c', '--component-name PATH',
                                    '[Optional] Name of the bt2 componant created') do |p|
-                             options[:generate_plugin][:component_name] = p
+                             options[:component_name] = p
                            end
 
                            opts.on('--params PATH', '[Optional] Paht to the bt2 YAML params definition') do |p|
-                             options[:generate_plugin][:params] = p
+                             options[:params] = p
                            end
 
                            opts.on('-m', '--matching PATH',
                                    '[Optional] Path to bt2 YAML matching-callbacks definitions') do |p|
-                             options[:generate_plugin][:matching] = p
+                             options[:matching] = p
                            end
 
                            opts.on('-o', '--output FOLDER', '[Optional] Output folder path') do |p|
-                             options[:generate_plugin][:folder] = p
+                             options[:folder] = p
                            end
 
                            opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions') do |p|
-                             options[:generate_plugin][:usr_data_header] = p
+                             options[:usr_data_header] = p
                            end
 
                            opts.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type') do |p|
-                             options[:generate_plugin][:disable_callbaks] -= p.to_set
+                             options[:disable_callbaks] -= p.to_set
                            end
                          end,
+    'list-matched-events' => OptionParser.new do |opts|
+                               opts.banner = "Usage: #{$PROGRAM_NAME} list-matched-events [options]"
+
+                               opts.on('-u', '--upstreams PATH', Array,
+                                       '[Mandatory] Path to the bt2 YAML files for the upstream model') do |p|
+                                 options[:upstreams] = p
+                               end
+
+                               opts.on('-m', '--matching PATH',
+                                       '[Mandatory] Path to bt2 YAML matching-callbacks definitions') do |p|
+                                 options[:matching] = p
+                               end
+
+                               opts.on('-s', '--set-ids IDS', Array,
+                                       '[Optional] Lists of set-id we want to know which events match') do |p|
+                                 options[:set_ids] = p
+                               end
+                             end,
   }
 
   if ARGV.empty?
@@ -251,11 +270,12 @@ def parse_argv
   subcommand = ARGV.shift
   subcommands[subcommand].order!
 
+  options['subcommand'] = subcommand
   if subcommand == 'generate-plugin'
-    raise OptionParser::MissingArgument if options[:generate_plugin][:component_type].nil?
+    raise('Mising Component Type') if options[:component_type].nil?
 
-    options[:generate_plugin][:plugin_name] ||= "metababel_#{options[:generate_plugin][:component_type].downcase}"
-    options[:generate_plugin][:component_name] ||= 'btx'
+    options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
+    options[:component_name] ||= 'btx'
   end
 
   options
@@ -336,7 +356,7 @@ class ContextBuilder
   attr_accessor :cli_options
 
   def initialize
-    @cli_options = parse_argv[:generate_plugin]
+    @cli_options = parse_argv
   end
 
   def base_folder
@@ -471,6 +491,7 @@ class ContextBuilder
       end
 
       { dispatchers: dispatchers,
+        matching_dispatch_types: matching_dispatch_types,
         dispatch_types: automatic_dispatch_types + matching_dispatch_types,
         event_name: event_name }
     end
@@ -486,6 +507,17 @@ class ContextBuilder
     d.update(upstream) if list_symbols.include?('upstream')
     d
   end
+end
+
+def print_matching_events(cb)
+  ds = cb.get_context(%w[upstream])[:matching_dispatch_types]
+  pp ds.filter_map { |d|
+       if !cb.cli_options.include?(:set_ids) || cb.cli_options[:set_ids].include?(d.name)
+         [d.name, d.matched_dispatchers.map do |d2|
+                    d2.name
+                  end]
+       end
+     }.to_h
 end
 
 def wrote_upstream(cb)
@@ -517,8 +549,12 @@ end
 
 # Babeltrace can be extended by plugins, which provide one or more component classes.
 context_builder = ContextBuilder.new
-wrote_header(context_builder)
-wrote_main(context_builder)
-wrote_component(context_builder)
-wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
-wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
+if context_builder.cli_options['subcommand'] == 'generate-plugin'
+  wrote_header(context_builder)
+  wrote_main(context_builder)
+  wrote_component(context_builder)
+  wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
+  wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
+elsif context_builder.cli_options['subcommand'] == 'list-matched-events'
+  print_matching_events(context_builder)
+end
