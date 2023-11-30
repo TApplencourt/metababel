@@ -333,7 +333,7 @@ class TestMatchEventsSameSignatureDifferentParamName < Test::Unit::TestCase
         btx_component_type: 'SINK',
         btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/15.btx_model.yaml',
         btx_component_callbacks: './test/callbacks/cases_matching_callbacks/15.btx_callbacks.yaml',
-        btx_metababel_generation_fail: false,
+        btx_compilation_should_fail: false,
       },
     ]
   end

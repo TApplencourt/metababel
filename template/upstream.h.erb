@@ -13,7 +13,7 @@ typedef void(dispatcher_t)(callbacks_t *callbacks, common_data_t *common_data,
 typedef void <%= dispatch_type.name_sanitized %>_callback_f(
     void *btx_handle,
     void *
-        usr_data<%= dispatch_type.args.map{ |s| s.type }.join_with_prefix(', ') %>);
+        usr_data<%= dispatch_type.args.values[0].map{ |s| s.type }.join_with_prefix(', ') %>);
 
 void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
     void *btx_handle, <%= dispatch_type.name_sanitized %>_callback_f *callback);
