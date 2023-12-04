@@ -260,13 +260,13 @@ def get_dispatch_type(em, default_clock_class, context)
   end
 
   # Modify the dispatcher to add the new dispatchType
-  name = em.set_id
-  _timestamp = default_clock_class ? [GeneratedArg.new('int64_t', '_timestamp')] : []
-  _event_class_name = [GeneratedArg.new('const char *', '_event_class_name')]
+  timestamp = default_clock_class ? [GeneratedArg.new('int64_t', '_timestamp')] : []
+  event_class_name = [GeneratedArg.new('const char *', '_event_class_name')]
   dispatch_type_args = matched_dispatchers.zip(signatures).map do |m, s|
-    [m.name, _timestamp + _event_class_name + s]
+    [m.name, timestamp + event_class_name + s]
   end.to_h
 
+  name = em.set_id
   dispatch_type = DispatchType.new(
     name, dispatch_type_args, "matching_#{sanitize(name)}", matched_dispatchers
   )
