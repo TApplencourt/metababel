@@ -253,18 +253,19 @@ def get_dispatch_type(em, default_clock_class, context)
   # Verify the uniqueness of signatures.
   # Note that `s.type` takes into account the `cast_type`
   #   (see TestMatchingConflictingSignatures for more details)
-  unique_signatures = signatures.uniq
+  unique_signatures = signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.uniq
   unless unique_signatures.size == 1
-    signatures_str = unique_signatures.map { |s| "(#{s.map(&:type).join(', ')})" }.join(', ')
+    signatures_str = unique_signatures.join(', ')
     raise "Conflicting signatures for '#{em.set_id}', found #{unique_signatures.size} signatures, only one allowed: '#{signatures_str}'"
   end
 
   # Modify the dispatcher to add the new dispatchType
   name = em.set_id
-  dispatch_type_args = []
-  dispatch_type_args += [GeneratedArg.new('int64_t', '_timestamp')] if default_clock_class
-  dispatch_type_args += [GeneratedArg.new('const char *', '_event_class_name')]
-  dispatch_type_args += signatures.pop
+  _timestamp = default_clock_class ? [GeneratedArg.new('int64_t', '_timestamp')] : []
+  _event_class_name = [GeneratedArg.new('const char *', '_event_class_name')]
+  dispatch_type_args = matched_dispatchers.zip(signatures).map do |m, s|
+    [m.name, _timestamp + _event_class_name + s]
+  end.to_h
 
   dispatch_type = DispatchType.new(
     name, dispatch_type_args, "matching_#{sanitize(name)}", matched_dispatchers
@@ -429,7 +430,7 @@ class ContextBuilder
       dispatchers, automatic_dispatch_types = t.filter_map_event_classes_with_index do |e, index_stream_class, index_event_class, default_clock_class|
         dispatcher =  Dispatcher.new(e, event_name, 'getter', index_stream_class, index_event_class,
                                      default_clock_class)
-        dispatch_type = DispatchType.new(e.name, dispatcher.args, 'automatic', [dispatcher])
+        dispatch_type = DispatchType.new(e.name, { e.name => dispatcher.args }, 'automatic', [dispatcher])
         dispatcher.dispatch_types << dispatch_type
 
         [dispatcher, dispatch_type]

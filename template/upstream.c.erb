@@ -28,7 +28,7 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
   bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &_timestamp);
   <% end %>
   <%# event_class_name, only required when there is at least one matching callback for this event.  %>
-  <% if dispatcher.dispatch_types.map(&:args).flatten.any? { |arg| arg.name == '_event_class_name' } %>
+  <% if dispatcher.dispatch_types.map { |dt| dt.args[dispatcher.name] }.flatten.any? { |arg| arg.name == '_event_class_name' } %>
   const char *_event_class_name = "<%= dispatcher.name %>";
   <% end %>
 
@@ -42,7 +42,7 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
         (*((<%= dispatch_type.name_sanitized %>_callback_f **)(_p)))(
             (void *)common_data,
             common_data
-                ->usr_data<%= dispatch_type.args.map{ |a| a.name }.join_with_prefix(", ") %>);
+                ->usr_data<%= dispatch_type.args[dispatcher.name].map{ |a| a.name }.join_with_prefix(", ") %>);
       }
     }
   }

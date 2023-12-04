@@ -1,0 +1,17 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event_1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: param_1
+        :field_class:
+          :type: string
+  - :name: event_2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: param_2
+        :field_class:
+          :type: string

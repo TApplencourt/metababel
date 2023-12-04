@@ -1,0 +1,9 @@
+:stream_classes:
+- :event_classes:
+  - :set_id: event_set
+    :name: ^event_[1-2]$
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :field_class:
+          :type: string

@@ -127,8 +127,8 @@ module GenericTest
   include Assertions
 
   def run_and_continue(command, component, key)
-    if component.fetch(key, false)
-      run_command(command, refute: true)
+    if component.key?(key) 
+      run_command(command, refute: component[key])
       return false
     end
     run_command(command)

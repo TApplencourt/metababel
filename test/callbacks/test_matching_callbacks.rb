@@ -319,3 +319,22 @@ class TestHashAreGood < Test::Unit::TestCase
     ]
   end
 end
+
+class TestMatchEventsSameSignatureDifferentParamName < Test::Unit::TestCase
+  # Validate we match two events having the same signature but different param names.
+  # event_1: string param_1, event_2: string param_2.
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SINK',
+        btx_component_upstream_model: './test/callbacks/cases_matching_callbacks/15.btx_model.yaml',
+        btx_component_callbacks: './test/callbacks/cases_matching_callbacks/15.btx_callbacks.yaml',
+        btx_compilation_should_fail: false,
+      },
+    ]
+  end
+end
