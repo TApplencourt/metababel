@@ -1,6 +1,6 @@
 require 'base_test'
 
-class TestArrayDynamic < Test::Unit::TestCase
+class TestArrayStatic < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
