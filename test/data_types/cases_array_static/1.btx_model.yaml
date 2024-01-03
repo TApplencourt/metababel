@@ -1,0 +1,13 @@
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: entries
+          :field_class:
+            :type: array_static
+            :element_field_class:
+              :type: integer_signed
+            :length: 3

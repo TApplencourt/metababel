@@ -632,6 +632,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Array::Static < BTFieldClass::Array
     extend BTFromH
+    using HashRefinements
     attr_reader :length
 
     def initialize(parent:, element_field_class:, length:)
@@ -647,6 +648,31 @@ module Babeltrace2Gen
         pr "#{variable} = bt_field_class_array_static_create(#{trace_class}, #{element_field_class_variable}, #{@length});"
       end
     end
+
+    def get_setter(field:, arg_variables:)
+      usr_var = bt_get_variable(arg_variables, is_array: true)
+      pr "for(uint64_t _i=0; _i < #{@length} ; _i++)"
+      scope do
+        v = "#{field}_e"
+        pr "bt_field* #{v} = bt_field_array_borrow_element_field_by_index(#{field}, _i);"
+        arg_variables.fetch_append('internal', GeneratedArg.new('', "#{usr_var.name}[_i]"))
+        @element_field_class.get_setter(field: v, arg_variables: arg_variables)
+      end
+    end
+
+    def get_getter(field:, arg_variables:)
+      length = @length
+      usr_var = bt_get_variable(arg_variables, is_array: true)
+      pr "#{usr_var.name} = (#{usr_var.type}) malloc(#{length} * sizeof(#{usr_var.name}));"
+      pr "for(uint64_t _i=0; _i < #{length} ; _i++)"
+      scope do
+        v = "#{field}_e"
+        pr "const bt_field* #{v} = bt_field_array_borrow_element_field_by_index_const(#{field}, _i);"
+        arg_variables.fetch_append('internal', GeneratedArg.new('', "#{usr_var.name}[_i]"))
+        @element_field_class.get_getter(field: v, arg_variables: arg_variables)
+      end
+    end
+
   end
 
   class BTFieldClass::Array::Dynamic < BTFieldClass::Array
