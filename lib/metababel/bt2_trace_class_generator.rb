@@ -646,6 +646,7 @@ module Babeltrace2Gen
         pr "bt_field_class *#{element_field_class_variable};"
         @element_field_class.get_declarator(trace_class: trace_class, variable: element_field_class_variable)
         pr "#{variable} = bt_field_class_array_static_create(#{trace_class}, #{element_field_class_variable}, #{@length});"
+        pr "bt_field_class_put_ref(#{element_field_class_variable});"
       end
     end
 
