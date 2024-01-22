@@ -134,7 +134,6 @@ class TestUnSupportedEnvironmentInDownstreamModel < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/9.btx_model.yaml',
-        btx_metababel_generation_fail: true,
       },
     ]
   end

@@ -412,7 +412,14 @@ class ContextBuilder
         t.get_declarator(variable: '_trace_class', self_component: '_self_component')
       end
 
+      args_downstream_set_env = {}
+      body_downstream_set_env = "\n" + Babeltrace2Gen.context(indent: 1) do
+        t.environment.get_setter(trace: "_trace", arg_variables: args_downstream_set_env)
+      end
+
       { body_declarator_classes: body_declarator_classes,
+        args_downstream_set_env: args_downstream_set_env["outputs"],
+        body_downstream_set_env: body_downstream_set_env,
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,
         event_name: event_name }
