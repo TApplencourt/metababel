@@ -954,14 +954,6 @@ module Babeltrace2Gen
       end
     end
 
-    def get_setter(trace:, arg_variables:)
-      scope do
-        @entries.each do |entry|
-          entry.get_setter(trace: trace, arg_variables: arg_variables)
-        end
-      end
-    end
-
   end
 
   class BTEntryClass

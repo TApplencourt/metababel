@@ -42,7 +42,10 @@ void btx_register_on_downstream_message_callback(
     void *btx_handle, on_downstream_message_callback_f *callback);
 <% end %>
 
-void btx_downstream_set_env(void *btx_handle<%= args_downstream_set_env.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
+<% downstream_environements.each do |arg, body| %>
+void btx_downstream_set_environment_<%= arg.name%>(void *btx_handle,
+                                                   <%= arg.type%> <%= arg.name%>);
+<% end %>
 
 #ifdef __cplusplus
 }

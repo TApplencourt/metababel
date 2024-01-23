@@ -124,7 +124,7 @@ class TestEventNameDuplicatedOnTheSameStream < Test::Unit::TestCase
   end
 end
 
-class TestUnSupportedEnvironmentInDownstreamModel < Test::Unit::TestCase
+class TestSupportedEnvironmentInDownstreamModel < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
@@ -134,8 +134,18 @@ class TestUnSupportedEnvironmentInDownstreamModel < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/9.btx_model.yaml',
+        btx_file_usr_callbacks: './test/model/cases_model_constructs/9.source_callbacks.c',
+
+      },
+      {
+        btx_component_type: 'SINK',
+        btx_component_plugin_name: 'text',
+        btx_component_name: 'details',
+        btx_compile: false,
       },
     ]
+
+    @btx_output_validation = './test/model/cases_model_constructs/9.btx_log.out'
   end
 end
 

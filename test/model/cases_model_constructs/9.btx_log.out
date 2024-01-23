@@ -1,0 +1,16 @@
+Trace class:
+  Stream class `sc` (ID 0):
+    Supports packets: No
+    Supports discarded events: No
+    Supports discarded packets: No
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Stream beginning:
+  Class name: sc
+  Trace:
+    Environment (1 entry):
+      dummy: set
+    Stream (ID 0, Class ID 0)
+
+{Trace 0, Stream class ID 0, Stream ID 0}
+Stream end
