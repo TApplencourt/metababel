@@ -173,3 +173,12 @@ void btx_push_message_<%= e.name_sanitized %>(
   btx_downstream_push_message(_message_iterator_private_data, _message);
 }
 <% end %>
+
+<% downstream_environements.each do |arg, body| %>
+void btx_downstream_set_environment_<%= arg.name%>(void *btx_handle,
+                                                   <%= arg.type%> <%= arg.name%>) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  bt_trace *_trace = common_data->downstream_trace;
+  <%= body %>
+}
+<% end %>
