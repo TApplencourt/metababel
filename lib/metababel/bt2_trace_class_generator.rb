@@ -100,8 +100,6 @@ module Babeltrace2Gen
     end
 
     def get_declarator(variable:, self_component:)
-      #raise NotImplementedError, "':environment' keyword not supported in downstream model" if environment
-
       pr "#{variable} = bt_trace_class_create(#{self_component});"
       bt_set_conditionally(@assigns_automatic_stream_class_id) do |v|
         pr "bt_trace_class_set_assigns_automatic_stream_class_id(#{variable}, #{v});"
@@ -953,7 +951,6 @@ module Babeltrace2Gen
         end
       end
     end
-
   end
 
   class BTEntryClass
@@ -986,22 +983,19 @@ module Babeltrace2Gen
     end
 
     def get_getter(trace:, arg_variables:)
-      var_name = @name
-      arg_variables.fetch_append('outputs', bt_get_variable)
-      bt_func_get = self.class.instance_variable_get(:@bt_func)
+      var_name = bt_get_variable(arg_variables).name
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
-      pr "#{var_name} = #{bt_func_get}(#{var_name}_value);"
+      pr "#{var_name} = #{@type}(#{var_name}_value);"
     end
 
     def get_setter(trace:, arg_variables:)
-      var_name = @name
-      arg_variables.fetch_append('outputs', bt_get_variable)
-      bt_type_set = self.class.instance_variable_get(:@bt_type_set)
-      pr "bt_trace_set_environment_entry_#{bt_type_set}(#{trace},  \"#{var_name}\", #{var_name});"
+      var_name = bt_get_variable(arg_variables).name
+      pr "bt_trace_set_environment_entry_#{@type}(#{trace}, \"#{var_name}\", #{var_name});"
     end
 
-    def bt_get_variable()
-      GeneratedArg.new(self.class.instance_variable_get(:@bt_type), @name)
+    def bt_get_variable(arg_variables)
+      var = GeneratedArg.new(self.class.instance_variable_get(:@bt_type), @name)
+      arg_variables.fetch_append('outputs', var)
     end
   end
 
@@ -1014,7 +1008,6 @@ module Babeltrace2Gen
 
     @bt_type = 'const char*'
     @bt_func = 'bt_value_string_get'
-    @bt_type_set = 'string'
   end
 
   class BTEntryClass::IntegerSigned < BTEntryClass
@@ -1023,6 +1016,5 @@ module Babeltrace2Gen
     @bt_type = 'int64_t'
     @bt_func = 'bt_value_integer_signed_get'
     # Sadly it's ` bt_trace_set_environment_entry_integer() ` and not ` bt_trace_set_environment_entry_integer_signed()`
-    @bt_type_set = 'integer'
   end
 end
