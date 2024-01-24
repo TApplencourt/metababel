@@ -416,11 +416,11 @@ class ContextBuilder
                                    []
                                  else
                                    t.environment.entries.map do |e|
-                                     args_downstream_set_env = {}
-                                     body_downstream_set_env = "\n" + Babeltrace2Gen.context(indent: 1) do
-                                       e.get_setter(trace: '_trace', arg_variables: args_downstream_set_env)
+                                     args = {}
+                                     body = "\n" + Babeltrace2Gen.context(indent: 1) do
+                                       e.get_setter(trace: '_trace', arg_variables: args)
                                      end
-                                     [args_downstream_set_env['outputs'].first, body_downstream_set_env]
+                                     [args['outputs'].first, body]
                                    end
                                  end
 
