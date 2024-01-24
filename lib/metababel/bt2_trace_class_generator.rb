@@ -985,12 +985,14 @@ module Babeltrace2Gen
     def get_getter(trace:, arg_variables:)
       var_name = bt_get_variable(arg_variables).name
       pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
-      pr "#{var_name} = #{@type}(#{var_name}_value);"
+      bt_type_set = self.class.instance_variable_get(:@bt_type_set)
+      pr "#{var_name} = #{bt_type_set}(#{var_name}_value);"
     end
 
     def get_setter(trace:, arg_variables:)
       var_name = bt_get_variable(arg_variables).name
-      pr "bt_trace_set_environment_entry_#{@type}(#{trace}, \"#{var_name}\", #{var_name});"
+      bt_type_set = self.class.instance_variable_get(:@bt_type_set)
+      pr "bt_trace_set_environment_entry_#{bt_type_set}(#{trace}, \"#{var_name}\", #{var_name});"
     end
 
     def bt_get_variable(arg_variables)
@@ -1008,6 +1010,7 @@ module Babeltrace2Gen
 
     @bt_type = 'const char*'
     @bt_func = 'bt_value_string_get'
+    @bt_type_set = 'string'
   end
 
   class BTEntryClass::IntegerSigned < BTEntryClass
@@ -1016,5 +1019,6 @@ module Babeltrace2Gen
     @bt_type = 'int64_t'
     @bt_func = 'bt_value_integer_signed_get'
     # Sadly it's ` bt_trace_set_environment_entry_integer() ` and not ` bt_trace_set_environment_entry_integer_signed()`
+    @bt_type_set = 'integer'
   end
 end
