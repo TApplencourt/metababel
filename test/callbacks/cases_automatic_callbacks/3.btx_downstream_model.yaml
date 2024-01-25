@@ -1,3 +1,9 @@
+:environment:
+  :entries:
+  - :name: entry_1
+    :type: string
+  - :name: entry_2
+    :type: integer_signed
 :stream_classes:
 - :name: sc
   :event_classes:
