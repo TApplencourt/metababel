@@ -43,17 +43,12 @@ def parse_event(line)
   hostname = nil
   tail = line
   if tail.start_with?('[')
-    # tail starts with [timestamp]
-    head, tail = tail.split(' ', 2)
+    # starts with [timestamp] (+offset)
+    # Note: offset is not currently used, discard the value
+    head, _, tail = tail.split(' ', 3)
     t = Time.parse(head[1,head.length-2])
     # Need to convert in nasosecond
     ts = (t.to_i * 1_000_000_000) + t.nsec
-
-    if tail.start_with?('(')
-      # Offset following time, i.e. [time] (+offset)
-      head, tail = tail.split(' ', 2)
-      # Note: not currently used, discard the value
-    end
   end
   head, tail = tail.split(' ', 2)
   if not head.end_with?(':')
