@@ -1,0 +1,7 @@
+:environment:
+  :entries:
+    - :name: dummy
+      :type: string
+:stream_classes:
+- :name: sc
+  :event_classes: []

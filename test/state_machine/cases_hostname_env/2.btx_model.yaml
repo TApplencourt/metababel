@@ -1,0 +1,14 @@
+---
+:environment:
+  :entries:
+  - :name: hostname
+    :type: string
+:stream_classes:
+- :name: sc_1
+  :default_clock_class: {}
+  :event_classes:
+  - :name: event_1
+- :name: sc_2
+  :default_clock_class: {}
+  :event_classes:
+  - :name: event_2

@@ -7,6 +7,6 @@ Gem::Specification.new do |s|
   s.version     = Metababel::VERSION
   s.files       = Dir['{lib}/**/*.rb', 'template/*.erb', 'bin/*', 'LICENSE', '*.md']
   s.license     = 'MIT'
-  s.executables = ['metababel']
+  s.executables = ['metababel', 'btx_gen_source_callbacks']
   s.metadata['rubygems_mfa_required'] = 'true'
 end
