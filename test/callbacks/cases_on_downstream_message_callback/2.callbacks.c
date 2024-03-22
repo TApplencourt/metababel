@@ -1,11 +1,11 @@
 #include <assert.h>
 #include <metababel/metababel.h>
 
-void btx_initialize_usr_data(void **usr_data) {
+static void btx_initialize_usr_data(void **usr_data) {
   *usr_data = calloc(1, sizeof(int));
 }
 
-void btx_finalize_usr_data(void *usr_data) {
+static void btx_finalize_usr_data(void *usr_data) {
   // 2 begin/end * 2 (one for source, one for filter)
   // + 2 message sent by the source and forwarded by the filter
   // = 6 messages totals
