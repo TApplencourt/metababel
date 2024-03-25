@@ -562,19 +562,32 @@ module Babeltrace2Gen
     class Mapping < BTFieldClass::Enumeration::Mapping
 
       def initialize(parent:, label:, ranges:)
+        @parent = parent
         @label = label
-        @ranges = [ranges].flatten
+        # Form [ [lower,upper], ...]
+        @ranges = ranges
       end
 
       def get_declarator(field_class:)
-         ranges_str = @ranges.map(&:to_s).join(",")
-         pr "const bt_integer_range_set_unsigned ranges[] = {#{ranges_str}};"
-         pr "bt_field_class_enumeration_unsigned_add_mapping(#{field_class}, \"#{@label}\", range);"
+
+         pr "bt_integer_range_set_unsigned *#{field_class}_range = NULL;"
+         pr "#{field_class}_range = bt_integer_range_set_unsigned_create();"
+
+         @ranges.each { |l,u|
+          pr "bt_integer_range_set_unsigned_add_range(#{field_class}_range, #{l},#{u});"
+         }
+         pr "bt_field_class_enumeration_unsigned_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
       end
 
     end
 
+    extend BTFromH
+
+    @bt_type = 'uint64_t'
+    @bt_func = 'bt_field_integer_unsigned_%s_value'
+
     def initialize(parent:, mappings:)
+      @parent = parent
       @mappings = mappings.map { |m| Mapping.new(parent: parent, **m) }
     end
 
@@ -585,9 +598,6 @@ module Babeltrace2Gen
           mapping.get_declarator(field_class: variable)
         end
       }
-    end
-
-    def get_setter(field:, arg_variables:)
     end
 
   end

@@ -10,6 +10,6 @@
            :type: enumeration_unsigned
            :mappings:
            - :label: BEFORE
-             :ranges: [0,12]
+             :ranges: [ [0,12], [20,23] ]
            - :label: AFTER
-             :ranges: 1
+             :ranges: [ [14,14] ]
