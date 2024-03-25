@@ -564,12 +564,14 @@ module Babeltrace2Gen
 
       def get_declarator(field_class:)
         bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
-        pr "bt_integer_range_set_#{bt_type_internal} *#{field_class}_range = NULL;"
-        pr "#{field_class}_range = bt_integer_range_set_#{bt_type_internal}_create();"
-        @ranges.each do |l, u|
-          pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l},#{u});"
+        scope do
+          pr "bt_integer_range_set_#{bt_type_internal} *#{field_class}_range;"
+          pr "#{field_class}_range = bt_integer_range_set_#{bt_type_internal}_create();"
+          @ranges.each do |l, u|
+            pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l},#{u});"
+          end
+          pr "bt_field_class_enumeration_#{bt_type_internal}_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
         end
-        pr "bt_field_class_enumeration_#{bt_type_internal}_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
       end
     end
 
@@ -584,9 +586,7 @@ module Babeltrace2Gen
       bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
       pr "#{variable} = bt_field_class_enumeration_#{bt_type_internal}_create(#{trace_class});"
       @mappings.each do |mapping|
-        scope do
-          mapping.get_declarator(field_class: variable)
-        end
+        mapping.get_declarator(field_class: variable)
       end
     end
   end
