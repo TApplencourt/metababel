@@ -5,7 +5,7 @@
     :payload_field_class:
       :type: structure
       :members:
-      - :name: direction
+      - :name: e_unsigned
         :field_class:
            :type: enumeration_unsigned
            :mappings:
@@ -13,3 +13,9 @@
              :ranges: [ [0,12], [20,23] ]
            - :label: AFTER
              :ranges: [ [14,14] ]
+      - :name: e_signed
+        :field_class:
+           :type: enumeration_signed
+           :mappings:
+           - :label: FOO
+             :ranges: [ [-10,10] ]

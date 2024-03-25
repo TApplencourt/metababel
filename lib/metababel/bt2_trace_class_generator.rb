@@ -552,60 +552,68 @@ module Babeltrace2Gen
   end
 
   module BTFieldClass::Enumeration
-    class Mapping
-      include BTPrinter
-    end
-  end
+    class BTFieldClass::Enumeration::Mapping
+       include BTPrinter
 
-  class BTFieldClass::Enumeration::Unsigned < BTFieldClass::Integer::Unsigned
-    include BTFieldClass::Enumeration
-    class Mapping < BTFieldClass::Enumeration::Mapping
+       def initialize(parent:, label:, ranges:)
+         @parent = parent
+         @label = label
+         # Form [ [lower,upper], ...]
+         @ranges = ranges
+       end
 
-      def initialize(parent:, label:, ranges:)
-        @parent = parent
-        @label = label
-        # Form [ [lower,upper], ...]
-        @ranges = ranges
-      end
-
-      def get_declarator(field_class:)
-
-         pr "bt_integer_range_set_unsigned *#{field_class}_range = NULL;"
-         pr "#{field_class}_range = bt_integer_range_set_unsigned_create();"
-
+       def get_declarator(field_class:)
+         bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
+         pr "bt_integer_range_set_#{bt_type_internal} *#{field_class}_range = NULL;"
+         pr "#{field_class}_range = bt_integer_range_set_#{bt_type_internal}_create();"
          @ranges.each { |l,u|
-          pr "bt_integer_range_set_unsigned_add_range(#{field_class}_range, #{l},#{u});"
+          pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l},#{u});"
          }
-         pr "bt_field_class_enumeration_unsigned_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
-      end
+         pr "bt_field_class_enumeration_#{bt_type_internal}_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
+       end
 
     end
-
-    extend BTFromH
-
-    @bt_type = 'uint64_t'
-    @bt_func = 'bt_field_integer_unsigned_%s_value'
 
     def initialize(parent:, mappings:)
       @parent = parent
-      @mappings = mappings.map { |m| Mapping.new(parent: parent, **m) }
+      @mappings = mappings.map { |m|
+        self.class.const_get('Mapping').new(parent: parent, **m)
+      }
     end
 
     def get_declarator(trace_class:, variable:)
-      pr "#{variable} = bt_field_class_enumeration_unsigned_create(#{trace_class});"
+      bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
+      pr "#{variable} = bt_field_class_enumeration_#{bt_type_internal}_create(#{trace_class});"
       @mappings.each { |mapping|
         scope do
           mapping.get_declarator(field_class: variable)
         end
       }
     end
+  end
+
+  class BTFieldClass::Enumeration::Unsigned < BTFieldClass::Integer::Unsigned
+    include BTFieldClass::Enumeration
+    class BTFieldClass::Enumeration::Unsigned::Mapping < BTFieldClass::Enumeration::Mapping
+        @bt_type_internal = 'unsigned'
+
+    end
+
+    @bt_type = 'uint64_t'
+    @bt_type_internal = 'unsigned'
+    @bt_func = "bt_field_integer_unsigned_%s_value"
 
   end
 
   class BTFieldClass::Enumeration::Signed < BTFieldClass::Integer::Signed
     include BTFieldClass::Enumeration
-    class Mapping < BTFieldClass::Enumeration::Mapping
+    class BTFieldClass::Enumeration::Signed::Mapping < BTFieldClass::Enumeration::Mapping
+        @bt_type_internal = 'signed'
     end
+
+    @bt_type = 'int64_t'
+    @bt_type_internal = 'signed'
+    @bt_func = "bt_field_integer_signed_%s_value"
 
   end
 
