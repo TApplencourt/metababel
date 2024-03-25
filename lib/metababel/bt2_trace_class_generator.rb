@@ -552,21 +552,44 @@ module Babeltrace2Gen
   end
 
   module BTFieldClass::Enumeration
-    attr_reader :mappings
-
     class Mapping
+      include BTPrinter
     end
   end
 
   class BTFieldClass::Enumeration::Unsigned < BTFieldClass::Integer::Unsigned
     include BTFieldClass::Enumeration
     class Mapping < BTFieldClass::Enumeration::Mapping
+
+      def initialize(parent:, label:, ranges:)
+        @label = label
+        @ranges = [ranges].flatten
+      end
+
+      def get_declarator(field_class:)
+         ranges_str = @ranges.map(&:to_s).join(",")
+         pr "const bt_integer_range_set_unsigned ranges[] = {#{ranges_str}};"
+         pr "bt_field_class_enumeration_unsigned_add_mapping(#{field_class}, \"#{@label}\", range);"
+      end
+
     end
 
-    def initialize(parent:, field_value_range:, mappings:, preferred_display_base: 10)
-      @mappings = mappings # TODO: init Mapping
-      super(parent: parent, field_value_range: field_value_range, preferred_display_base: preferred_display_base)
+    def initialize(parent:, mappings:)
+      @mappings = mappings.map { |m| Mapping.new(parent: parent, **m) }
     end
+
+    def get_declarator(trace_class:, variable:)
+      pr "#{variable} = bt_field_class_enumeration_unsigned_create(#{trace_class});"
+      @mappings.each { |mapping|
+        scope do
+          mapping.get_declarator(field_class: variable)
+        end
+      }
+    end
+
+    def get_setter(field:, arg_variables:)
+    end
+
   end
 
   class BTFieldClass::Enumeration::Signed < BTFieldClass::Integer::Signed
@@ -574,10 +597,6 @@ module Babeltrace2Gen
     class Mapping < BTFieldClass::Enumeration::Mapping
     end
 
-    def initialize(parent:, field_value_range:, mappings:, preferred_display_base: 10)
-      @mappings = mappings # TODO: init Mapping
-      super(parent: parent, field_value_range: field_value_range, preferred_display_base: preferred_display_base)
-    end
   end
 
   class BTFieldClass::String < BTFieldClass
