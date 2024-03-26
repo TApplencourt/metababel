@@ -570,7 +570,7 @@ module Babeltrace2Gen
           pr "bt_integer_range_set_#{bt_type_internal} *#{field_class}_range;"
           pr "#{field_class}_range = bt_integer_range_set_#{bt_type_internal}_create();"
           @ranges.each do |l, u|
-            pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l},#{u});"
+            pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l}, #{u});"
           end
           pr "bt_field_class_enumeration_#{bt_type_internal}_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
           pr "bt_integer_range_set_#{bt_type_internal}_put_ref(#{field_class}_range);"
