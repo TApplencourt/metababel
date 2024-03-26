@@ -553,13 +553,15 @@ module Babeltrace2Gen
 
   module BTFieldClass::Enumeration
     class BTFieldClass::Enumeration::Mapping
+      extend BTFromH
+      include BTUtils
       include BTPrinter
 
-      def initialize(parent:, label:, ranges:)
+      def initialize(parent:, label:, integer_range_set:)
         @parent = parent
         @label = label
         # Form [ [lower,upper], ...]
-        @ranges = ranges
+        @ranges = integer_range_set
       end
 
       def get_declarator(field_class:)
@@ -577,8 +579,9 @@ module Babeltrace2Gen
 
     def initialize(parent:, mappings:)
       @parent = parent
-      @mappings = mappings.map do |m|
-        self.class.const_get('Mapping').new(parent: parent, **m)
+      @mappings = mappings.map do |mapping|
+        # Handle inheritence
+        self.class.const_get('Mapping').from_h(self, mapping)
       end
     end
 
