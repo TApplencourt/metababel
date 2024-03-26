@@ -1,6 +1,6 @@
 require_relative '../base_test'
 
-class IntTest < Test::Unit::TestCase
+class EnumerationTest < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor
