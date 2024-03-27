@@ -8,6 +8,7 @@ require 'fileutils'
 require 'set'
 require 'ostruct'
 require 'abbrev'
+require 'pathname'
 
 class Array
   def join_with_prefix(sep)
@@ -162,7 +163,7 @@ def parse_argv
 
   parser  = OptionParser.new
   parser.on('-h', '--help', 'Prints this help') do
-    puts opts
+    puts parser.help
     exit
   end
 
@@ -190,6 +191,14 @@ def parse_argv
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
   parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
+  parser.on('--display-path-shared PLUGIN', Array) { |plugins|
+    plugins.each { |plugin|
+      path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
+      puts Pathname.new(path).realpath.to_s
+    }
+    exit
+  }
+
 
   options = { 'disable-callbaks': ['on_downstream'].to_set,
               'component-name': 'btx',
