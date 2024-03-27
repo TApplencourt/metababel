@@ -46,7 +46,7 @@ void btx_register_on_downstream_message_callback(
       (void *)callback;
 }
 <% end %>
-// Used internaly to push messages downstreams
+// Used internally to push messages downstreams
 void btx_downstream_push_message(
     btx_message_iterator_t *message_iterator_private_data,
     const bt_message *message) {
@@ -84,7 +84,7 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   return trace;
 }
 
-// Workarround of a bug where gepping trace alive (and not the stream) provoke
+// Workaround of a bug where gepping trace alive (and not the stream) provoke
 // some segfault
 void btx_streams_get_ref(bt_trace *trace) {
   <% stream_classes.each_with_index do |_,i| %>
