@@ -52,14 +52,8 @@ end
 
 def get_component_compilation_command(component)
   uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
-  command = <<~TEXT
-    ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
-              #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-              -I ./include -I #{component[:btx_component_path]}/
-              $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)
-              ${CFLAGS:='-Wall -Werror'} -fpic --shared
-  TEXT
-  command.split.join(' ')
+  uuid_so = "#{component[:btx_component_path]}/#{uuid}.so"
+  "make -f ./test/Makefile BTX_SO_UUID=#{uuid_so} BTX_SRC=#{component[:btx_component_path]}"
 end
 
 def get_graph_execution_command(components, connections)
@@ -110,7 +104,7 @@ end
 def mock_user_callbacks(component)
   # See if we need to generate us callbacks.
 
-  # If the user already define callancks do nothing
+  # If the user already define callabcks do nothing
   return if component.key?(:btx_file_usr_callbacks)
 
   # We support only generation of SOURCE callbacks
