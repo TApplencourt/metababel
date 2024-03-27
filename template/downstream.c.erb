@@ -118,6 +118,7 @@ void btx_push_messages_stream_beginning(
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
+  (void)trace;
 }
 
 void btx_push_messages_stream_end(
@@ -134,6 +135,7 @@ void btx_push_messages_stream_end(
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
+  (void)trace;
 }
 
 <% downstream_events.each do |e| %>
@@ -175,8 +177,8 @@ void btx_push_message_<%= e.name_sanitized %>(
 <% end %>
 
 <% downstream_environements.each do |arg, body| %>
-void btx_downstream_set_environment_<%= arg.name%>(void *btx_handle,
-                                                   <%= arg.type%> <%= arg.name%>) {
+void btx_downstream_set_environment_<%= arg.name%>(
+    void *btx_handle, <%= arg.type%> <%= arg.name%>) {
   common_data_t *common_data = (common_data_t *)btx_handle;
   bt_trace *_trace = common_data->downstream_trace;
   <%= body %>

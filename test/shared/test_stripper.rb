@@ -15,8 +15,6 @@ class TestStripper < Test::Unit::TestCase
       {
         btx_component_type: 'FILTER',
         btx_file_usr_callbacks: './shared/stripper.cpp',
-        btx_component_downstream_model: './test/shared/cases_stripper/1.btx_model.yaml',
-        btx_component_upstream_model: './test/shared/cases_stripper/1.btx_model.yaml',
         btx_component_enable_callbacks: 'on_downstream',
       },
       {

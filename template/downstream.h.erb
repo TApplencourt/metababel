@@ -43,8 +43,8 @@ void btx_register_on_downstream_message_callback(
 <% end %>
 
 <% downstream_environements.each do |arg, body| %>
-void btx_downstream_set_environment_<%= arg.name%>(void *btx_handle,
-                                                   <%= arg.type%> <%= arg.name%>);
+void btx_downstream_set_environment_<%= arg.name%>(
+    void *btx_handle, <%= arg.type%> <%= arg.name%>);
 <% end %>
 
 #ifdef __cplusplus

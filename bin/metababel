@@ -398,9 +398,11 @@ class ContextBuilder
 
   def downstream
     @downstream ||= begin
-      raise 'Missing downstream model' unless @cli_options[:downstream]
+      unless @cli_options[:downstream] || !@cli_options[:disable_callbaks].include?('on_downstream')
+        raise 'Missing downstream model'
+      end
 
-      y = load_models(@cli_options[:downstream])
+      y = @cli_options[:downstream] ? load_models(@cli_options[:downstream]) : { stream_classes: [] }
       t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
 
       event_name = '_event'
@@ -434,7 +436,15 @@ class ContextBuilder
 
   def upstream
     @upstream ||= begin
-      raise 'Missing upstreams models' unless @cli_options[:upstreams]
+      unless @cli_options[:upstreams] || !@cli_options[:disable_callbaks].include?('on_downstream')
+        raise 'Missing upstreams models'
+      end
+
+      unless @cli_options[:upstreams]
+        return { dispatchers: [],
+                 dispatch_types: [],
+                 event_name: nil }
+      end
 
       y = load_models(@cli_options[:upstreams])
       t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
