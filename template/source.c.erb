@@ -132,7 +132,7 @@ source_initialize(bt_self_component_source *self_component_source,
   btx_call_callbacks_initialize_component(common_data, &common_data->usr_data);
   /* Call read callbacks */
   btx_call_callbacks_read_params(common_data, common_data->usr_data,
-      common_data->btx_params);
+                                 common_data->btx_params);
 
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -209,15 +209,15 @@ static void source_message_iterator_finalize(
 /* Mandatory */
 BT_PLUGIN_MODULE();
 
-BT_PLUGIN(<%= options[:plugin_name] %>);
-BT_PLUGIN_SOURCE_COMPONENT_CLASS(<%= options[:component_name] %>,
+BT_PLUGIN(<%= options[:'plugin-name'] %>);
+BT_PLUGIN_SOURCE_COMPONENT_CLASS(<%= options[:'component-name'] %>,
                                  source_message_iterator_next);
 
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD(
-    <%= options[:component_name] %>, source_initialize);
+    <%= options[:'component-name'] %>, source_initialize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD(
-    <%= options[:component_name] %>, source_finalize);
+    <%= options[:'component-name'] %>, source_finalize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
-    <%= options[:component_name] %>, source_message_iterator_initialize);
+    <%= options[:'component-name'] %>, source_message_iterator_initialize);
 BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(
-    <%= options[:component_name] %>, source_message_iterator_finalize);
+    <%= options[:'component-name'] %>, source_message_iterator_finalize);

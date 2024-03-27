@@ -163,15 +163,12 @@ sink_graph_is_configured(bt_self_component_sink *self_component_sink) {
 /* Mandatory */
 BT_PLUGIN_MODULE();
 
-BT_PLUGIN(<%= options[:plugin_name] %>);
-// Maybe we should createonly one pluging
-/* Add the output  component class */
-BT_PLUGIN_SINK_COMPONENT_CLASS(<%= options[:component_name] %>, sink_consume);
+BT_PLUGIN(<%= options[:'plugin-name'] %>);
+BT_PLUGIN_SINK_COMPONENT_CLASS(<%= options[:'component-name'] %>, sink_consume);
 
 BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(
-    <%= options[:component_name] %>, sink_initialize);
-BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(<%= options[:component_name] %>,
-                                               sink_finalize);
-
+    <%= options[:'component-name'] %>, sink_initialize);
+BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(
+    <%= options[:'component-name'] %>, sink_finalize);
 BT_PLUGIN_SINK_COMPONENT_CLASS_GRAPH_IS_CONFIGURED_METHOD(
-    <%= options[:component_name] %>, sink_graph_is_configured);
+    <%= options[:'component-name'] %>, sink_graph_is_configured);
