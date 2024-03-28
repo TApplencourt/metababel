@@ -182,7 +182,7 @@ def parse_argv
     h[p.upcase]
   end
 
-  parser.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 YAML files for the upstream model.')
+  parser.on('-u', '--upstreams PATHS', Array, '[Mandatory] Path to the bt2 YAML files for the upstream model.')
   parser.on('-d', '--downstream PATH', '[Optional] Path to the bt2 YAML file for the downstream model.')
   parser.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.')
   parser.on('-c', '--component-name PATH', '[Optional] Name of the bt2 component created.')
@@ -191,7 +191,7 @@ def parse_argv
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
   parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
-  parser.on('--display-path-shared PLUGIN', Array) { |plugins|
+  parser.on('--display-paths-shared PLUGINS', Array) { |plugins|
     plugins.each { |plugin|
       path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
       puts Pathname.new(path).realpath.to_s
