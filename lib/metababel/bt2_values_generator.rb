@@ -26,7 +26,7 @@ module Babeltrace2Gen
 
     include BTPrinter
 
-    # Scalars are leafs, avoid recursion
+    # Scalars are leaves, avoid recursion
     def self.from_h(model)
       new(model[:name], model.fetch(:default_value, nil))
     end

@@ -33,7 +33,7 @@ void btx_push_message_<%= e.name_sanitized %>(
         btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
 <% end %>
 
-<% unless options[:disable_callbaks].include?('on_downstream') %>
+<% unless options[:'disable-callbaks'].include?('on_downstream') %>
 void btx_push_message(void *btx_handle, const bt_message *message);
 
 typedef void on_downstream_message_callback_f(void *btx_handle, void *usr_data,
@@ -43,8 +43,8 @@ void btx_register_on_downstream_message_callback(
 <% end %>
 
 <% downstream_environements.each do |arg, body| %>
-void btx_downstream_set_environment_<%= arg.name%>(void *btx_handle,
-                                                   <%= arg.type%> <%= arg.name%>);
+void btx_downstream_set_environment_<%= arg.name%>(
+    void *btx_handle, <%= arg.type%> <%= arg.name%>);
 <% end %>
 
 #ifdef __cplusplus

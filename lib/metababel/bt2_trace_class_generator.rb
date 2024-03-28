@@ -41,8 +41,8 @@ module Babeltrace2Gen
       is_a?(Babeltrace2Gen::BTEventClass) ? self : @parent.rec_event_class
     end
 
-    def rec_menber_class
-      is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_menber_class
+    def rec_member_class
+      is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_member_class
     end
 
     def resolve_path(path)
@@ -432,7 +432,7 @@ module Babeltrace2Gen
         else
           self.class.instance_variable_get(:@bt_type)
         end
-      var = GeneratedArg.new(@cast_type || type, rec_menber_class.name)
+      var = GeneratedArg.new(@cast_type || type, rec_member_class.name)
 
       arg_variables.fetch_append('outputs_allocated', var) if is_array
       arg_variables.fetch_append('outputs', var)
@@ -448,7 +448,7 @@ module Babeltrace2Gen
     def get_setter(field:, arg_variables:)
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'set'
       variable = bt_get_variable(arg_variables).name
-      # We always explicitly cast to the proper bebeltrace type when sending messsages.
+      # We always explicitly cast to the proper bebeltrace type when sending messages.
       pr "#{bt_func_get}(#{field}, (#{self.class.instance_variable_get(:@bt_type)})#{variable});"
     end
   end

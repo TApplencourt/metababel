@@ -4,8 +4,8 @@
 #include "uthash.h"
 #include <babeltrace2/babeltrace.h>
 #include <stdbool.h>
-<% if options.key?(:usr_data_header) %>
-#include "<%= options[:usr_data_header] %>"
+<% if options.key?(:'usr-data-header') %>
+#include "<%= options[:'usr-data-header'] %>"
 <% end %>
 
 #ifdef __cplusplus
@@ -50,7 +50,7 @@ struct name_to_dispatcher_s {
 };
 typedef struct name_to_dispatcher_s name_to_dispatcher_t;
 
-<% if ['SOURCE', 'FILTER'].include?(options[:component_type]) %>
+<% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
 // Structure for Downstream Message
 struct el {
   const bt_message *message;
@@ -59,11 +59,11 @@ struct el {
 
 <% end %>
 // Struct stored in the component via `bt_self_component_set_data`
-<% if options[:component_type] == 'SOURCE' %>
+<% if options[:'component-type'] == 'SOURCE' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
-  <% unless options[:disable_callbaks].include?('on_downstream') %>
+  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
   void *on_downstream_message_callback;
   <% end %>
   void *usr_data;
@@ -101,11 +101,11 @@ enum btx_source_status_e {
 };
 typedef enum btx_source_status_e btx_source_status_t;
 
-<% elsif options[:component_type] == 'FILTER' %>
+<% elsif options[:'component-type'] == 'FILTER' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
-  <% unless options[:disable_callbaks].include?('on_downstream') %>
+  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
   void *on_downstream_message_callback;
   <% end %>
 
@@ -155,7 +155,7 @@ struct btx_message_iterator_s {
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 
-<% elsif options[:component_type] == 'SINK' %>
+<% elsif options[:'component-type'] == 'SINK' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
@@ -173,8 +173,8 @@ void btx_unregister_callbacks(common_data_t *common_data);
 
 <% static_callback_types.each do |e| %>
 typedef void <%= e.name_sanitized %>_static_callback_f(
-  <%= "void *btx_handle," unless e.no_btx_handle %>
-  <%= e.args.map{ |s| s.type }.join(", ") %>);
+    <%= "void *btx_handle," unless e.no_btx_handle %>
+        <%= e.args.map{ |s| s.type }.join(", ") %>);
 
 <%# The Function who register the callbacks to the dispatcher %>
 void btx_register_callbacks_<%= e.name_sanitized %>(

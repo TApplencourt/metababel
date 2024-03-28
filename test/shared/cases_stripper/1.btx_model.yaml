@@ -1,0 +1,22 @@
+---
+:stream_classes:
+- :name: sc1
+  :event_classes:
+  - :name: event1
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
+- :name: sc2
+  :event_classes:
+  - :name: event2
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pf_1
+        :field_class:
+          :type: integer_unsigned
+          :field_value_range: 64
