@@ -552,32 +552,69 @@ module Babeltrace2Gen
   end
 
   module BTFieldClass::Enumeration
-    attr_reader :mappings
+    class BTFieldClass::Enumeration::Mapping
+      extend BTFromH
+      include BTUtils
+      include BTPrinter
 
-    class Mapping
+      def initialize(parent:, label:, integer_range_set:)
+        @parent = parent
+        @label = label
+        # Form [ [lower,upper], ...]
+        @ranges = integer_range_set
+      end
+
+      def get_declarator(field_class:)
+        bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
+        scope do
+          pr "bt_integer_range_set_#{bt_type_internal} *#{field_class}_range;"
+          pr "#{field_class}_range = bt_integer_range_set_#{bt_type_internal}_create();"
+          @ranges.each do |l, u|
+            pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l}, #{u});"
+          end
+          pr "bt_field_class_enumeration_#{bt_type_internal}_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
+          pr "bt_integer_range_set_#{bt_type_internal}_put_ref(#{field_class}_range);"
+        end
+      end
+    end
+
+    def initialize(parent:, mappings:)
+      @parent = parent
+      @mappings = mappings.map do |mapping|
+        # Handle inheritence
+        self.class.const_get('Mapping').from_h(self, mapping)
+      end
+    end
+
+    def get_declarator(trace_class:, variable:)
+      bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
+      pr "#{variable} = bt_field_class_enumeration_#{bt_type_internal}_create(#{trace_class});"
+      @mappings.each do |mapping|
+        mapping.get_declarator(field_class: variable)
+      end
     end
   end
 
   class BTFieldClass::Enumeration::Unsigned < BTFieldClass::Integer::Unsigned
     include BTFieldClass::Enumeration
-    class Mapping < BTFieldClass::Enumeration::Mapping
+    class BTFieldClass::Enumeration::Unsigned::Mapping < BTFieldClass::Enumeration::Mapping
+      @bt_type_internal = 'unsigned'
     end
 
-    def initialize(parent:, field_value_range:, mappings:, preferred_display_base: 10)
-      @mappings = mappings # TODO: init Mapping
-      super(parent: parent, field_value_range: field_value_range, preferred_display_base: preferred_display_base)
-    end
+    @bt_type = 'uint64_t'
+    @bt_type_internal = 'unsigned'
+    @bt_func = 'bt_field_integer_unsigned_%s_value'
   end
 
   class BTFieldClass::Enumeration::Signed < BTFieldClass::Integer::Signed
     include BTFieldClass::Enumeration
-    class Mapping < BTFieldClass::Enumeration::Mapping
+    class BTFieldClass::Enumeration::Signed::Mapping < BTFieldClass::Enumeration::Mapping
+      @bt_type_internal = 'signed'
     end
 
-    def initialize(parent:, field_value_range:, mappings:, preferred_display_base: 10)
-      @mappings = mappings # TODO: init Mapping
-      super(parent: parent, field_value_range: field_value_range, preferred_display_base: preferred_display_base)
-    end
+    @bt_type = 'int64_t'
+    @bt_type_internal = 'signed'
+    @bt_func = 'bt_field_integer_signed_%s_value'
   end
 
   class BTFieldClass::String < BTFieldClass
@@ -597,7 +634,7 @@ module Babeltrace2Gen
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
 
-      pr "// Dump string data to the struct."
+      pr '// Dump string data to the struct.'
       pr "memcpy(&#{variable}, #{bt_func_get}(#{field}), sizeof(#{variable}));"
     end
 
@@ -606,12 +643,12 @@ module Babeltrace2Gen
 
       variable = bt_get_variable(arg_variables).name
 
-      pr "// Dump data to a temporal string."
+      pr '// Dump data to a temporal string.'
       pr "char *#{field}_temp = (char *)malloc(sizeof(#{variable}));"
       pr "assert(#{field}_temp != NULL && \"Out of memory\");"
       pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
-      pr ""
-      pr "// Set string field with dumped data."
+      pr ''
+      pr '// Set string field with dumped data.'
       pr "bt_field_string_clear(#{field});"
       pr "bt_field_string_append_status #{field}_status = bt_field_string_append_with_length(#{field}, #{field}_temp, sizeof(#{variable}));"
       pr "assert(#{field}_status == BT_FIELD_STRING_APPEND_STATUS_OK && \"Out of memory\");"
@@ -671,7 +708,6 @@ module Babeltrace2Gen
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
     end
-
   end
 
   class BTFieldClass::Array::Dynamic < BTFieldClass::Array
@@ -759,13 +795,14 @@ module Babeltrace2Gen
     def initialize(parent:, field_class: nil, name: nil)
       @parent = parent
       is_match_model = parent.rec_trace_class.match
-      raise ArgumentError.new("missing keyword: :name") unless name || is_match_model
-      raise ArgumentError.new("missing keyword: :field_class") unless field_class || is_match_model
+      raise ArgumentError, 'missing keyword: :name' unless name || is_match_model
+      raise ArgumentError, 'missing keyword: :field_class' unless field_class || is_match_model
+
       @name = name # Name can be nil in the matching callbacks
-      @field_class = BTFieldClass.from_h(self, field_class || {} )
+      @field_class = BTFieldClass.from_h(self, field_class || {})
     end
 
-    def bt_get_variable()
+    def bt_get_variable
       @field_class.bt_get_variable({})
     end
   end
@@ -994,7 +1031,7 @@ module Babeltrace2Gen
       pr "bt_trace_set_environment_entry_#{bt_type_set}(#{trace}, \"#{var_name}\", #{var_name});"
     end
 
-    def bt_get_variable(arg_variables={})
+    def bt_get_variable(arg_variables = {})
       var = GeneratedArg.new(self.class.instance_variable_get(:@bt_type), @name)
       arg_variables.fetch_append('outputs', var)
     end
