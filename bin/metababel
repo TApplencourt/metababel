@@ -191,11 +191,9 @@ def parse_argv
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
   parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
-  parser.on('--display-paths-shared PLUGINS', Array) { |plugins|
-    plugins.each { |plugin|
-      path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
-      puts Pathname.new(path).realpath.to_s
-    }
+  parser.on('--display-shared-callback PLUGIN') { |plugin|
+    path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
+    puts File.readlines(path)
     exit
   }
 
