@@ -8,6 +8,7 @@ require 'fileutils'
 require 'set'
 require 'ostruct'
 require 'abbrev'
+require 'pathname'
 
 class Array
   def join_with_prefix(sep)
@@ -92,7 +93,7 @@ class DispatchType < BaseDispatch
 end
 
 class Dispatcher < BaseDispatch
-  attr_reader :event_nane, :event, :name,
+  attr_reader :event_name, :event, :name,
               :index_stream_class, :index_event_class,
               :default_clock_class,
               :dispatch_types
@@ -160,75 +161,51 @@ def parse_argv
   # Display help if no arguments.
   ARGV << '-h' if ARGV.empty?
 
-  options = {}
+  parser  = OptionParser.new
+  parser.on('-h', '--help', 'Prints this help') do
+    puts parser.help
+    exit
+  end
 
-  options[:disable_callbaks] = ['on_downstream'].to_set
+  parser.on('-v', '--version', 'Prints this help') do
+    puts "Ruby: #{RUBY_VERSION}"
+    puts "Metababel: #{Metababel::VERSION}"
+    exit
+  end
 
-  OptionParser.new do |opts|
-    opts.banner = 'Usage: example.rb [options]'
-
-    opts.on('-h', '--help', 'Prints this help') do
-      puts opts
-      exit
-    end
-
-    opts.on('-v', '--version', 'Prints this help') do
-      puts "Ruby: #{RUBY_VERSION}"
-      puts "Metababel: #{Metababel::VERSION}"
-      exit
-    end
-
-    opts.on('-t', '--component TYPE',
+  parser.on('-t', '--component-type TYPE',
             '[Mandatory] Node within a trace processing graph [one of: SINK, SOURCE, FILTER].') do |p|
-      l = %w[SOURCE FILTER SINK]
-      h = Abbrev.abbrev(l)
-      raise "Invalid component type, should be #{l} (case insentitive)" unless h.include?(p.upcase)
+    l = %w[SOURCE FILTER SINK]
+    h = Abbrev.abbrev(l)
+    raise "Invalid component type, should be #{l} (case insensitive)" unless h.include?(p.upcase)
 
-      options[:component_type] = h[p.upcase]
-    end
+    h[p.upcase]
+  end
 
-    opts.on('-u', '--upstreams PATH', Array, '[Mandatory] Path to the bt2 YAML files for the upstream model.') do |p|
-      options[:upstreams] = p
-    end
+  parser.on('-u', '--upstreams PATHS', Array, '[Mandatory] Path to the bt2 YAML files for the upstream model.')
+  parser.on('-d', '--downstream PATH', '[Optional] Path to the bt2 YAML file for the downstream model.')
+  parser.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.')
+  parser.on('-c', '--component-name PATH', '[Optional] Name of the bt2 component created.')
+  parser.on('--params PATH', '[Optional] Path to the bt2 YAML params definition.')
+  parser.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.')
+  parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
+  parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
+  parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
+  parser.on('--display-shared-callback PLUGIN') { |plugin|
+    path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
+    puts File.readlines(path)
+    exit
+  }
 
-    opts.on('-d', '--downstream PATH', '[Optional] Path to the bt2 YAML file for the downstream model.') do |p|
-      options[:downstream] = p
-    end
 
-    opts.on('-p', '--plugin-name PATH', '[Optional] Name of the bt2 plugin created.') do |p|
-      options[:plugin_name] = p
-    end
+  options = { 'disable-callbaks': ['on_downstream'].to_set,
+              'component-name': 'btx',
+            }
+  parser.parse!(into: options)
+  raise OptionParser::MissingArgument if options[:'component-type'].nil?
 
-    opts.on('-c', '--component-name PATH', '[Optional] Name of the bt2 componant created.') do |p|
-      options[:component_name] = p
-    end
-
-    opts.on('--params PATH', '[Optional] Paht to the bt2 YAML params definition.') do |p|
-      options[:params] = p
-    end
-
-    opts.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.') do |p|
-      options[:matching] = p
-    end
-
-    opts.on('-o', '--output FOLDER', '[Optional] Output folder path.') do |p|
-      options[:folder] = p
-    end
-
-    opts.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.') do |p|
-      options[:usr_data_header] = p
-    end
-
-    opts.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type') do |p|
-      options[:disable_callbaks] -= p.to_set
-    end
-  end.parse!
-
-  raise OptionParser::MissingArgument if options[:component_type].nil?
-
-  options[:plugin_name] ||= "metababel_#{options[:component_type].downcase}"
-  options[:component_name] ||= 'btx'
-
+  options[:'plugin-name'] ||= "metababel_#{options[:'component-type'].downcase}"
+  options[:'disable-callbaks'] -= (options[:'enable-callbacks'] || []).to_set
   options
 end
 
@@ -313,7 +290,7 @@ class ContextBuilder
 
   def base_folder
     @base_folder ||= begin
-      f = @cli_options[:folder] || "#{@cli_options[:component_type]}.#{@cli_options[:plugin_name]}.#{@cli_options[:component_name]}"
+      f = @cli_options[:output] || "#{@cli_options[:'component-type']}.#{@cli_options[:'plugin-name']}.#{@cli_options[:'component-name']}"
       FileUtils.mkdir_p(f)
       f
     end
@@ -377,15 +354,15 @@ class ContextBuilder
                                                [GeneratedArg.new('void *', 'usr_data'),
                                                 GeneratedArg.new('btx_params_t *', 'usr_params')],
                                                no_btx_handle: true)]
-      # Usefull to push message
-      if %w[SOURCE FILTER].include?(@cli_options[:component_type])
+
+      if %w[SOURCE FILTER].include?(@cli_options[:'component-type'])
         static_callbacks += [StaticDispatcher.new('initialize_processing',
                                                   [GeneratedArg.new('void *', 'usr_data_p')]),
                              StaticDispatcher.new('finalize_processing',
                                                   [GeneratedArg.new('void *', 'usr_data')])]
       end
 
-      if %w[SOURCE].include?(@cli_options[:component_type])
+      if %w[SOURCE].include?(@cli_options[:'component-type'])
         static_callbacks << StaticDispatcher.new('push_usr_messages',
                                                  [GeneratedArg.new('void *', 'usr_data'),
                                                   GeneratedArg.new('btx_source_status_t*', 'status')])
@@ -398,9 +375,11 @@ class ContextBuilder
 
   def downstream
     @downstream ||= begin
-      raise 'Missing downstream model' unless @cli_options[:downstream]
+      unless @cli_options[:downstream] || !@cli_options[:'disable-callbaks'].include?('on_downstream')
+        raise 'Missing downstream model'
+      end
 
-      y = load_models(@cli_options[:downstream])
+      y = @cli_options[:downstream] ? load_models(@cli_options[:downstream]) : { stream_classes: [] }
       t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
 
       event_name = '_event'
@@ -434,7 +413,15 @@ class ContextBuilder
 
   def upstream
     @upstream ||= begin
-      raise 'Missing upstreams models' unless @cli_options[:upstreams]
+      unless @cli_options[:upstreams] || !@cli_options[:'disable-callbaks'].include?('on_downstream')
+        raise 'Missing upstreams models'
+      end
+
+      unless @cli_options[:upstreams]
+        return { dispatchers: [],
+                 dispatch_types: [],
+                 event_name: nil }
+      end
 
       y = load_models(@cli_options[:upstreams])
       t = Babeltrace2Gen::BTTraceClass.from_h(nil, y)
@@ -491,7 +478,7 @@ def wrote_component(cb)
 end
 
 def wrote_main(cb)
-  erb_render_and_save(cb.get_context(%w[params options]), "#{cb.cli_options[:component_type].downcase}.c",
+  erb_render_and_save(cb.get_context(%w[params options]), "#{cb.cli_options[:'component-type'].downcase}.c",
                       cb.base_folder, out_name: 'main.c')
 end
 
@@ -505,5 +492,5 @@ context_builder = ContextBuilder.new
 wrote_header(context_builder)
 wrote_main(context_builder)
 wrote_component(context_builder)
-wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:component_type])
-wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:component_type])
+wrote_downstream(context_builder) if %w[SOURCE FILTER].include?(context_builder.cli_options[:'component-type'])
+wrote_upstream(context_builder) if %w[FILTER SINK].include?(context_builder.cli_options[:'component-type'])

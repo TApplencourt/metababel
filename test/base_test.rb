@@ -18,7 +18,7 @@ end
 
 def get_component_with_default_values(component)
   # We have only one component per plugins, the component name can be arbitrary.
-  # TODO: We need to downcase for SOURCE -> source somehwere. They will need to be fixed later
+  # TODO: We need to downcase for SOURCE -> source somewhere. They will need to be fixed later
   uuid = [component[:btx_component_type],
           component[:btx_component_label]].compact.map(&:downcase).join('_')
 
@@ -52,14 +52,8 @@ end
 
 def get_component_compilation_command(component)
   uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
-  command = <<~TEXT
-    ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
-              #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-              -I ./include -I #{component[:btx_component_path]}/
-              $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)
-              ${CFLAGS:='-Wall -Werror'} -fpic --shared
-  TEXT
-  command.split.join(' ')
+  uuid_so = "#{component[:btx_component_path]}/#{uuid}.so"
+  "make -f ./test/Makefile BTX_SO_UUID=#{uuid_so} BTX_SRC=#{component[:btx_component_path]}"
 end
 
 def get_graph_execution_command(components, connections)
@@ -110,7 +104,7 @@ end
 def mock_user_callbacks(component)
   # See if we need to generate us callbacks.
 
-  # If the user already define callancks do nothing
+  # If the user already define callbacks do nothing
   return if component.key?(:btx_file_usr_callbacks)
 
   # We support only generation of SOURCE callbacks
@@ -136,7 +130,7 @@ module GenericTest
   end
 
   def test_run
-    # Provide componenents default values
+    # Provide components default values
     sanitized_components = btx_components.map { |c| get_component_with_default_values(c) }
                                          .filter do |c|
       next true unless c[:btx_compile]
