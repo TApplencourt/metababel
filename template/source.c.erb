@@ -126,7 +126,8 @@ source_initialize(bt_self_component_source *self_component_source,
   btx_call_callbacks_initialize_component(common_data, &common_data->usr_data);
   /* Call read callbacks */
   <% if params_type_name %>
-        common_data->btx_params = (<%= params_type_name %> *) calloc(1, sizeof(<%= params_type_name%>));
+  common_data->btx_params =
+      (<%= params_type_name %> *)calloc(1, sizeof(<%= params_type_name%>));
   common_data->params = params;
   /* Read parameters */
   btx_populate_params(common_data);
@@ -183,10 +184,10 @@ static void source_finalize(bt_self_component_source *self_component_source) {
   btx_unregister_callbacks(common_data);
 
   <% if params_type_name %>
-        /* We allocate it, we need to free it */
-        free(common_data->btx_params);
+  /* We allocate it, we need to free it */
+  free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
-<% end %>
+  <% end %>
   free(common_data->static_callbacks);
   free(common_data);
 }

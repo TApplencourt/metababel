@@ -85,19 +85,20 @@ sink_initialize(bt_self_component_sink *self_component_sink,
   common_data_t *common_data =
       (common_data_t *)calloc(1, sizeof(common_data_t));
   common_data->static_callbacks =
-    (static_callbacks_t *)calloc(1, sizeof(static_callbacks_t));
+      (static_callbacks_t *)calloc(1, sizeof(static_callbacks_t));
   /* Register User Callbacks */
   btx_register_usr_callbacks((void *)common_data);
   /* Call initialize_processing*/
   btx_call_callbacks_initialize_component(common_data, &common_data->usr_data);
   <% if params_type_name %>
   /* Call read callbacks */
-    common_data->btx_params = (<%= params_type_name%> *) calloc(1, sizeof(<%= params_type_name%>));
+  common_data->btx_params =
+      (<%= params_type_name%> *)calloc(1, sizeof(<%= params_type_name%>));
   common_data->params = params;
   /* Read parameters */
   btx_populate_params(common_data);
   bt_value_get_ref(common_data->params);
-    btx_call_callbacks_read_params(common_data, common_data->usr_data,
+  btx_call_callbacks_read_params(common_data, common_data->usr_data,
                                  common_data->btx_params);
   <% end %>
   /* Set the component's user data to our private data structure */
@@ -128,9 +129,9 @@ static void sink_finalize(bt_self_component_sink *self_component_sink) {
   btx_unregister_callbacks(common_data);
   <% if params_type_name %>
   // We allocate it, we need to free it
-    free(common_data->btx_params);
+  free(common_data->btx_params);
   bt_value_put_ref(common_data->params);
-<% end %>
+  <% end %>
   free(common_data->static_callbacks);
 
   /* Free the allocated structure */

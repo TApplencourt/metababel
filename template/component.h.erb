@@ -57,10 +57,10 @@ struct common_data_s {
   void *on_downstream_message_callback;
   <% end %>
   void *usr_data;
-<% if params_type_name %>
+  <% if params_type_name %>
   const bt_value *params;
   <%= params_type_name %> *btx_params;
-<% end %>
+  <% end %>
   bt_trace *downstream_trace;
   /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
@@ -105,7 +105,7 @@ struct common_data_s {
   <% if params_type_name %>
   const bt_value *params;
   <%= params_type_name %> *btx_params;
-<% end %>
+  <% end %>
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
@@ -155,10 +155,10 @@ struct common_data_s {
   static_callbacks_t *static_callbacks;
 
   void *usr_data;
-<% if params_type_name %>
+  <% if params_type_name %>
   const bt_value *params;
   <%= params_type_name %> *btx_params;
-<% end %>
+  <% end %>
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };

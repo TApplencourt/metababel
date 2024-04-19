@@ -8,7 +8,7 @@ void btx_populate_params(common_data_t *common_data) {
   <%= params_type_name %> *_usr_params = common_data->btx_params;
   <%= params_definition %>
 }
-  <% end %>
+<% end %>
 
 <% static_callback_types.each do |e| %>
 void btx_register_callbacks_<%= e.name_sanitized %>(
