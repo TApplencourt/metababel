@@ -1,3 +1,4 @@
+:name: params
 :type: map
 :entries:
   - :name: path

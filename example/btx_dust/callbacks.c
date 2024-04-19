@@ -16,7 +16,7 @@ void btx_initialize_usr_data(void **usr_data) {
 }
 
 void btx_read_params(void *usr_data,
-                     btx_params_t *usr_params) {
+                     btx_params_params_t *usr_params) {
   usr_data_t *data = (usr_data_t *)usr_data;
   data->file = fopen(usr_params->path, "r");
 }
