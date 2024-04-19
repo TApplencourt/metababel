@@ -11,7 +11,7 @@ class TestUserParams < Test::Unit::TestCase
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_usr_params/1.btx_model.yaml',
         btx_component_params_model: './test/model/cases_usr_params/1.btx_params.yaml',
-        btx_component_params: 'param_1=\"\",param_2=false,param_3=1',
+        btx_component_params: 'param_1=\"\",param_2=false,param_3=1,param_4={param_4_1=12}',
         btx_file_usr_callbacks: './test/model/cases_usr_params/1.callbacks.c',
       },
       {
@@ -19,14 +19,14 @@ class TestUserParams < Test::Unit::TestCase
         btx_component_upstream_model: './test/model/cases_usr_params/1.btx_model.yaml',
         btx_component_downstream_model: './test/model/cases_usr_params/1.btx_model.yaml',
         btx_component_params_model: './test/model/cases_usr_params/1.btx_params.yaml',
-        btx_component_params: 'param_1=\"\",param_2=false,param_3=1',
+        btx_component_params: 'param_1=\"\",param_2=false,param_3=1,param_4={param_4_1=12}',
         btx_file_usr_callbacks: './test/model/cases_usr_params/1.callbacks.c',
       },
       {
         btx_component_type: 'SINK',
         btx_component_upstream_model: './test/model/cases_usr_params/1.btx_model.yaml',
         btx_component_params_model: './test/model/cases_usr_params/1.btx_params.yaml',
-        btx_component_params: 'param_1=\"\",param_2=false,param_3=1',
+        btx_component_params: 'param_1=\"\",param_2=false,param_3=1,param_4={param_4_1=12}',
         btx_file_usr_callbacks: './test/model/cases_usr_params/1.callbacks.c',
       },
     ]

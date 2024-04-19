@@ -16,20 +16,10 @@ extern "C" {
 struct common_data_s;
 typedef struct common_data_s common_data_t;
 
-// Params
-// Avoid icx error: empty struct has size 0 in C, size 1 in C++
-// [-Werror,-Wextern-c-compat]
-struct btx_params_s {
-  <% if params_declaration %>
-  <%= params_declaration %>
-  <% else %>
-  char _dummy;
-  <% end %>
-
-}; <%# Need empty line for nice code gen %>
-typedef struct btx_params_s btx_params_t;
-
+<% if params_type_name %>
+<%= params_declaration %>
 void btx_populate_params(common_data_t *common_data_t);
+<% end %>
 
 struct callbacks_s {
   <% callback_types.each do |c| %>
@@ -67,8 +57,10 @@ struct common_data_s {
   void *on_downstream_message_callback;
   <% end %>
   void *usr_data;
+<% if params_type_name %>
   const bt_value *params;
-  btx_params_t *btx_params;
+  <%= params_type_name %> *btx_params;
+<% end %>
   bt_trace *downstream_trace;
   /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
@@ -110,8 +102,10 @@ struct common_data_s {
   <% end %>
 
   void *usr_data;
+  <% if params_type_name %>
   const bt_value *params;
-  btx_params_t *btx_params;
+  <%= params_type_name %> *btx_params;
+<% end %>
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
@@ -161,8 +155,10 @@ struct common_data_s {
   static_callbacks_t *static_callbacks;
 
   void *usr_data;
+<% if params_type_name %>
   const bt_value *params;
-  btx_params_t *btx_params;
+  <%= params_type_name %> *btx_params;
+<% end %>
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
 };
