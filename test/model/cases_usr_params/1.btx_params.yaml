@@ -1,3 +1,4 @@
+:name: param_0
 :type: map
 :entries:
   - :name: param_1
@@ -6,3 +7,8 @@
     :type: bool
   - :name: param_3
     :type: integer_unsigned
+  - :name: param_4
+    :type: map
+    :entries:
+      - :name: param_4_1
+        :type: integer_unsigned

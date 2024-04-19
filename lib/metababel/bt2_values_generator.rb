@@ -54,33 +54,50 @@ module Babeltrace2Gen
       pr "  #{name} = #{cast_func}#{default_value};"
       pr '}'
     end
+
+    def get_struct_definition(_name)
+        type = @cast_type || self.class.instance_variable_get(:@bt_return_type)
+        "#{type} #{@name};"
+    end
   end
 
   class BTValueCLass::Map < BTValueCLass
+    @bt_type = 'struct'
+
+    attr_accessor :name
     include BTPrinter
 
     def self.from_h(model)
-      new(model[:entries])
+      new(model[:name], model[:entries])
     end
 
-    def initialize(entries = [])
+    def initialize(name, entries = [])
+      @name = name
       @entries = entries.collect { |m| BTValueCLass.from_h(**m) }
     end
 
     def get(struct, map)
       @entries.map do |m|
         scope do
-          pr "const bt_value *val = bt_value_map_borrow_entry_value_const(#{map}, \"#{m.name}\");"
-          m.get("#{struct}->#{m.name}", 'val')
+          pr "const bt_value *#{m.name} = bt_value_map_borrow_entry_value_const(#{map}, \"#{m.name}\");"
+          m.get("#{struct}.#{m.name}", m.name)
         end
       end
     end
 
-    def get_struct_definition(_name)
-      @entries.map do |e|
-        type = e.cast_type || e.class.instance_variable_get(:@bt_return_type)
-        "  #{type} #{e.name};"
-      end.join("\n")
+    def get_struct_definition(level=0)
+      a = ["struct btx_params_#{@name}_s {"]
+      a += @entries.map do |e|
+        e.get_struct_definition(level+1);
+      end
+      if level == 0
+        a << "};"
+        a << "typedef struct btx_params_#{@name}_s btx_params_#{@name}_t;"
+      else
+        a << "} #{@name};"
+      end
+
+      a.join("\n")
     end
   end
 

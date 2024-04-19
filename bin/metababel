@@ -308,17 +308,22 @@ class ContextBuilder
     { options: @cli_options }
   end
 
+  def params_type_name
+    @params[:params_type_name]
+  end
+
   def params
     @params ||= if @cli_options.key?(:params)
                   y = YAML.load_file(@cli_options[:params])
                   c = Babeltrace2Gen::BTValueCLass.from_h(y)
                   body = Babeltrace2Gen.context(indent: 1) do
-                    c.get('_usr_params', '_params')
+                    c.get('(*_usr_params)', '_params')
                   end
-                  { params_declaration: c.get_struct_definition('_params'),
+                  { params_type_name: "btx_params_#{c.name}_t",
+                    params_declaration: c.get_struct_definition(),
                     params_definition: body }
                 else
-                  { params_declaration: nil, params_definition: nil }
+                  { params_declaration: nil, params_definition: nil, params_type_name: nil }
                 end
   end
 
@@ -349,11 +354,13 @@ class ContextBuilder
                                                no_btx_handle: true),
                           StaticDispatcher.new('finalize_component',
                                                [GeneratedArg.new('void *', 'usr_data')],
-                                               no_btx_handle: true),
-                          StaticDispatcher.new('read_params',
-                                               [GeneratedArg.new('void *', 'usr_data'),
-                                                GeneratedArg.new('btx_params_t *', 'usr_params')],
                                                no_btx_handle: true)]
+      if params_type_name
+            static_callbacks << StaticDispatcher.new('read_params',
+                                               [GeneratedArg.new('void *', 'usr_data'),
+                                                GeneratedArg.new("#{params_type_name} *", 'usr_params')],
+                                               no_btx_handle: true)
+      end
 
       if %w[SOURCE FILTER].include?(@cli_options[:'component-type'])
         static_callbacks += [StaticDispatcher.new('initialize_processing',
