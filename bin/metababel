@@ -319,7 +319,7 @@ class ContextBuilder
                   body = Babeltrace2Gen.context(indent: 1) do
                     c.get('(*_usr_params)', '_params')
                   end
-                  { params_type_name: "btx_params_#{c.name}_t",
+                  { params_type_name: "btx_#{c.name}_t",
                     params_declaration: c.get_struct_definition(),
                     params_definition: body }
                 else
