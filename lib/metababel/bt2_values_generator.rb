@@ -55,7 +55,7 @@ module Babeltrace2Gen
       pr '}'
     end
 
-    def get_struct_definition(_name)
+    def declaration(_name)
         type = @cast_type || self.class.instance_variable_get(:@bt_return_type)
         "#{type} #{@name};"
     end
@@ -85,14 +85,18 @@ module Babeltrace2Gen
       end
     end
 
-    def get_struct_definition(level=0)
+    def type_name
+        "btx_#{@name}_t"
+    end
+
+    def declaration(level=0)
       a = ["struct btx_params_#{@name}_s {"]
       a += @entries.map do |e|
-        e.get_struct_definition(level+1);
+        e.declaration(level+1);
       end
       if level == 0
         a << "};"
-        a << "typedef struct btx_params_#{@name}_s btx_params_#{@name}_t;"
+        a << "typedef struct btx_params_#{@name}_s #{type_name};"
       else
         a << "} #{@name};"
       end
