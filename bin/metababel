@@ -320,7 +320,7 @@ class ContextBuilder
                     c.get('(*_usr_params)', '_params')
                   end
                   { params_type_name: c.type_name,
-                    params_declaration: c.declaration,
+                    params_declaration: c.declaration(level=0),
                     params_definition: body }
                 else
                   { params_declaration: nil, params_definition: nil, params_type_name: nil }
