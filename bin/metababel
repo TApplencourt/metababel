@@ -196,6 +196,7 @@ def parse_argv
     puts File.readlines(path)
     exit
   }
+  parser.on('--drop','[Optional] Drop unknow messages')
 
 
   options = { 'disable-callbaks': ['on_downstream'].to_set,

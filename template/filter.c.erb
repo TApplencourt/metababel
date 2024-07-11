@@ -117,9 +117,13 @@ static inline void filter_message_iterator_next_call_dispatchers(
     /* Drop message */
     bt_message_put_ref(upstream_message);
   } else {
-    /* Push upstream message to downstream */
-    btx_downstream_push_message(message_iterator_private_data,
+    <% if options[:drop] %>
+      bt_message_put_ref(upstream_message);
+    <% else %>
+      /* Push upstream message to downstream */
+      btx_downstream_push_message(message_iterator_private_data,
                                 upstream_message);
+    <% end %>
   }
 }
 
