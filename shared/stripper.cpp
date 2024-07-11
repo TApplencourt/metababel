@@ -1,5 +1,6 @@
 #include <babeltrace2/babeltrace.h>
 #include <metababel/metababel.h>
+#include <string>
 #include <unordered_map>
 
 typedef std::unordered_map<const bt_stream *, const bt_message *> StreamToMessage_t;
@@ -8,12 +9,20 @@ typedef std::unordered_map<const bt_packet *, const bt_message *> PacketToMessag
 struct StreamToMessages_s {
   StreamToMessage_t stream_beginning;
   PacketToMessage_t packet_beginning;
+  std::string filter_prefix;
 };
+
 typedef struct StreamToMessages_s StreamToMessages_t;
 
 static void btx_initialize_usr_data(void **usr_data) { *usr_data = new StreamToMessages_t{}; }
 
 static void btx_finalize_usr_data(void *usr_data) { delete ((StreamToMessages_t *)(usr_data)); }
+
+static void btx_read_params(void *usr_data, btx_params_t *usr_params) {
+
+  auto *data = (StreamToMessages_t *)usr_data;
+  data->filter_prefix = std::string{usr_params->filter_prefix};
+}
 
 static void push_associated_beginnings(void *btx_handle, StreamToMessages_t *h,
                                        const bt_message *message) {
@@ -69,8 +78,19 @@ static void on_downstream_message_callback(void *btx_handle, void *usr_data,
   }
   // Push event and associated beginnings
   case (BT_MESSAGE_TYPE_EVENT): {
-    push_associated_beginnings(btx_handle, h, message);
-    btx_push_message(btx_handle, message);
+    if (h->filter_prefix.empty()) {
+      push_associated_beginnings(btx_handle, h, message);
+      btx_push_message(btx_handle, message);
+      break;
+    }
+
+    const bt_event *event = bt_message_event_borrow_event_const(message);
+    const bt_event_class *event_class = bt_event_borrow_class_const(event);
+    const char *class_name = bt_event_class_get_name(event_class);
+    if (strncmp(h->filter_prefix.data(), class_name, h->filter_prefix.size()) == 0) {
+      push_associated_beginnings(btx_handle, h, message);
+      btx_push_message(btx_handle, message);
+    }
     break;
   }
   // Drop or push ends
@@ -92,5 +112,6 @@ static void on_downstream_message_callback(void *btx_handle, void *usr_data,
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_component(btx_handle, &btx_initialize_usr_data);
   btx_register_callbacks_finalize_component(btx_handle, &btx_finalize_usr_data);
+  btx_register_callbacks_read_params(btx_handle, &btx_read_params);
   btx_register_on_downstream_message_callback(btx_handle, &on_downstream_message_callback);
 }

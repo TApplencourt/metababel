@@ -1,0 +1,4 @@
+:type: map
+:entries:
+  - :name: filter_prefix
+    :type: string
