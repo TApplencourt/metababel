@@ -90,7 +90,10 @@ static void on_downstream_message_callback(void *btx_handle, void *usr_data,
     if (strncmp(h->filter_prefix.data(), class_name, h->filter_prefix.size()) == 0) {
       push_associated_beginnings(btx_handle, h, message);
       btx_push_message(btx_handle, message);
+      break;
     }
+
+    bt_message_put_ref(message);
     break;
   }
   // Drop or push ends
