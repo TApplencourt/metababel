@@ -118,8 +118,15 @@ static inline void filter_message_iterator_next_call_dispatchers(
     bt_message_put_ref(upstream_message);
   } else {
     /* Push upstream message to downstream */
-    btx_downstream_push_message(message_iterator_private_data,
-                                upstream_message);
+    <% if options[:drop] %>
+      /* Drop message. Including PACKET_{BEGIN,END} messages.
+       * It's ok as ALL message will be drop, so we will never get
+       * any EVENT without BEGIN */
+      bt_message_put_ref(upstream_message);
+    <% else %>
+      btx_downstream_push_message(message_iterator_private_data,
+                                  upstream_message);
+    <% end %>
   }
 }
 
