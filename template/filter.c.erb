@@ -119,8 +119,8 @@ static inline void filter_message_iterator_next_call_dispatchers(
   } else {
     /* Push upstream message to downstream */
     <% if options[:drop] %>
-      /* Drop message. This will also message, including PACKET_{BEGIN,END}
-       * It's ok as ALL events will be drop, so we will never get
+      /* Drop message. Including PACKET_{BEGIN,END} messages.
+       * It's ok as ALL message will be drop, so we will never get
        * any EVENT without BEGIN */
       bt_message_put_ref(upstream_message);
     <% else %>
