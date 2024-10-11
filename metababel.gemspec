@@ -9,4 +9,5 @@ Gem::Specification.new do |s|
   s.license     = 'MIT'
   s.executables = ['metababel', 'btx_gen_source_callbacks']
   s.metadata['rubygems_mfa_required'] = 'true'
+  s.required_ruby_version = '>= 2.7.0'
 end
