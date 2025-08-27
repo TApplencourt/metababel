@@ -792,7 +792,7 @@ module Babeltrace2Gen
 
     attr_reader :parent, :name, :field_class
 
-    def initialize(parent:, field_class: nil, name: nil)
+    def initialize(parent:, field_class: nil, name: nil, metadata: nil)
       @parent = parent
       is_match_model = parent.rec_trace_class.match
       raise ArgumentError, 'missing keyword: :name' unless name || is_match_model

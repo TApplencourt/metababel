@@ -138,3 +138,18 @@ class TestPacketContextField < Test::Unit::TestCase
     ]
   end
 end
+
+class TestPayloadFiledClassMetadata < Test::Unit::TestCase
+  include GenericTest
+  extend VariableAccessor
+  include VariableClassAccessor
+
+  def self.startup
+    @btx_components = [
+      {
+        btx_component_type: 'SOURCE',
+        btx_component_downstream_model: './test/model/cases_model_constructs/10.btx_model.yaml',
+      },
+    ]
+  end
+end
