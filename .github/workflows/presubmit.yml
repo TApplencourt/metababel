@@ -7,7 +7,7 @@ jobs:
       matrix:
         compiler: [gcc, clang, g++]
         build_gem: [true, false]
-        ruby: [ruby2.7, ruby]
+        ruby: ruby
     name: 'Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}'
     runs-on: ubuntu-latest
     steps:
