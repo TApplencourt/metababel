@@ -125,18 +125,17 @@ class Dispatcher < BaseDispatch
     end
   end
 
-  # We preprent an empty new line from the body as a hack, to correct the indentation
-  # Indeeed the <%= body %> will be indented, but we don't don't want it,
-  # in the body string is already indented
-  # But we clean the white space empty line afterward \o/
+  # Prepend a newline to align the rendered body correctly.
+  # Without this, ERB adds unwanted indentation to <%= body %>.
+  # Since body_args[1] is already indented, we avoid double-indentation.
+  # The extra leading blank line is removed later.
   def body
     "\n" + body_args[1]
   end
 
   def args
-    evt_args = []
-    evt_args += [GeneratedArg.new('int64_t', '_timestamp')] if @default_clock_class
-    evt_args += body_args[0].fetch('outputs', [])
+    timestamp = @default_clock_class ? [GeneratedArg.new('int64_t', '_timestamp')] : []
+    timestamp + body_args[0].fetch('outputs', [])
   end
 
   def args_to_free
@@ -191,16 +190,15 @@ def parse_argv
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
   parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
-  parser.on('--display-shared-callback PLUGIN') { |plugin|
+  parser.on('--display-shared-callback PLUGIN') do |plugin|
     path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
     puts File.readlines(path)
     exit
-  }
-  parser.on('--drop','[Optional] Drop unknow messages')
+  end
+  parser.on('--drop', '[Optional] Drop unknow messages')
 
   options = { 'disable-callbaks': ['on_downstream'].to_set,
-              'component-name': 'btx',
-            }
+              'component-name': 'btx' }
   parser.parse!(into: options)
   raise OptionParser::MissingArgument if options[:'component-type'].nil?
 

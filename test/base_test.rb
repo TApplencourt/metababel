@@ -52,7 +52,7 @@ def get_component_generation_command(component)
 end
 
 def get_component_compilation_command(component)
-  uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
+  uuid = %w[type plugin_name name].filter_map { |k| component[:"btx_component_#{k}"] }.join('_')
   uuid_so = "#{component[:btx_component_path]}/#{uuid}.so"
   "make -f ./test/Makefile BTX_SO_UUID=#{uuid_so} BTX_SRC=#{component[:btx_component_path]}"
 end
@@ -60,7 +60,7 @@ end
 def get_graph_execution_command(components, connections)
   plugin_path = components.map { |c| c[:btx_component_path] }.uniq
   components_list = components.map do |c|
-    uuid = %w[type plugin_name name].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
+    uuid = %w[type plugin_name name].map { |l| c[:"btx_component_#{l}"].downcase }.join('.')
     uuid_label = [c[:btx_component_label], uuid].compact.join(':')
     component_params = c.key?(:btx_component_params) ? "--params=#{c[:btx_component_params]}" : ''
     "--component=#{uuid_label} #{component_params}"
@@ -81,7 +81,7 @@ def get_graph_execution_command(components, connections)
 
   command += <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
-                #{components_connections.empty? ? '' : 'run'}
+                #{'run' unless components_connections.empty?}
                 #{components_list.join(' ')}
                 #{components_connections.join(' ')}
   TEXT
@@ -122,7 +122,7 @@ module GenericTest
   include Assertions
 
   def run_and_continue(command, component, key)
-    if component.key?(key) 
+    if component.key?(key)
       run_command(command, refute: component[key])
       return false
     end

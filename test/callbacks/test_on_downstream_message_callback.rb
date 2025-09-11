@@ -24,7 +24,6 @@ class TestOnDownstreamMessageFilter < Test::Unit::TestCase
   end
 end
 
-
 class TestOnDownstreamMessageCount < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
@@ -47,4 +46,3 @@ class TestOnDownstreamMessageCount < Test::Unit::TestCase
     ]
   end
 end
-

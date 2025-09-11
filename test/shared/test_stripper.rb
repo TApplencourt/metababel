@@ -22,7 +22,7 @@ class TestStripper < Test::Unit::TestCase
         btx_component_plugin_name: 'text',
         btx_component_name: 'details',
         btx_compile: false,
-      }
+      },
     ]
 
     @btx_output_validation = './test/shared/cases_stripper/1.btx_log.out'

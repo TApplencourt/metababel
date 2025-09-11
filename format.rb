@@ -1,8 +1,6 @@
 require 'open3'
 
 def format_erb(str_)
-  r = /<%\s+(.*?)\s*%>/
-
   d_sub = {}
   i = 0
 

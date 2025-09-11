@@ -22,6 +22,5 @@ class TestDrop < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/callbacks/cases_drop/1.btx_log.out'
-    
   end
 end

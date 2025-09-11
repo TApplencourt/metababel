@@ -249,7 +249,6 @@ module Babeltrace2Gen
 
     def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil,
                    set_id: nil, domain: nil, register: true)
-
       @set_id = set_id
       @domain = domain
       @register = register
@@ -365,6 +364,7 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
     include BTMatch
+
     using HashRefinements
 
     BT_MATCH_ATTRS = %i[type cast_type cast_type_is_struct]
@@ -470,6 +470,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::BitArray < BTFieldClass
     extend BTFromH
+
     attr_reader :length
 
     @bt_type = 'uint64_t'
@@ -597,6 +598,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Enumeration::Unsigned < BTFieldClass::Integer::Unsigned
     include BTFieldClass::Enumeration
+
     class BTFieldClass::Enumeration::Unsigned::Mapping < BTFieldClass::Enumeration::Mapping
       @bt_type_internal = 'unsigned'
     end
@@ -608,6 +610,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Enumeration::Signed < BTFieldClass::Integer::Signed
     include BTFieldClass::Enumeration
+
     class BTFieldClass::Enumeration::Signed::Mapping < BTFieldClass::Enumeration::Mapping
       @bt_type_internal = 'signed'
     end
@@ -629,7 +632,7 @@ module Babeltrace2Gen
     end
 
     def get_getter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type_is_struct
+      return super unless @cast_type_is_struct
 
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
@@ -639,7 +642,7 @@ module Babeltrace2Gen
     end
 
     def get_setter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type_is_struct
+      return super unless @cast_type_is_struct
 
       variable = bt_get_variable(arg_variables).name
 
@@ -667,6 +670,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Array::Static < BTFieldClass::Array
     extend BTFromH
+
     using HashRefinements
     attr_reader :length
 
@@ -712,6 +716,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Array::Dynamic < BTFieldClass::Array
     extend BTFromH
+
     module WithLengthField
       attr_reader :length_field_path
     end
@@ -722,6 +727,7 @@ module Babeltrace2Gen
       return unless length_field_path
 
       extend(WithLengthField)
+
       @length_field_path = length_field_path
     end
 
@@ -891,6 +897,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Option::WithSelectorField::Bool < BTFieldClass::Option::WithSelectorField
     extend BTFromH
+
     attr_reader :selector_is_reversed
 
     def initialize(parent:, field_class:, selector_field_path:, selector_is_reversed: nil)
@@ -901,6 +908,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Option::WithSelectorField::IntegerUnsigned < BTFieldClass::Option::WithSelectorField
     extend BTFromH
+
     attr_reader :selector_ranges
 
     def initialize(parent:, field_class:, selector_field_path:, selector_ranges:)
@@ -911,6 +919,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Option::WithSelectorField::IntegerSigned < BTFieldClass::Option::WithSelectorField
     extend BTFromH
+
     attr_reader :selector_ranges
 
     def initialize(parent:, field_class:, selector_field_path:, selector_ranges:)
@@ -921,6 +930,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Variant < BTFieldClass
     extend BTFromH
+
     attr_reader :options
 
     class Option
@@ -953,6 +963,7 @@ module Babeltrace2Gen
       @parent = parent
       if selector_field_class
         extend(WithSelectorField)
+
         @selector_field_class = selector_field_class
         @options = options.collect do |o|
           BTFieldClass::Variant::WithSelectorField::Option.new(name: o[:name], field_class: o[:field_class],
@@ -960,6 +971,7 @@ module Babeltrace2Gen
         end
       else
         extend(WithoutSelectorField)
+
         @options = options.collect do |o|
           BTFieldClass::Variant::Option.new(name: o[:name], field_class: o[:field_class])
         end
@@ -972,6 +984,7 @@ module Babeltrace2Gen
     include BTLocator
     include BTMatchMembers
     extend BTFromH
+
     attr_reader :parent, :entries
 
     BT_MATCH_ATTRS = [:entries]
@@ -993,6 +1006,7 @@ module Babeltrace2Gen
   class BTEntryClass
     include BTPrinter
     include BTMatch
+
     using HashRefinements
 
     BT_MATCH_ATTRS = %i[name type]
