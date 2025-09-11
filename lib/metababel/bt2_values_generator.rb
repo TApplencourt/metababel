@@ -11,7 +11,7 @@ module Babeltrace2Gen
       h = { 'map' => BTValueCLass::Map,
             'string' => BTValueCLass::String,
             'bool' => BTValueCLass::Bool,
-            'integer_unsigned' => BTValueCLass::IntegerUnsigned }.freeze
+            'integer_signed' => BTValueCLass::IntegerSigned }.freeze
       raise "Type #{key} not supported" unless h.include?(key)
 
       cast_type = model.delete(:cast_type)
@@ -45,7 +45,7 @@ module Babeltrace2Gen
       default_value = @usr_default_value || bt_default_value
 
       pr "if (#{val} != NULL) {"
-      pr "  if (!#{bt_type_is}(#{val})) {"
+      pr "  if (#{bt_type_is}(#{val}) != BT_TRUE) {"
       pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
       pr '    exit(1);'
       pr '  }'
@@ -117,16 +117,16 @@ module Babeltrace2Gen
     end
   end
 
-  class BTValueCLass::IntegerUnsigned < BTValueCLass::Scalar
-    @bt_type = 'integer_unsigned'
+  class BTValueCLass::IntegerSigned < BTValueCLass::Scalar
+    @bt_type = 'integer_signed'
     @bt_type_is = 'bt_value_is_signed_integer'
-    @bt_return_type = 'uint64_t'
+    @bt_return_type = 'int64_t'
     @bt_default_value = '0'
 
     def initialize(name, usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
-      if !usr_default_value.nil? && (!usr_default_value.is_a?(Integer) || !usr_default_value.between?(0, (2**64) - 1))
-        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} and must be in [0,2^64-1], but provided '#{usr_default_value}'."
+      if !usr_default_value.nil? && (!usr_default_value.is_a?(Integer) || !usr_default_value.between?(-2**63, 2**63 - 1))
+        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} and must be in [-2**63, 2**63 - 1], but provided '#{usr_default_value}'."
       end
 
       super(name, usr_default_value)
