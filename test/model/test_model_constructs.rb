@@ -134,8 +134,10 @@ class TestPacketContextField < Test::Unit::TestCase
       {
         btx_component_type: 'SOURCE',
         btx_component_downstream_model: './test/model/cases_model_constructs/9.btx_model.yaml',
+        btx_log_path: './test/model/cases_model_constructs/9.btx_log.txt',
       },
     ]
+    @btx_output_validation = './test/model/cases_model_constructs/9.btx_log.txt'
   end
 end
 

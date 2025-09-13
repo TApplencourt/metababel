@@ -57,8 +57,36 @@ def get_component_compilation_command(component)
   "make -f ./test/Makefile BTX_SO_UUID=#{uuid_so} BTX_SRC=#{component[:btx_component_path]}"
 end
 
-def get_graph_execution_command(components, connections)
-  plugin_path = components.map { |c| c[:btx_component_path] }.uniq
+def _get_plugin_path(components)
+  components.map { |c| c[:btx_component_path] }.uniq
+end
+
+def _get_ctf_out_path(components)
+  plugin_path = _get_plugin_path(components).first
+  "#{plugin_path}/ctf_tmp"
+end
+
+def get_ctf_read_execution_command(components)
+  command = ''
+  if ENV['METABABEL_VALGRIND']
+    command += <<~TEXT
+      valgrind --suppressions=.valgrind/dlopen.supp
+               --error-exitcode=1
+               --leak-check=full
+               --quiet
+               --
+    TEXT
+  end
+
+  ctf_out_path = _get_ctf_out_path(components)
+  command += <<~TEXT
+    babeltrace2 #{ctf_out_path}
+  TEXT
+  command.split.join(' ')
+end
+
+def get_graph_execution_command(components, connections, write_ctf=false)
+  plugin_path = _get_plugin_path(components)
   components_list = components.map do |c|
     uuid = %w[type plugin_name name].map { |l| c[:"btx_component_#{l}"].downcase }.join('.')
     uuid_label = [c[:btx_component_label], uuid].compact.join(':')
@@ -79,11 +107,18 @@ def get_graph_execution_command(components, connections)
     TEXT
   end
 
+  extra_args = ''
+  if write_ctf
+    ctf_out_path = _get_ctf_out_path(components)
+    extra_args = "-o ctf -w #{ctf_out_path}"
+  end
+
   command += <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
                 #{'run' unless components_connections.empty?}
                 #{components_list.join(' ')}
                 #{components_connections.join(' ')}
+                #{extra_args}
   TEXT
   command.split.join(' ')
 end
@@ -155,13 +190,26 @@ module GenericTest
     end
     return if sanitized_components.empty?
 
+    has_sink = sanitized_components.join(' ').include?('sink')
+
     # Run the Graph
     stdout_str = run_command(get_graph_execution_command(sanitized_components, btx_connect))
+
+    stdout_str_readctf = ''
+    if not has_sink
+      # Round trip through CTF format and back to pretty print
+      run_command(get_graph_execution_command(sanitized_components, btx_connect, true))
+      stdout_str_readctf = run_command(get_ctf_read_execution_command(sanitized_components))
+    end
+
     # Output validation
     return unless btx_output_validation
 
     expected_output = File.read(btx_output_validation)
     assert_equal(expected_output, stdout_str)
+    if not has_sink
+      assert_equal(expected_output, stdout_str_readctf)
+    end
   end
 end
 
