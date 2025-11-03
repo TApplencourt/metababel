@@ -1026,6 +1026,7 @@ module Babeltrace2Gen
       raise "No type in #{model}" unless type || is_match_model
 
       h = { 'string' => BTEntryClass::String,
+            'integer_unsigned' => BTEntryClass::IntegerUnsigned,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
 
       raise "Type #{type} not supported" unless h.include?(type) || is_match_model
@@ -1067,6 +1068,14 @@ module Babeltrace2Gen
 
     @bt_type = 'int64_t'
     # Sadly it's ` bt_trace_set_environment_entry_integer() ` and not ` bt_trace_set_environment_entry_integer_signed()`
+    @bt_type_set = 'integer'
+  end
+
+  class BTEntryClass::IntegerUnsigned < BTEntryClass
+    extend BTFromH
+
+    @bt_type = 'uint64_t'
+    # Sadly it's ` bt_trace_set_environment_entry_integer() ` and not ` bt_trace_set_environment_entry_integer_unsigned()`
     @bt_type_set = 'integer'
   end
 end
