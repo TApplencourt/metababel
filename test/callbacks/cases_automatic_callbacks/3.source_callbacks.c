@@ -6,8 +6,10 @@ void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_status_t
   bt_trace *trace = ((common_data_t *) btx_handle)->downstream_trace;
   bt_trace_set_environment_entry_status stat_1 = bt_trace_set_environment_entry_string(trace, "entry_1", "dummy value");
   bt_trace_set_environment_entry_status stat_2 = bt_trace_set_environment_entry_integer(trace, "entry_2", -1);
+  bt_trace_set_environment_entry_status stat_3 = bt_trace_set_environment_entry_integer(trace, "entry_3", 12);
   assert(stat_1 == BT_TRACE_SET_ENVIRONMENT_ENTRY_STATUS_OK);
   assert(stat_2 == BT_TRACE_SET_ENVIRONMENT_ENTRY_STATUS_OK);
+  assert(stat_3 == BT_TRACE_SET_ENVIRONMENT_ENTRY_STATUS_OK);
 
   btx_push_message_event(btx_handle);
   *status = BTX_SOURCE_END;

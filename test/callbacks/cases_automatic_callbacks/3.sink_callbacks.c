@@ -1,9 +1,10 @@
 #include <metababel/metababel.h>
 #include <assert.h>
 
-static void usr_event_callback(void *btx_handle, void *usr_data, const char *entry_1, int64_t entry_2) {
+static void usr_event_callback(void *btx_handle, void *usr_data, const char *entry_1, int64_t entry_2, uint64_t entry_3) {
   assert(strcmp(entry_1,"dummy value") == 0);
   assert(entry_2 == -1);
+  assert(entry_3 == 12);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {

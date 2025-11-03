@@ -11,6 +11,7 @@ module Babeltrace2Gen
       h = { 'map' => BTValueCLass::Map,
             'string' => BTValueCLass::String,
             'bool' => BTValueCLass::Bool,
+            'integer_unsigned' => BTValueCLass::IntegerUnsigned,
             'integer_signed' => BTValueCLass::IntegerSigned }.freeze
       raise "Type #{key} not supported" unless h.include?(key)
 
@@ -45,10 +46,12 @@ module Babeltrace2Gen
       default_value = @usr_default_value || bt_default_value
 
       pr "if (#{val} != NULL) {"
-      pr "  if (#{bt_type_is}(#{val}) != BT_TRUE) {"
-      pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
-      pr '    exit(1);'
-      pr '  }'
+      if bt_type_is
+        pr "  if (#{bt_type_is}(#{val}) != BT_TRUE) {"
+        pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
+        pr '    exit(1);'
+        pr '  }'
+      end
       pr "  #{name} = #{cast_func}bt_value_#{bt_type}_get(#{val});"
       pr '} else {'
       pr "  #{name} = #{cast_func}#{default_value};"
@@ -114,6 +117,23 @@ module Babeltrace2Gen
       end
 
       super(name, usr_default_value.to_s.inspect)
+    end
+  end
+
+  class BTValueCLass::IntegerUnsigned < BTValueCLass::Scalar
+    @bt_type = 'integer_unsigned'
+    @bt_type_is = nil # 'bt_value_is_unsigned_integer'. Workarround `isIntegerUnsigned` broken
+    @bt_return_type = 'uint64_t'
+    @bt_default_value = '0'
+
+    def initialize(name, usr_default_value)
+      bt_type = self.class.instance_variable_get(:@bt_type)
+      if !usr_default_value.nil? && (!usr_default_value.is_a?(Integer) || !usr_default_value.between?(0,
+                                                                                                      (2**64) - 1))
+        raise "Bad default_value for '#{name}' in params.yaml, it must be #{bt_type} and must be in [0, 2**64 - 1], but provided '#{usr_default_value}'."
+      end
+
+      super
     end
   end
 
