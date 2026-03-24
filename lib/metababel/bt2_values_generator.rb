@@ -122,7 +122,7 @@ module Babeltrace2Gen
     @bt_type = 'integer_unsigned'
     @bt_type_is = 'bt_value_is_unsigned_integer'
     @bt_return_type = 'uint64_t'
-    @bt_default_value = '0'
+    @bt_default_value = '+0'
 
     def initialize(name, usr_default_value)
       bt_type = self.class.instance_variable_get(:@bt_type)
