@@ -120,7 +120,7 @@ module Babeltrace2Gen
 
   class BTValueCLass::IntegerUnsigned < BTValueCLass::Scalar
     @bt_type = 'integer_unsigned'
-    @bt_type_is = 'bt_value_is_unsigned_integer' 
+    @bt_type_is = 'bt_value_is_unsigned_integer'
     @bt_return_type = 'uint64_t'
     @bt_default_value = '0'
 

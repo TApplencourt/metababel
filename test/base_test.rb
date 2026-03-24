@@ -134,24 +134,25 @@ module GenericTest
     # Provide components default values
     sanitized_components = btx_components.map { |c| get_component_with_default_values(c) }
                                          .filter do |c|
-      next true unless c[:btx_compile]
+                                           next true unless c[:btx_compile]
 
-      # Validate files
-      usr_assert_files(c)
-      # Generate Metababel
-      next unless run_and_continue(get_component_generation_command(c),
-                                   c, :btx_metababel_generation_fail)
+                                           # Validate files
+                                           usr_assert_files(c)
+                                           # Generate Metababel
+                                           next unless run_and_continue(get_component_generation_command(c),
+                                                                        c, :btx_metababel_generation_fail)
 
-      # Copy user files
-      c.keys.grep(/_file_usr/) do |key|
-        assert_nothing_raised do
-          FileUtils.cp(c[key], c[:btx_component_path])
-        end
-      end
-      # Mock user callbacks
-      mock_user_callbacks(c)
-      # Compile
-      run_and_continue(get_component_compilation_command(c), c, :btx_compilation_should_fail)
+                                           # Copy user files
+                                           c.keys.grep(/_file_usr/) do |key|
+                                             assert_nothing_raised do
+                                               FileUtils.cp(c[key], c[:btx_component_path])
+                                             end
+                                           end
+                                           # Mock user callbacks
+                                           mock_user_callbacks(c)
+                                           # Compile
+                                           run_and_continue(get_component_compilation_command(c), c,
+                                                            :btx_compilation_should_fail)
     end
     return if sanitized_components.empty?
 
