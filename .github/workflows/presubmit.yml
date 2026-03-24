@@ -16,7 +16,7 @@ jobs:
     name: 'Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: |
           sudo add-apt-repository ppa:lttng/ppa
           sudo apt-get update
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check with example
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: |
           sudo add-apt-repository ppa:lttng/ppa
           sudo apt-get update
