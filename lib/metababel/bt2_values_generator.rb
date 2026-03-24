@@ -46,12 +46,10 @@ module Babeltrace2Gen
       default_value = @usr_default_value || bt_default_value
 
       pr "if (#{val} != NULL) {"
-      if bt_type_is
-        pr "  if (#{bt_type_is}(#{val}) != BT_TRUE) {"
-        pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
-        pr '    exit(1);'
-        pr '  }'
-      end
+      pr "  if (#{bt_type_is}(#{val}) != BT_TRUE) {"
+      pr "    fprintf(stderr,\"Bad value for command line argument '%s' the value must be '%s'. \\n\",\"#{@name}\",\"#{bt_type}\");"
+      pr '    exit(1);'
+      pr '  }'
       pr "  #{name} = #{cast_func}bt_value_#{bt_type}_get(#{val});"
       pr '} else {'
       pr "  #{name} = #{cast_func}#{default_value};"
@@ -122,7 +120,7 @@ module Babeltrace2Gen
 
   class BTValueCLass::IntegerUnsigned < BTValueCLass::Scalar
     @bt_type = 'integer_unsigned'
-    @bt_type_is = nil # 'bt_value_is_unsigned_integer'. Workarround `isIntegerUnsigned` broken
+    @bt_type_is = 'bt_value_is_unsigned_integer' 
     @bt_return_type = 'uint64_t'
     @bt_default_value = '0'
 

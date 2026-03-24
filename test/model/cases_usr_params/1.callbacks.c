@@ -5,6 +5,7 @@ void btx_read_params(void *usr_data, btx_params_t *usr_params) {
   assert(strcmp(usr_params->param_1,"") == 0);
   assert(usr_params->param_2 == BT_FALSE);
   assert(usr_params->param_3 == 1);
+  assert(usr_params->param_4 == 9223372036854775808U);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
