@@ -13,5 +13,5 @@
           :field_class:
             :type: blob_dynamic
             :length_field_location:
-              :scope: EVENT_PAYLOAD
+              :root_scope: BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD
               :items: [length]

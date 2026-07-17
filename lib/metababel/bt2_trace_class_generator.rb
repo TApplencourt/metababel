@@ -50,33 +50,31 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
 
-    attr_reader :scope, :items
+    # root_scope is the full babeltrace enum name, e.g.
+    # BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD (mirrors the C bt_field_location API).
+    attr_reader :root_scope, :items
 
-    def initialize(parent:, scope:, items:)
+    def initialize(parent:, root_scope:, items:)
       raise "nested field locations are not supported (items: #{items})" unless items.size == 1
 
       @parent = parent
-      @scope = scope
+      @root_scope = root_scope
       @items = items
-    end
-
-    def scope_enum
-      "BT_FIELD_LOCATION_SCOPE_#{@scope}"
     end
 
     def member
       field_class =
-        case @scope.to_s
-        when 'PACKET_CONTEXT'
+        case @root_scope.to_s
+        when 'BT_FIELD_LOCATION_SCOPE_PACKET_CONTEXT'
           rec_stream_class.packet_context_field_class
-        when 'EVENT_COMMON_CONTEXT'
+        when 'BT_FIELD_LOCATION_SCOPE_EVENT_COMMON_CONTEXT'
           rec_stream_class.event_common_context_field_class
-        when 'EVENT_SPECIFIC_CONTEXT'
+        when 'BT_FIELD_LOCATION_SCOPE_EVENT_SPECIFIC_CONTEXT'
           rec_event_class.specific_context_field_class
-        when 'EVENT_PAYLOAD'
+        when 'BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD'
           rec_event_class.payload_field_class
         else
-          raise "invalid field-location scope #{@scope}"
+          raise "invalid field-location root scope #{@root_scope}"
         end
       field_class[@items.first]
     end
@@ -84,7 +82,7 @@ module Babeltrace2Gen
     def get_declarator(trace_class:, variable:)
       items_var = "#{variable}_items"
       pr "const char *const #{items_var}[] = { #{@items.map { |i| "\"#{i}\"" }.join(', ')} };"
-      pr "#{variable} = bt_field_location_create(#{trace_class}, #{scope_enum}, #{items_var}, #{@items.length});"
+      pr "#{variable} = bt_field_location_create(#{trace_class}, #{@root_scope}, #{items_var}, #{@items.length});"
     end
   end
 
