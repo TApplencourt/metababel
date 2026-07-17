@@ -1,0 +1,162 @@
+name: Monthly keepalive commit
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"   # monthly, UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  SOURCE_BRANCH: main
+  KEEPALIVE_BRANCH: _github_keepalive_branch
+  THRESHOLD_DAYS: 28   # GitHub timeout - (max days in month + 1) = 60 - (31 + 1) = 28
+  CI_WORKFLOW_FILE: .github/workflows/presubmit.yml
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          fetch-depth: 1
+
+      - name: Evaluate source branch age
+        id: check
+        shell: bash
+        run: |
+          LAST_COMMIT_TS=$(git log -1 --format=%ct)
+          NOW_TS=$(date +%s)
+          AGE_DAYS=$(( (NOW_TS - LAST_COMMIT_TS) / 86400 ))
+
+          echo "Source branch: $SOURCE_BRANCH"
+          echo "Last commit age: ${AGE_DAYS} days"
+          echo "Threshold: ${THRESHOLD_DAYS} days"
+
+          if [ "$AGE_DAYS" -gt "$THRESHOLD_DAYS" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare keepalive branch
+        if: steps.check.outputs.stale == 'true'
+        shell: bash
+        run: |
+          git fetch origin
+
+          if git show-ref --verify --quiet refs/remotes/origin/$KEEPALIVE_BRANCH; then
+            echo "Branch exists: $KEEPALIVE_BRANCH"
+            git checkout -B $KEEPALIVE_BRANCH origin/$KEEPALIVE_BRANCH
+          else
+            echo "Branch does not exist. Creating: $KEEPALIVE_BRANCH"
+            git checkout --orphan $KEEPALIVE_BRANCH
+            git rm -rf . # Remove all files, so we have an empty branch
+          fi
+
+      - name: Configure git identity
+        if: steps.check.outputs.stale == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create empty keepalive commit
+        if: steps.check.outputs.stale == 'true'
+        run: |
+          git commit --allow-empty -m "chore(keepalive): monthly heartbeat"
+
+      - name: Push keepalive branch
+        if: steps.check.outputs.stale == 'true'
+        run: |
+          git push origin $KEEPALIVE_BRANCH
+
+  update-ruby-versions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          token: ${{ secrets.KEEPALIVE_WORKFLOW }}
+
+      - name: Get latest Ruby package available in apt
+        id: ruby_latest
+        run: |
+          sudo apt-get update -qq
+          # Ruby minor-version packages look like ruby3.2, ruby3.4; -dev/-doc are excluded by the $ anchor.
+          LATEST=$(apt-cache search --names-only '^ruby[0-9]+\.[0-9]+$' \
+            | awk '{print $1}' \
+            | sed 's/^ruby//' \
+            | sort -V \
+            | tail -n1)
+
+          if [ -z "$LATEST" ]; then
+            echo "Could not find any ruby<major>.<minor> package in apt." >&2
+            exit 1
+          fi
+
+          echo "Latest Ruby package available in apt: ruby$LATEST"
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Get current Ruby versions from matrix
+        id: current_versions
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.jobs.build-and-check.strategy.matrix.ruby[]' "${{ env.CI_WORKFLOW_FILE }}"
+
+      - name: Check if version is already tracked on main
+        id: decision
+        run: |
+          LATEST="ruby${{ steps.ruby_latest.outputs.version }}"
+
+          if echo "${{ steps.current_versions.outputs.result }}" | grep -qx "$LATEST"; then
+            echo "$LATEST is already in the matrix on main — nothing to do."
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$LATEST is not tracked yet — will open a PR."
+            echo "needed=true"  >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update ruby matrix
+        if: steps.decision.outputs.needed == 'true'
+        uses: mikefarah/yq@master
+        with:
+          cmd: >-
+            yq -i
+            '.jobs.build-and-check.strategy.matrix.ruby += ["ruby${{ steps.ruby_latest.outputs.version }}"]'
+            "${{ env.CI_WORKFLOW_FILE }}"
+
+      - name: Commit, push and open PR
+        if: steps.decision.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.KEEPALIVE_WORKFLOW }}
+        run: |
+          NEW_VERSION=ruby${{ steps.ruby_latest.outputs.version }}
+          BRANCH="ci/add-${NEW_VERSION}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add "${{ env.CI_WORKFLOW_FILE }}"
+          git commit -m "ci: add ${NEW_VERSION} to test matrix"
+          git push --force-with-lease origin "$BRANCH"
+
+          # gh exits non-zero if a PR already exists — suppress it
+          gh pr create \
+            --title "ci: add ${NEW_VERSION} to test matrix" \
+            --body "\`${NEW_VERSION}\` is now available in apt on the CI runner.
+
+          This PR adds it to the \`ruby\` matrix in \`${{ env.CI_WORKFLOW_FILE }}\`.
+
+          ---
+          *Opened automatically by the monthly keepalive workflow.*" \
+            --base "$SOURCE_BRANCH" \
+            --head "$BRANCH" \
+          || echo "PR already open for $BRANCH — skipping."
