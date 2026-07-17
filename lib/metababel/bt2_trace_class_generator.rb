@@ -44,11 +44,29 @@ module Babeltrace2Gen
     def rec_member_class
       is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_member_class
     end
+  end
 
-    def resolve_path(path)
-      root, id = path.match(/^(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)\["?(.+)?"\]/).captures
+  class BTFieldLocation
+    include BTLocator
+    include BTPrinter
+
+    attr_reader :scope, :items
+
+    def initialize(parent:, scope:, items:)
+      raise "nested field locations are not supported (items: #{items})" unless items.size == 1
+
+      @parent = parent
+      @scope = scope
+      @items = items
+    end
+
+    def scope_enum
+      "BT_FIELD_LOCATION_SCOPE_#{@scope}"
+    end
+
+    def member
       field_class =
-        case root
+        case @scope.to_s
         when 'PACKET_CONTEXT'
           rec_stream_class.packet_context_field_class
         when 'EVENT_COMMON_CONTEXT'
@@ -58,9 +76,15 @@ module Babeltrace2Gen
         when 'EVENT_PAYLOAD'
           rec_event_class.payload_field_class
         else
-          raise "invalid path #{path}"
+          raise "invalid field-location scope #{@scope}"
         end
-      [field_class, id]
+      field_class[@items.first]
+    end
+
+    def get_declarator(trace_class:, variable:)
+      items_var = "#{variable}_items"
+      pr "const char *const #{items_var}[] = { #{@items.map { |i| "\"#{i}\"" }.join(', ')} };"
+      pr "#{variable} = bt_field_location_create(#{trace_class}, #{scope_enum}, #{items_var}, #{@items.length});"
     end
   end
 
@@ -394,6 +418,8 @@ module Babeltrace2Gen
         'string' => BTFieldClass::String,
         'array_static' => BTFieldClass::Array::Static,
         'array_dynamic' => BTFieldClass::Array::Dynamic,
+        'blob_static' => BTFieldClass::Blob::Static,
+        'blob_dynamic' => BTFieldClass::Blob::Dynamic,
         'structure' => BTFieldClass::Structure,
         'option_without_selector_field' => BTFieldClass::Option::WithoutSelectorField,
         'option_with_selector_field_bool' => BTFieldClass::Option::WithSelectorField::Bool,
@@ -718,17 +744,17 @@ module Babeltrace2Gen
     extend BTFromH
 
     module WithLengthField
-      attr_reader :length_field_path
+      attr_reader :length_field_location
     end
     using HashRefinements
 
-    def initialize(parent:, element_field_class:, length_field_path: nil)
+    def initialize(parent:, element_field_class:, length_field_location: nil)
       super(parent: parent, element_field_class: element_field_class)
-      return unless length_field_path
+      return unless length_field_location
 
       extend(WithLengthField)
 
-      @length_field_path = length_field_path
+      @length_field_location = BTFieldLocation.new(parent: self, **length_field_location)
     end
 
     def get_declarator(trace_class:, variable:)
@@ -736,34 +762,26 @@ module Babeltrace2Gen
       scope do
         pr "bt_field_class *#{element_field_class_variable};"
         @element_field_class.get_declarator(trace_class: trace_class, variable: element_field_class_variable)
-        if @length_field_path
-          element_field_class_variable_length = "#{element_field_class_variable}_length"
-          pr "bt_field_class *#{element_field_class_variable_length};"
+        if @length_field_location
+          # MIP 1: reference the length field via a field-location instead of a
+          # length field class (bt_field_class_array_dynamic_create is MIP 0 only).
+          loc = "#{element_field_class_variable}_length_loc"
+          pr "const bt_field_location *#{loc};"
           scope do
-            element_field_class_variable_length_sm = "#{element_field_class_variable_length}_sm"
-            pr "bt_field_class_structure_member *#{element_field_class_variable_length_sm};"
-            field_class, id = resolve_path(@length_field_path)
-            id.scan(/(\w+)|(\d+)/).each do |name, index|
-              # String
-              if name
-                pr "#{element_field_class_variable_length_sm} = bt_field_class_structure_borrow_member_by_name(#{field_class.variable}, \"#{name}\");"
-              else
-                pr "#{element_field_class_variable_length_sm} = bt_field_class_structure_borrow_member_by_index(#{field_class.variable}, #{index});"
-              end
-            end
-            pr "#{element_field_class_variable_length} = bt_field_class_structure_member_borrow_field_class(#{element_field_class_variable_length_sm});"
+            @length_field_location.get_declarator(trace_class: trace_class, variable: loc)
           end
-          pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, #{element_field_class_variable_length});"
+          pr "#{variable} = bt_field_class_array_dynamic_with_length_field_location_create(#{trace_class}, #{element_field_class_variable}, #{loc});"
+          pr "bt_field_location_put_ref(#{loc});"
           pr "bt_field_class_put_ref(#{element_field_class_variable});"
         else
-          pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, NULL);"
+          pr "#{variable} = bt_field_class_array_dynamic_without_length_field_location_create(#{trace_class}, #{element_field_class_variable});"
+          pr "bt_field_class_put_ref(#{element_field_class_variable});"
         end
       end
     end
 
     def get_setter(field:, arg_variables:)
-      field_class, id = resolve_path(@length_field_path)
-      length_field = field_class[id]
+      length_field = @length_field_location.member
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_field.name});"
       usr_var = bt_get_variable(arg_variables, is_array: true)
       pr "for(uint64_t _i=0; _i < #{length_field.name} ; _i++)"
@@ -787,6 +805,92 @@ module Babeltrace2Gen
         arg_variables.fetch_append('internal', GeneratedArg.new('', "#{usr_var.name}[_i]"))
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
+    end
+  end
+
+  # BLOB fields (CTF2 / MIP 1): a raw byte buffer with an associated IANA media
+  # type. Used by THAPI to record structs/unions and opaque byte buffers as
+  # uninterpreted bytes instead of smuggling them through text sequences.
+  class BTFieldClass::Blob < BTFieldClass
+    DEFAULT_MEDIA_TYPE = 'application/octet-stream'
+
+    attr_reader :media_type
+
+    # Emit the media-type assignment shared by static and dynamic blobs.
+    def declare_media_type(variable)
+      pr "bt_field_class_blob_set_media_type(#{variable}, \"#{@media_type || DEFAULT_MEDIA_TYPE}\");"
+    end
+  end
+
+  class BTFieldClass::Blob::Static < BTFieldClass::Blob
+    extend BTFromH
+
+    attr_reader :length
+
+    def initialize(parent:, length:, media_type: nil)
+      @parent = parent
+      @length = length
+      @media_type = media_type
+    end
+
+    def get_declarator(trace_class:, variable:)
+      pr "#{variable} = bt_field_class_blob_static_create(#{trace_class}, #{@length});"
+      declare_media_type(variable)
+    end
+
+    # A fixed-length blob carries the raw bytes of a struct/union; reconstruct it
+    # by memcpy, mirroring BTFieldClass::String with cast_type_is_struct.
+    def get_setter(field:, arg_variables:)
+      variable = bt_get_variable(arg_variables).name
+      pr "memcpy(bt_field_blob_get_data(#{field}), &#{variable}, #{@length});"
+    end
+
+    def get_getter(field:, arg_variables:)
+      variable = bt_get_variable(arg_variables).name
+      pr "memcpy(&#{variable}, bt_field_blob_get_data_const(#{field}), #{@length});"
+    end
+  end
+
+  class BTFieldClass::Blob::Dynamic < BTFieldClass::Blob
+    extend BTFromH
+
+    attr_reader :length_field_location
+
+    @bt_type = 'uint8_t*'
+
+    def initialize(parent:, length_field_location: nil, media_type: nil)
+      @parent = parent
+      @length_field_location = BTFieldLocation.new(parent: self, **length_field_location) if length_field_location
+      @media_type = media_type
+    end
+
+    def get_declarator(trace_class:, variable:)
+      if @length_field_location
+        loc = "#{variable}_length_loc"
+        pr "const bt_field_location *#{loc};"
+        scope do
+          @length_field_location.get_declarator(trace_class: trace_class, variable: loc)
+        end
+        pr "#{variable} = bt_field_class_blob_dynamic_with_length_field_location_create(#{trace_class}, #{loc});"
+        pr "bt_field_location_put_ref(#{loc});"
+      else
+        pr "#{variable} = bt_field_class_blob_dynamic_without_length_field_location_create(#{trace_class});"
+      end
+      declare_media_type(variable)
+    end
+
+    def get_setter(field:, arg_variables:)
+      length_field = @length_field_location.member
+      usr_var = bt_get_variable(arg_variables)
+      pr "bt_field_blob_dynamic_set_length(#{field}, #{length_field.name});"
+      pr "memcpy(bt_field_blob_get_data(#{field}), #{usr_var.name}, #{length_field.name});"
+    end
+
+    # The returned pointer is valid until the field is modified, so hand it to the
+    # callback directly instead of copying (mirrors BTFieldClass::String).
+    def get_getter(field:, arg_variables:)
+      usr_var = bt_get_variable(arg_variables)
+      pr "#{usr_var.name} = (#{usr_var.type})bt_field_blob_get_data_const(#{field});"
     end
   end
 

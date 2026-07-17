@@ -1,3 +1,3 @@
 module Metababel
-  VERSION = '1.1.4'
+  VERSION = '2.0.0'
 end

@@ -1,3 +1,4 @@
+---
 :stream_classes:
 - :name: sc
   :event_classes:
@@ -8,11 +9,9 @@
         - :name: length
           :field_class:
             :type: integer_unsigned
-        - :name: entries
+        - :name: bytes
           :field_class:
-            :type: array_dynamic
-            :element_field_class:
-              :type: integer_signed
+            :type: blob_dynamic
             :length_field_location:
               :scope: EVENT_PAYLOAD
               :items: [length]
