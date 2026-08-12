@@ -6,4 +6,6 @@
     - :name: dummy
       :field_class:
         :type: string
-  :event_classes: []
+  :event_classes:
+  - :name: event_1
+  - :name: event_2
