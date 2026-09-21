@@ -160,12 +160,28 @@ sink_graph_is_configured(bt_self_component_sink *self_component_sink) {
   return BT_COMPONENT_CLASS_SINK_GRAPH_IS_CONFIGURED_METHOD_STATUS_OK;
 }
 
+/* Advertise support for MIP version 1, required for CTF2 features such as
+ * BLOB fields. Without this method a component defaults to MIP 0 only. */
+static bt_component_class_get_supported_mip_versions_method_status
+sink_get_supported_mip_versions(
+    bt_self_component_class_sink *self_component_class,
+    const bt_value *params, void *initialize_method_data,
+    bt_logging_level logging_level,
+    bt_integer_range_set_unsigned *supported_versions) {
+  if (bt_integer_range_set_unsigned_add_range(supported_versions, 1, 1) !=
+      BT_INTEGER_RANGE_SET_ADD_RANGE_STATUS_OK)
+    return BT_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD_STATUS_MEMORY_ERROR;
+  return BT_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD_STATUS_OK;
+}
+
 /* Mandatory */
 BT_PLUGIN_MODULE();
 
 BT_PLUGIN(<%= options[:'plugin-name'] %>);
 BT_PLUGIN_SINK_COMPONENT_CLASS(<%= options[:'component-name'] %>, sink_consume);
 
+BT_PLUGIN_SINK_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD(
+    <%= options[:'component-name'] %>, sink_get_supported_mip_versions);
 BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(
     <%= options[:'component-name'] %>, sink_initialize);
 BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(
