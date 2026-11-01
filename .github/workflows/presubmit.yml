@@ -5,14 +5,13 @@ on:
   schedule:
     # At 00:00 on Sunday
     - cron: "0 0 * * 0"
-
 jobs:
   build-and-check:
     strategy:
       matrix:
         compiler: [gcc, clang, g++]
         build_gem: [true, false]
-        ruby: [ruby, ruby3.2]
+        ruby: [ruby, ruby3.2, ruby3.3]
     name: 'Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}'
     runs-on: ubuntu-latest
     steps:
