@@ -37,6 +37,36 @@ jobs:
           METABABEL_VALGRIND: 1
         run: CC=${{matrix.compiler}} CFLAGS="-Wall -Werror" rake test
         if: ${{ matrix.build_gem == false }}
+  babeltrace2-master:
+    # Same tests against babeltrace2 built from upstream master, to catch
+    # regressions early and to run the CTF round trips that are skipped
+    # because of bugs only fixed there (see CTF_ROUNDTRIP_BUG_* in test/base_test.rb)
+    name: 'Check: gcc, ruby3.3, babeltrace2 master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: gcc g++ ruby3.3 autoconf automake libtool pkg-config libglib2.0-dev flex bison valgrind libc6-dbg
+          version: 1.0
+      - name: Build babeltrace2 master
+        run: |
+          git clone --depth 1 https://github.com/efficios/babeltrace /tmp/babeltrace
+          cd /tmp/babeltrace
+          git log -1 --format='babeltrace master: %H %cd'
+          ./bootstrap
+          ./configure --prefix=/usr/local --disable-man-pages --disable-debug-info \
+            --disable-python-bindings --disable-python-plugins --disable-tests --enable-vendor-fmt
+          make -j"$(nproc)"
+          sudo make install
+          sudo ldconfig
+          babeltrace2 --version
+      - name: Run tests
+        run: CC=gcc CFLAGS="-Wall -Werror" rake test
+      - name: Run tests with Valgrind
+        env:
+          METABABEL_VALGRIND: 1
+        run: CC=gcc CFLAGS="-Wall -Werror" rake test
   example:
     runs-on: ubuntu-latest
     name: Check with example

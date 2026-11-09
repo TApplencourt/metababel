@@ -222,8 +222,14 @@ module VariableClassAccessor
   end
 end
 
-# Reasons for btx_skip_ctf_roundtrip, i.e. babeltrace2 (stable-2.1) bugs
-CTF_ROUNDTRIP_BUG_CLOCK = 'src.ctf.fs aborts reading back timestamped events without packets: ' \
-                          'fixed by babeltrace 502ef2f72, not in stable-2.1 yet'
+# [major, minor] of the babeltrace2 used by the tests, e.g. [2, 1] for "Babeltrace 2.1.3"
+# (.b: the output can hold non-ASCII text, e.g. the 2.1.3 codename description)
+BT2_VERSION = `babeltrace2 --version`.b[/\d+\.\d+/].split('.').map(&:to_i)
+
+# Reasons for btx_skip_ctf_roundtrip, i.e. babeltrace2 bugs (nil when fixed in BT2_VERSION)
+CTF_ROUNDTRIP_BUG_CLOCK = if (BT2_VERSION <=> [2, 2]).negative?
+                            'src.ctf.fs aborts reading back timestamped events without packets: ' \
+                              'fixed by babeltrace 502ef2f72 (2.2), not in stable-2.1'
+                          end
 CTF_ROUNDTRIP_BUG_BLOB = 'sink.ctf.fs aborts destroying BLOB field classes: ' \
-                         'fs_sink_ctf_field_class_destroy() has no BLOB case'
+                         'fs_sink_ctf_field_class_destroy() has no BLOB case (unfixed upstream)'
