@@ -19,6 +19,18 @@ Link with a object file who export the symbol `btx_push_usr_messages(struct xpro
 In the callbacks, and in the `btx_push_usr_messages`, you have access to `btx_push_message_{stream_class_name}_#{event_class_name}(struct xprof_common_data *common_data, ...)`.
 
 
+## Optional callbacks
+
+Enabled with `--enable-callbacks NAME[,NAME]`. Both take `(void *btx_handle, void *usr_data, const bt_message *message)`.
+
+- `on_downstream` (FILTER): `btx_register_on_downstream_message_callback` receives every message the
+  filter would push downstream (the events it does not dispatch, and its own). The callback owns the
+  message: it pushes it with `btx_push_message` or puts its reference.
+- `on_upstream` (SINK): `btx_register_on_upstream_message_callback` receives every message the sink
+  does not dispatch to an event callback: the events of no registered class, and the other messages
+  (stream, packet, ...). The message is borrowed; the sink puts its reference afterwards. With
+  `on_upstream`, the upstream model is optional.
+
 # Source Description
 
 ## State Machine

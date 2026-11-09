@@ -171,6 +171,9 @@ struct common_data_s {
   btx_params_t *btx_params;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
+  <% unless options[:'disable-callbaks'].include?('on_upstream') %>
+  void *on_upstream_message_callback;
+  <% end %>
 };
 <% end %>
 

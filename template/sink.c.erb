@@ -49,7 +49,15 @@ sink_consume(bt_self_component_sink *self_component_sink) {
   /* For each consumed message */
   for (uint64_t i = 0; i < message_count; i++) {
     const bt_message *upstream_message = messages[i];
+    <% unless options[:'disable-callbaks'].include?('on_upstream') %>
+    on_upstream_message_callback_f *on_upstream =
+        (on_upstream_message_callback_f *)common_data->on_upstream_message_callback;
+    <% end %>
     if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
+      <% unless options[:'disable-callbaks'].include?('on_upstream') %>
+      if (on_upstream)
+        on_upstream(common_data, common_data->usr_data, upstream_message);
+      <% end %>
       bt_message_put_ref(upstream_message);
       continue;
     }
@@ -67,6 +75,11 @@ sink_consume(bt_self_component_sink *self_component_sink) {
       (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data,
                                             upstream_message);
     }
+    <% unless options[:'disable-callbaks'].include?('on_upstream') %>
+    else if (on_upstream) {
+      on_upstream(common_data, common_data->usr_data, upstream_message);
+    }
+    <% end %>
 
     bt_message_put_ref(upstream_message);
   }

@@ -197,7 +197,7 @@ def parse_argv
   end
   parser.on('--drop', '[Optional] Drop unknow messages')
 
-  options = { 'disable-callbaks': ['on_downstream'].to_set,
+  options = { 'disable-callbaks': %w[on_downstream on_upstream].to_set,
               'component-name': 'btx' }
   parser.parse!(into: options)
   raise OptionParser::MissingArgument if options[:'component-type'].nil?
@@ -411,7 +411,9 @@ class ContextBuilder
 
   def upstream
     @upstream ||= begin
-      unless @cli_options[:upstreams] || !@cli_options[:'disable-callbaks'].include?('on_downstream')
+      # A filter with on_downstream, or a sink with on_upstream, can see every message without a model.
+      unless @cli_options[:upstreams] || !@cli_options[:'disable-callbaks'].include?('on_downstream') ||
+             !@cli_options[:'disable-callbaks'].include?('on_upstream')
         raise 'Missing upstreams models'
       end
 
@@ -459,8 +461,8 @@ class ContextBuilder
 end
 
 def wrote_upstream(cb)
-  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
-  erb_render_and_save(cb.get_context(%w[upstream callback_types]), 'upstream.c', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream options]), 'upstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream callback_types options]), 'upstream.c', cb.folder)
 end
 
 def wrote_downstream(cb)

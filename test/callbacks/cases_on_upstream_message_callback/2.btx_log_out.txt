@@ -1,0 +1,5 @@
+on_upstream: event_a
+on_upstream: event_b
+on_upstream: event_a
+on_upstream: event_b
+on_upstream: 2 other messages
