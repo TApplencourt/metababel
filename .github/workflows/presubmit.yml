@@ -12,15 +12,9 @@ jobs:
       matrix:
         compiler: [gcc, clang, g++]
         build_gem: [true, false]
-        ruby: [ruby, ruby3.2]
-        # Versioned ruby packages only exist on some Ubuntu releases
-        # (ruby3.2 is 24.04-only; 26.04 ships ruby3.3). Pin those to a runner
-        # that has them; everything else follows ubuntu-latest.
-        include:
-          - ruby: ruby3.2
-            os: ubuntu-24.04
+        ruby: [ruby3.3]
     name: 'Check: ${{matrix.compiler}}, ${{matrix.ruby}}, build_gem? ${{matrix.build_gem}}'
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - run: |
