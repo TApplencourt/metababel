@@ -35,7 +35,7 @@ _btx_push_message(btx_message_iterator_t *message_iterator_private_data,
   DL_APPEND(message_iterator_private_data->queue, elt);
 }
 
-<% unless options[:disable_callbaks].include?('on_downstream') %>
+<% unless options[:'disable-callbaks'].include?('on_downstream') %>
 void btx_push_message(void *btx_handle, const bt_message *message) {
   _btx_push_message((btx_message_iterator_t *)btx_handle, message);
 }
@@ -46,12 +46,12 @@ void btx_register_on_downstream_message_callback(
       (void *)callback;
 }
 <% end %>
-// Used internaly to push messages downstreams
+// Used internally to push messages downstreams
 void btx_downstream_push_message(
     btx_message_iterator_t *message_iterator_private_data,
     const bt_message *message) {
 
-  <% unless options[:disable_callbaks].include?('on_downstream') %>
+  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
   on_downstream_message_callback_f *p =
       (on_downstream_message_callback_f *)message_iterator_private_data
           ->common_data->on_downstream_message_callback;
@@ -84,7 +84,7 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   return trace;
 }
 
-// Workarround of a bug where gepping trace alive (and not the stream) provoke
+// Workaround of a bug where gepping trace alive (and not the stream) provoke
 // some segfault
 void btx_streams_get_ref(bt_trace *trace) {
   <% stream_classes.each_with_index do |_,i| %>
@@ -118,6 +118,7 @@ void btx_push_messages_stream_beginning(
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
+  (void)trace;
 }
 
 void btx_push_messages_stream_end(
@@ -134,6 +135,7 @@ void btx_push_messages_stream_end(
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
+  (void)trace;
 }
 
 <% downstream_events.each do |e| %>
@@ -175,8 +177,8 @@ void btx_push_message_<%= e.name_sanitized %>(
 <% end %>
 
 <% downstream_environements.each do |arg, body| %>
-void btx_downstream_set_environment_<%= arg.name%>(void *btx_handle,
-                                                   <%= arg.type%> <%= arg.name%>) {
+void btx_downstream_set_environment_<%= arg.name%>(
+    void *btx_handle, <%= arg.type%> <%= arg.name%>) {
   common_data_t *common_data = (common_data_t *)btx_handle;
   bt_trace *_trace = common_data->downstream_trace;
   <%= body %>

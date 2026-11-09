@@ -55,9 +55,9 @@ static void btx_dispatch_<%= dispatcher.name_sanitized %>(
 
 <% end %>
 
-static void bt_register_callbacks(void *btx_handle, const char *dispatcher_name,
-                                  void *btx_dispatch_p, const char *id,
-                                  void *callback) {
+static void __attribute__((unused))
+bt_register_callbacks(void *btx_handle, const char *dispatcher_name,
+                      void *btx_dispatch_p, const char *id, void *callback) {
 
   name_to_dispatcher_t *s = NULL;
 

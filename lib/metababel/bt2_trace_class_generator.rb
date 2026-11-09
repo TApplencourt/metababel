@@ -41,26 +41,48 @@ module Babeltrace2Gen
       is_a?(Babeltrace2Gen::BTEventClass) ? self : @parent.rec_event_class
     end
 
-    def rec_menber_class
-      is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_menber_class
+    def rec_member_class
+      is_a?(Babeltrace2Gen::BTMemberClass) ? self : @parent.rec_member_class
+    end
+  end
+
+  class BTFieldLocation
+    include BTLocator
+    include BTPrinter
+
+    # root_scope is the full babeltrace enum name, e.g.
+    # BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD (mirrors the C bt_field_location API).
+    attr_reader :root_scope, :items
+
+    def initialize(parent:, root_scope:, items:)
+      raise "nested field locations are not supported (items: #{items})" unless items.size == 1
+
+      @parent = parent
+      @root_scope = root_scope
+      @items = items
     end
 
-    def resolve_path(path)
-      root, id = path.match(/^(PACKET_CONTEXT|EVENT_COMMON_CONTEXT|EVENT_SPECIFIC_CONTEXT|EVENT_PAYLOAD)\["?(.+)?"\]/).captures
+    def member
       field_class =
-        case root
-        when 'PACKET_CONTEXT'
+        case @root_scope.to_s
+        when 'BT_FIELD_LOCATION_SCOPE_PACKET_CONTEXT'
           rec_stream_class.packet_context_field_class
-        when 'EVENT_COMMON_CONTEXT'
+        when 'BT_FIELD_LOCATION_SCOPE_EVENT_COMMON_CONTEXT'
           rec_stream_class.event_common_context_field_class
-        when 'EVENT_SPECIFIC_CONTEXT'
+        when 'BT_FIELD_LOCATION_SCOPE_EVENT_SPECIFIC_CONTEXT'
           rec_event_class.specific_context_field_class
-        when 'EVENT_PAYLOAD'
+        when 'BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD'
           rec_event_class.payload_field_class
         else
-          raise "invalid path #{path}"
+          raise "invalid field-location root scope #{@root_scope}"
         end
-      [field_class, id]
+      field_class[@items.first]
+    end
+
+    def get_declarator(trace_class:, variable:)
+      items_var = "#{variable}_items"
+      pr "const char *const #{items_var}[] = { #{@items.map { |i| "\"#{i}\"" }.join(', ')} };"
+      pr "#{variable} = bt_field_location_create(#{trace_class}, #{@root_scope}, #{items_var}, #{@items.length});"
     end
   end
 
@@ -249,7 +271,6 @@ module Babeltrace2Gen
 
     def initialize(parent:, name: nil, specific_context_field_class: nil, payload_field_class: nil, id: nil,
                    set_id: nil, domain: nil, register: true)
-
       @set_id = set_id
       @domain = domain
       @register = register
@@ -365,6 +386,7 @@ module Babeltrace2Gen
     include BTLocator
     include BTPrinter
     include BTMatch
+
     using HashRefinements
 
     BT_MATCH_ATTRS = %i[type cast_type cast_type_is_struct]
@@ -394,6 +416,8 @@ module Babeltrace2Gen
         'string' => BTFieldClass::String,
         'array_static' => BTFieldClass::Array::Static,
         'array_dynamic' => BTFieldClass::Array::Dynamic,
+        'blob_static' => BTFieldClass::Blob::Static,
+        'blob_dynamic' => BTFieldClass::Blob::Dynamic,
         'structure' => BTFieldClass::Structure,
         'option_without_selector_field' => BTFieldClass::Option::WithoutSelectorField,
         'option_with_selector_field_bool' => BTFieldClass::Option::WithSelectorField::Bool,
@@ -432,7 +456,7 @@ module Babeltrace2Gen
         else
           self.class.instance_variable_get(:@bt_type)
         end
-      var = GeneratedArg.new(@cast_type || type, rec_menber_class.name)
+      var = GeneratedArg.new(@cast_type || type, rec_member_class.name)
 
       arg_variables.fetch_append('outputs_allocated', var) if is_array
       arg_variables.fetch_append('outputs', var)
@@ -448,7 +472,7 @@ module Babeltrace2Gen
     def get_setter(field:, arg_variables:)
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'set'
       variable = bt_get_variable(arg_variables).name
-      # We always explicitly cast to the proper bebeltrace type when sending messsages.
+      # We always explicitly cast to the proper bebeltrace type when sending messages.
       pr "#{bt_func_get}(#{field}, (#{self.class.instance_variable_get(:@bt_type)})#{variable});"
     end
   end
@@ -470,6 +494,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::BitArray < BTFieldClass
     extend BTFromH
+
     attr_reader :length
 
     @bt_type = 'uint64_t'
@@ -552,32 +577,71 @@ module Babeltrace2Gen
   end
 
   module BTFieldClass::Enumeration
-    attr_reader :mappings
+    class BTFieldClass::Enumeration::Mapping
+      extend BTFromH
+      include BTUtils
+      include BTPrinter
 
-    class Mapping
+      def initialize(parent:, label:, integer_range_set:)
+        @parent = parent
+        @label = label
+        # Form [ [lower,upper], ...]
+        @ranges = integer_range_set
+      end
+
+      def get_declarator(field_class:)
+        bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
+        scope do
+          pr "bt_integer_range_set_#{bt_type_internal} *#{field_class}_range;"
+          pr "#{field_class}_range = bt_integer_range_set_#{bt_type_internal}_create();"
+          @ranges.each do |l, u|
+            pr "bt_integer_range_set_#{bt_type_internal}_add_range(#{field_class}_range, #{l}, #{u});"
+          end
+          pr "bt_field_class_enumeration_#{bt_type_internal}_add_mapping(#{field_class}, \"#{@label}\", #{field_class}_range);"
+          pr "bt_integer_range_set_#{bt_type_internal}_put_ref(#{field_class}_range);"
+        end
+      end
+    end
+
+    def initialize(parent:, mappings:)
+      @parent = parent
+      @mappings = mappings.map do |mapping|
+        # Handle inheritence
+        self.class.const_get('Mapping').from_h(self, mapping)
+      end
+    end
+
+    def get_declarator(trace_class:, variable:)
+      bt_type_internal = self.class.instance_variable_get(:@bt_type_internal)
+      pr "#{variable} = bt_field_class_enumeration_#{bt_type_internal}_create(#{trace_class});"
+      @mappings.each do |mapping|
+        mapping.get_declarator(field_class: variable)
+      end
     end
   end
 
   class BTFieldClass::Enumeration::Unsigned < BTFieldClass::Integer::Unsigned
     include BTFieldClass::Enumeration
-    class Mapping < BTFieldClass::Enumeration::Mapping
+
+    class BTFieldClass::Enumeration::Unsigned::Mapping < BTFieldClass::Enumeration::Mapping
+      @bt_type_internal = 'unsigned'
     end
 
-    def initialize(parent:, field_value_range:, mappings:, preferred_display_base: 10)
-      @mappings = mappings # TODO: init Mapping
-      super(parent: parent, field_value_range: field_value_range, preferred_display_base: preferred_display_base)
-    end
+    @bt_type = 'uint64_t'
+    @bt_type_internal = 'unsigned'
+    @bt_func = 'bt_field_integer_unsigned_%s_value'
   end
 
   class BTFieldClass::Enumeration::Signed < BTFieldClass::Integer::Signed
     include BTFieldClass::Enumeration
-    class Mapping < BTFieldClass::Enumeration::Mapping
+
+    class BTFieldClass::Enumeration::Signed::Mapping < BTFieldClass::Enumeration::Mapping
+      @bt_type_internal = 'signed'
     end
 
-    def initialize(parent:, field_value_range:, mappings:, preferred_display_base: 10)
-      @mappings = mappings # TODO: init Mapping
-      super(parent: parent, field_value_range: field_value_range, preferred_display_base: preferred_display_base)
-    end
+    @bt_type = 'int64_t'
+    @bt_type_internal = 'signed'
+    @bt_func = 'bt_field_integer_signed_%s_value'
   end
 
   class BTFieldClass::String < BTFieldClass
@@ -592,26 +656,26 @@ module Babeltrace2Gen
     end
 
     def get_getter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type_is_struct
+      return super unless @cast_type_is_struct
 
       bt_func_get = self.class.instance_variable_get(:@bt_func) % 'get'
       variable = bt_get_variable(arg_variables).name
 
-      pr "// Dump string data to the struct."
+      pr '// Dump string data to the struct.'
       pr "memcpy(&#{variable}, #{bt_func_get}(#{field}), sizeof(#{variable}));"
     end
 
     def get_setter(field:, arg_variables:)
-      return super(field: field, arg_variables: arg_variables) unless @cast_type_is_struct
+      return super unless @cast_type_is_struct
 
       variable = bt_get_variable(arg_variables).name
 
-      pr "// Dump data to a temporal string."
+      pr '// Dump data to a temporal string.'
       pr "char *#{field}_temp = (char *)malloc(sizeof(#{variable}));"
       pr "assert(#{field}_temp != NULL && \"Out of memory\");"
       pr "memcpy(#{field}_temp, &#{variable}, sizeof(#{variable}));"
-      pr ""
-      pr "// Set string field with dumped data."
+      pr ''
+      pr '// Set string field with dumped data.'
       pr "bt_field_string_clear(#{field});"
       pr "bt_field_string_append_status #{field}_status = bt_field_string_append_with_length(#{field}, #{field}_temp, sizeof(#{variable}));"
       pr "assert(#{field}_status == BT_FIELD_STRING_APPEND_STATUS_OK && \"Out of memory\");"
@@ -630,6 +694,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Array::Static < BTFieldClass::Array
     extend BTFromH
+
     using HashRefinements
     attr_reader :length
 
@@ -671,22 +736,23 @@ module Babeltrace2Gen
         @element_field_class.get_getter(field: v, arg_variables: arg_variables)
       end
     end
-
   end
 
   class BTFieldClass::Array::Dynamic < BTFieldClass::Array
     extend BTFromH
+
     module WithLengthField
-      attr_reader :length_field_path
+      attr_reader :length_field_location
     end
     using HashRefinements
 
-    def initialize(parent:, element_field_class:, length_field_path: nil)
+    def initialize(parent:, element_field_class:, length_field_location: nil)
       super(parent: parent, element_field_class: element_field_class)
-      return unless length_field_path
+      return unless length_field_location
 
       extend(WithLengthField)
-      @length_field_path = length_field_path
+
+      @length_field_location = BTFieldLocation.new(parent: self, **length_field_location)
     end
 
     def get_declarator(trace_class:, variable:)
@@ -694,34 +760,26 @@ module Babeltrace2Gen
       scope do
         pr "bt_field_class *#{element_field_class_variable};"
         @element_field_class.get_declarator(trace_class: trace_class, variable: element_field_class_variable)
-        if @length_field_path
-          element_field_class_variable_length = "#{element_field_class_variable}_length"
-          pr "bt_field_class *#{element_field_class_variable_length};"
+        if @length_field_location
+          # MIP 1: reference the length field via a field-location instead of a
+          # length field class (bt_field_class_array_dynamic_create is MIP 0 only).
+          loc = "#{element_field_class_variable}_length_loc"
+          pr "const bt_field_location *#{loc};"
           scope do
-            element_field_class_variable_length_sm = "#{element_field_class_variable_length}_sm"
-            pr "bt_field_class_structure_member *#{element_field_class_variable_length_sm};"
-            field_class, id = resolve_path(@length_field_path)
-            id.scan(/(\w+)|(\d+)/).each do |name, index|
-              # String
-              if name
-                pr "#{element_field_class_variable_length_sm} = bt_field_class_structure_borrow_member_by_name(#{field_class.variable}, \"#{name}\");"
-              else
-                pr "#{element_field_class_variable_length_sm} = bt_field_class_structure_borrow_member_by_index(#{field_class.variable}, #{index});"
-              end
-            end
-            pr "#{element_field_class_variable_length} = bt_field_class_structure_member_borrow_field_class(#{element_field_class_variable_length_sm});"
+            @length_field_location.get_declarator(trace_class: trace_class, variable: loc)
           end
-          pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, #{element_field_class_variable_length});"
+          pr "#{variable} = bt_field_class_array_dynamic_with_length_field_location_create(#{trace_class}, #{element_field_class_variable}, #{loc});"
+          pr "bt_field_location_put_ref(#{loc});"
           pr "bt_field_class_put_ref(#{element_field_class_variable});"
         else
-          pr "#{variable} = bt_field_class_array_dynamic_create(#{trace_class}, #{element_field_class_variable}, NULL);"
+          pr "#{variable} = bt_field_class_array_dynamic_without_length_field_location_create(#{trace_class}, #{element_field_class_variable});"
+          pr "bt_field_class_put_ref(#{element_field_class_variable});"
         end
       end
     end
 
     def get_setter(field:, arg_variables:)
-      field_class, id = resolve_path(@length_field_path)
-      length_field = field_class[id]
+      length_field = @length_field_location.member
       pr "bt_field_array_dynamic_set_length(#{field}, #{length_field.name});"
       usr_var = bt_get_variable(arg_variables, is_array: true)
       pr "for(uint64_t _i=0; _i < #{length_field.name} ; _i++)"
@@ -748,6 +806,92 @@ module Babeltrace2Gen
     end
   end
 
+  # BLOB fields (CTF2 / MIP 1): a raw byte buffer with an associated IANA media
+  # type. Used by THAPI to record structs/unions and opaque byte buffers as
+  # uninterpreted bytes instead of smuggling them through text sequences.
+  class BTFieldClass::Blob < BTFieldClass
+    DEFAULT_MEDIA_TYPE = 'application/octet-stream'
+
+    attr_reader :media_type
+
+    # Emit the media-type assignment shared by static and dynamic blobs.
+    def declare_media_type(variable)
+      pr "bt_field_class_blob_set_media_type(#{variable}, \"#{@media_type || DEFAULT_MEDIA_TYPE}\");"
+    end
+  end
+
+  class BTFieldClass::Blob::Static < BTFieldClass::Blob
+    extend BTFromH
+
+    attr_reader :length
+
+    def initialize(parent:, length:, media_type: nil)
+      @parent = parent
+      @length = length
+      @media_type = media_type
+    end
+
+    def get_declarator(trace_class:, variable:)
+      pr "#{variable} = bt_field_class_blob_static_create(#{trace_class}, #{@length});"
+      declare_media_type(variable)
+    end
+
+    # A fixed-length blob carries the raw bytes of a struct/union; reconstruct it
+    # by memcpy, mirroring BTFieldClass::String with cast_type_is_struct.
+    def get_setter(field:, arg_variables:)
+      variable = bt_get_variable(arg_variables).name
+      pr "memcpy(bt_field_blob_get_data(#{field}), &#{variable}, #{@length});"
+    end
+
+    def get_getter(field:, arg_variables:)
+      variable = bt_get_variable(arg_variables).name
+      pr "memcpy(&#{variable}, bt_field_blob_get_data_const(#{field}), #{@length});"
+    end
+  end
+
+  class BTFieldClass::Blob::Dynamic < BTFieldClass::Blob
+    extend BTFromH
+
+    attr_reader :length_field_location
+
+    @bt_type = 'uint8_t*'
+
+    def initialize(parent:, length_field_location: nil, media_type: nil)
+      @parent = parent
+      @length_field_location = BTFieldLocation.new(parent: self, **length_field_location) if length_field_location
+      @media_type = media_type
+    end
+
+    def get_declarator(trace_class:, variable:)
+      if @length_field_location
+        loc = "#{variable}_length_loc"
+        pr "const bt_field_location *#{loc};"
+        scope do
+          @length_field_location.get_declarator(trace_class: trace_class, variable: loc)
+        end
+        pr "#{variable} = bt_field_class_blob_dynamic_with_length_field_location_create(#{trace_class}, #{loc});"
+        pr "bt_field_location_put_ref(#{loc});"
+      else
+        pr "#{variable} = bt_field_class_blob_dynamic_without_length_field_location_create(#{trace_class});"
+      end
+      declare_media_type(variable)
+    end
+
+    def get_setter(field:, arg_variables:)
+      length_field = @length_field_location.member
+      usr_var = bt_get_variable(arg_variables)
+      pr "bt_field_blob_dynamic_set_length(#{field}, #{length_field.name});"
+      pr "memcpy(bt_field_blob_get_data(#{field}), #{usr_var.name}, #{length_field.name});"
+    end
+
+    # The returned pointer is valid until the field is modified, so hand it to the
+    # callback directly instead of copying (mirrors BTFieldClass::String).
+    def get_getter(field:, arg_variables:)
+      usr_var = bt_get_variable(arg_variables)
+      pr "#{usr_var.name} = (#{usr_var.type})bt_field_blob_get_data_const(#{field});"
+    end
+  end
+
   class BTMemberClass
     include BTMatch
     include BTLocator
@@ -756,16 +900,17 @@ module Babeltrace2Gen
 
     attr_reader :parent, :name, :field_class
 
-    def initialize(parent:, field_class: nil, name: nil)
+    def initialize(parent:, field_class: nil, name: nil, metadata: nil)
       @parent = parent
       is_match_model = parent.rec_trace_class.match
-      raise ArgumentError.new("missing keyword: :name") unless name || is_match_model
-      raise ArgumentError.new("missing keyword: :field_class") unless field_class || is_match_model
+      raise ArgumentError, 'missing keyword: :name' unless name || is_match_model
+      raise ArgumentError, 'missing keyword: :field_class' unless field_class || is_match_model
+
       @name = name # Name can be nil in the matching callbacks
-      @field_class = BTFieldClass.from_h(self, field_class || {} )
+      @field_class = BTFieldClass.from_h(self, field_class || {})
     end
 
-    def bt_get_variable()
+    def bt_get_variable
       @field_class.bt_get_variable({})
     end
   end
@@ -854,6 +999,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Option::WithSelectorField::Bool < BTFieldClass::Option::WithSelectorField
     extend BTFromH
+
     attr_reader :selector_is_reversed
 
     def initialize(parent:, field_class:, selector_field_path:, selector_is_reversed: nil)
@@ -864,6 +1010,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Option::WithSelectorField::IntegerUnsigned < BTFieldClass::Option::WithSelectorField
     extend BTFromH
+
     attr_reader :selector_ranges
 
     def initialize(parent:, field_class:, selector_field_path:, selector_ranges:)
@@ -874,6 +1021,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Option::WithSelectorField::IntegerSigned < BTFieldClass::Option::WithSelectorField
     extend BTFromH
+
     attr_reader :selector_ranges
 
     def initialize(parent:, field_class:, selector_field_path:, selector_ranges:)
@@ -884,6 +1032,7 @@ module Babeltrace2Gen
 
   class BTFieldClass::Variant < BTFieldClass
     extend BTFromH
+
     attr_reader :options
 
     class Option
@@ -916,6 +1065,7 @@ module Babeltrace2Gen
       @parent = parent
       if selector_field_class
         extend(WithSelectorField)
+
         @selector_field_class = selector_field_class
         @options = options.collect do |o|
           BTFieldClass::Variant::WithSelectorField::Option.new(name: o[:name], field_class: o[:field_class],
@@ -923,6 +1073,7 @@ module Babeltrace2Gen
         end
       else
         extend(WithoutSelectorField)
+
         @options = options.collect do |o|
           BTFieldClass::Variant::Option.new(name: o[:name], field_class: o[:field_class])
         end
@@ -935,6 +1086,7 @@ module Babeltrace2Gen
     include BTLocator
     include BTMatchMembers
     extend BTFromH
+
     attr_reader :parent, :entries
 
     BT_MATCH_ATTRS = [:entries]
@@ -956,6 +1108,7 @@ module Babeltrace2Gen
   class BTEntryClass
     include BTPrinter
     include BTMatch
+
     using HashRefinements
 
     BT_MATCH_ATTRS = %i[name type]
@@ -975,6 +1128,7 @@ module Babeltrace2Gen
       raise "No type in #{model}" unless type || is_match_model
 
       h = { 'string' => BTEntryClass::String,
+            'integer_unsigned' => BTEntryClass::IntegerUnsigned,
             'integer_signed' => BTEntryClass::IntegerSigned }.freeze
 
       raise "Type #{type} not supported" unless h.include?(type) || is_match_model
@@ -994,7 +1148,7 @@ module Babeltrace2Gen
       pr "bt_trace_set_environment_entry_#{bt_type_set}(#{trace}, \"#{var_name}\", #{var_name});"
     end
 
-    def bt_get_variable(arg_variables={})
+    def bt_get_variable(arg_variables = {})
       var = GeneratedArg.new(self.class.instance_variable_get(:@bt_type), @name)
       arg_variables.fetch_append('outputs', var)
     end
@@ -1016,6 +1170,14 @@ module Babeltrace2Gen
 
     @bt_type = 'int64_t'
     # Sadly it's ` bt_trace_set_environment_entry_integer() ` and not ` bt_trace_set_environment_entry_integer_signed()`
+    @bt_type_set = 'integer'
+  end
+
+  class BTEntryClass::IntegerUnsigned < BTEntryClass
+    extend BTFromH
+
+    @bt_type = 'uint64_t'
+    # Sadly it's ` bt_trace_set_environment_entry_integer() ` and not ` bt_trace_set_environment_entry_integer_unsigned()`
     @bt_type_set = 'integer'
   end
 end

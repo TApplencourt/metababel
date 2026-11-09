@@ -1,11 +1,12 @@
 #include <babeltrace2/babeltrace.h>
 #include <metababel/metababel.h>
+#include <stdio.h>
 
-void btx_initialize_usr_data(void *btx_handle, void **usr_data) {
+static void btx_initialize_usr_data(void **usr_data) {
   *usr_data = calloc(1, sizeof(int));
 }
 
-void btx_finalize_usr_data(void *btx_handle, void *usr_data) { free(usr_data); }
+static void btx_finalize_usr_data(void *usr_data) { free(usr_data); }
 
 static void event_callback(void *btx_handle, void *usr_data,
                            int64_t timestamp) {

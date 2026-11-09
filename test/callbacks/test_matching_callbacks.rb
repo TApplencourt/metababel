@@ -166,7 +166,7 @@ class TestMatchingSimilarMembers < Test::Unit::TestCase
   end
 end
 
-class TestExludeEventNameInMatching < Test::Unit::TestCase
+class TestExcludeEventNameInMatching < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
   include VariableClassAccessor

@@ -1,0 +1,3 @@
+event: { e_unsigned = ( "BEFORE" : container = 1 ), e_signed = ( "FOO" : container = -1 ) }
+event: { e_unsigned = ( "BEFORE" : container = 23 ), e_signed = ( "FOO" : container = 0 ) }
+event: { e_unsigned = ( "AFTER" : container = 14 ), e_signed = ( "FOO" : container = 1 ) }

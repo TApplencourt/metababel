@@ -3,7 +3,8 @@
 
 void btx_getplatformids_callbacks(
     void *btx_handle,
-    void *common_data,
+    void *usr_data,
+    const char* name,
     int vpid, int vtid, uint64_t num_entries, uint64_t platforms, uint64_t num_platform) {
 
    printf("Received btx_getplatformids_callbacks message\n");

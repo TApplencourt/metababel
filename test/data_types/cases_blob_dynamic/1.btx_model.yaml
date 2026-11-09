@@ -1,0 +1,17 @@
+---
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+        - :name: length
+          :field_class:
+            :type: integer_unsigned
+        - :name: bytes
+          :field_class:
+            :type: blob_dynamic
+            :length_field_location:
+              :root_scope: BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD
+              :items: [length]

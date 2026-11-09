@@ -13,4 +13,6 @@
             :type: array_dynamic
             :element_field_class:
               :type: integer_signed
-            :length_field_path: EVENT_PAYLOAD["length"]
+            :length_field_location:
+              :root_scope: BT_FIELD_LOCATION_SCOPE_EVENT_PAYLOAD
+              :items: [length]

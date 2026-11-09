@@ -18,7 +18,7 @@ end
 
 def get_component_with_default_values(component)
   # We have only one component per plugins, the component name can be arbitrary.
-  # TODO: We need to downcase for SOURCE -> source somehwere. They will need to be fixed later
+  # TODO: We need to downcase for SOURCE -> source somewhere. They will need to be fixed later
   uuid = [component[:btx_component_type],
           component[:btx_component_label]].compact.map(&:downcase).join('_')
 
@@ -40,6 +40,7 @@ def get_component_generation_command(component)
     btx_component_usr_header_file: '-i',
     btx_component_callbacks: '-m',
     btx_component_enable_callbacks: '--enable_callbacks',
+    btx_commonent_drop: '--drop',
   }
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
 
@@ -51,15 +52,9 @@ def get_component_generation_command(component)
 end
 
 def get_component_compilation_command(component)
-  uuid = %w[type plugin_name name].filter_map { |k| component["btx_component_#{k}".to_sym] }.join('_')
-  command = <<~TEXT
-    ${CC:-cc} -o #{component[:btx_component_path]}/#{uuid}.so
-              #{component[:btx_component_path]}/*.c #{component[:btx_component_path]}/metababel/*.c
-              -I ./include -I #{component[:btx_component_path]}/
-              $(pkg-config --cflags babeltrace2) $(pkg-config --libs babeltrace2)
-              ${CFLAGS:='-Wall -Werror'} -fpic --shared
-  TEXT
-  command.split.join(' ')
+  uuid = %w[type plugin_name name].filter_map { |k| component[:"btx_component_#{k}"] }.join('_')
+  uuid_so = "#{component[:btx_component_path]}/#{uuid}.so"
+  "make -f ./test/Makefile BTX_SO_UUID=#{uuid_so} BTX_SRC=#{component[:btx_component_path]}"
 end
 
 def _get_plugin_path(components)
@@ -93,7 +88,7 @@ end
 def get_graph_execution_command(components, connections, write_ctf=false)
   plugin_path = _get_plugin_path(components)
   components_list = components.map do |c|
-    uuid = %w[type plugin_name name].map { |l| c["btx_component_#{l}".to_sym].downcase }.join('.')
+    uuid = %w[type plugin_name name].map { |l| c[:"btx_component_#{l}"].downcase }.join('.')
     uuid_label = [c[:btx_component_label], uuid].compact.join(':')
     component_params = c.key?(:btx_component_params) ? "--params=#{c[:btx_component_params]}" : ''
     "--component=#{uuid_label} #{component_params}"
@@ -120,7 +115,7 @@ def get_graph_execution_command(components, connections, write_ctf=false)
 
   command += <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
-                #{components_connections.empty? ? '' : 'run'}
+                #{'run' unless components_connections.empty?}
                 #{components_list.join(' ')}
                 #{components_connections.join(' ')}
                 #{extra_args}
@@ -145,7 +140,7 @@ end
 def mock_user_callbacks(component)
   # See if we need to generate us callbacks.
 
-  # If the user already define callancks do nothing
+  # If the user already define callbacks do nothing
   return if component.key?(:btx_file_usr_callbacks)
 
   # We support only generation of SOURCE callbacks
@@ -162,7 +157,7 @@ module GenericTest
   include Assertions
 
   def run_and_continue(command, component, key)
-    if component.key?(key) 
+    if component.key?(key)
       run_command(command, refute: component[key])
       return false
     end
@@ -171,27 +166,28 @@ module GenericTest
   end
 
   def test_run
-    # Provide componenents default values
+    # Provide components default values
     sanitized_components = btx_components.map { |c| get_component_with_default_values(c) }
                                          .filter do |c|
-      next true unless c[:btx_compile]
+                                           next true unless c[:btx_compile]
 
-      # Validate files
-      usr_assert_files(c)
-      # Generate Metababel
-      next unless run_and_continue(get_component_generation_command(c),
-                                   c, :btx_metababel_generation_fail)
+                                           # Validate files
+                                           usr_assert_files(c)
+                                           # Generate Metababel
+                                           next unless run_and_continue(get_component_generation_command(c),
+                                                                        c, :btx_metababel_generation_fail)
 
-      # Copy user files
-      c.keys.grep(/_file_usr/) do |key|
-        assert_nothing_raised do
-          FileUtils.cp(c[key], c[:btx_component_path])
-        end
-      end
-      # Mock user callbacks
-      mock_user_callbacks(c)
-      # Compile
-      run_and_continue(get_component_compilation_command(c), c, :btx_compilation_should_fail)
+                                           # Copy user files
+                                           c.keys.grep(/_file_usr/) do |key|
+                                             assert_nothing_raised do
+                                               FileUtils.cp(c[key], c[:btx_component_path])
+                                             end
+                                           end
+                                           # Mock user callbacks
+                                           mock_user_callbacks(c)
+                                           # Compile
+                                           run_and_continue(get_component_compilation_command(c), c,
+                                                            :btx_compilation_should_fail)
     end
     return if sanitized_components.empty?
 

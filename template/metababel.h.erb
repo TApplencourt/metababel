@@ -1,7 +1,7 @@
 #include <metababel/btx_component.h>
-<% if ['SOURCE', 'FILTER'].include?(options[:component_type]) %>
+<% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
 #include <metababel/btx_downstream.h>
 <% end %>
-<% if ['FILTER', 'SINK'].include?(options[:component_type]) %>
+<% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
 #include <metababel/btx_upstream.h>
 <% end %>

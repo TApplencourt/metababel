@@ -5,8 +5,9 @@ Gem::Specification.new do |s|
   s.authors	= ['Thomas Applencourt', 'Aurelio A. Vivas Meza', 'Brice Videau']
   s.summary     = 'Helper for creation Babeltrace plugins'
   s.version     = Metababel::VERSION
-  s.files       = Dir['{lib}/**/*.rb', 'template/*.erb', 'bin/*', 'LICENSE', '*.md']
+  s.files       = Dir['{lib}/**/*.rb', 'template/*.erb', 'bin/*', 'LICENSE', '*.md', 'shared/*.cpp']
   s.license     = 'MIT'
-  s.executables = ['metababel', 'btx_gen_source_callbacks']
+  s.executables = %w[metababel btx_gen_source_callbacks]
   s.metadata['rubygems_mfa_required'] = 'true'
+  s.required_ruby_version = '>= 2.7.0'
 end

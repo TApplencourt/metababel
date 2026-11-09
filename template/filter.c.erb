@@ -118,8 +118,15 @@ static inline void filter_message_iterator_next_call_dispatchers(
     bt_message_put_ref(upstream_message);
   } else {
     /* Push upstream message to downstream */
-    btx_downstream_push_message(message_iterator_private_data,
-                                upstream_message);
+    <% if options[:drop] %>
+      /* Drop message. Including PACKET_{BEGIN,END} messages.
+       * It's ok as ALL message will be drop, so we will never get
+       * any EVENT without BEGIN */
+      bt_message_put_ref(upstream_message);
+    <% else %>
+      btx_downstream_push_message(message_iterator_private_data,
+                                  upstream_message);
+    <% end %>
   }
 }
 
@@ -264,7 +271,7 @@ filter_message_iterator_next_initializing(
       (btx_message_iterator_t *)bt_self_message_iterator_get_data(
           self_message_iterator);
 
-  /* Begining of Stream */
+  /* Beginning of Stream */
   btx_push_messages_stream_beginning(self_message_iterator,
                                      message_iterator_private_data);
 
@@ -404,7 +411,7 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   btx_call_callbacks_initialize_component(common_data, &common_data->usr_data);
   /* Call read callbacks */
   btx_call_callbacks_read_params(common_data, common_data->usr_data,
-      common_data->btx_params);
+                                 common_data->btx_params);
 
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -516,20 +523,36 @@ static void filter_message_iterator_finalize(
   free(message_iterator_private_data);
 }
 
+/* Advertise support for MIP version 1, required for CTF2 features such as
+ * BLOB fields. Without this method a component defaults to MIP 0 only. */
+static bt_component_class_get_supported_mip_versions_method_status
+filter_get_supported_mip_versions(
+    bt_self_component_class_filter *self_component_class,
+    const bt_value *params, void *initialize_method_data,
+    bt_logging_level logging_level,
+    bt_integer_range_set_unsigned *supported_versions) {
+  if (bt_integer_range_set_unsigned_add_range(supported_versions, 1, 1) !=
+      BT_INTEGER_RANGE_SET_ADD_RANGE_STATUS_OK)
+    return BT_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD_STATUS_MEMORY_ERROR;
+  return BT_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD_STATUS_OK;
+}
+
 /* Mandatory */
 BT_PLUGIN_MODULE();
 
-BT_PLUGIN(<%= options[:plugin_name] %>);
-BT_PLUGIN_FILTER_COMPONENT_CLASS(<%= options[:component_name] %>,
+BT_PLUGIN(<%= options[:'plugin-name'] %>);
+BT_PLUGIN_FILTER_COMPONENT_CLASS(<%= options[:'component-name'] %>,
                                  filter_message_iterator_next);
 
+BT_PLUGIN_FILTER_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD(
+    <%= options[:'component-name'] %>, filter_get_supported_mip_versions);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD(
-    <%= options[:component_name] %>, filter_initialize);
+    <%= options[:'component-name'] %>, filter_initialize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD(
-    <%= options[:component_name] %>, filter_finalize);
+    <%= options[:'component-name'] %>, filter_finalize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(
-    <%= options[:component_name] %>, filter_message_iterator_initialize);
+    <%= options[:'component-name'] %>, filter_message_iterator_initialize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(
-    <%= options[:component_name] %>, filter_message_iterator_finalize);
+    <%= options[:'component-name'] %>, filter_message_iterator_finalize);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_INPUT_PORT_CONNECTED_METHOD(
-    <%= options[:component_name] %>, filter_input_port_connected);
+    <%= options[:'component-name'] %>, filter_input_port_connected);

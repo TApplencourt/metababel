@@ -5,4 +5,6 @@
   - :name: param_2
     :type: bool
   - :name: param_3
+    :type: integer_signed
+  - :name: param_4
     :type: integer_unsigned

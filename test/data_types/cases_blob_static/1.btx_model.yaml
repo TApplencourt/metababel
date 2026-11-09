@@ -1,0 +1,14 @@
+---
+:stream_classes:
+- :name: sc
+  :event_classes:
+  - :name: event
+    :payload_field_class:
+      :type: structure
+      :members:
+      - :name: pt
+        :field_class:
+          :type: blob_static
+          :length: 12
+          :cast_type: point_t
+          :cast_type_is_struct: true

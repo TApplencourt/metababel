@@ -4,6 +4,8 @@
     :type: string
   - :name: entry_2
     :type: integer_signed
+  - :name: entry_3
+    :type: integer_unsigned
 :stream_classes:
 - :name: sc
   :event_classes:
