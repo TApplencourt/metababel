@@ -33,7 +33,7 @@ class TestSourceFilterHostnameEnvWithTimestamp < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/state_machine/cases_hostname_env/2.btx_log.txt'
-    @btx_skip_ctf_roundtrip = CTF_ROUNDTRIP_BUG_CLOCK
+    @btx_ctf_roundtrip_bug = CTF_ROUNDTRIP_BUG_CLOCK
   end
 end
 

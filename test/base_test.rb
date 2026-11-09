@@ -174,27 +174,43 @@ module GenericTest
     # Run the Graph
     stdout_str = run_command(get_graph_execution_command(sanitized_components, btx_connect))
 
+    expected_output = File.read(btx_output_validation) if btx_output_validation
+    assert_equal(expected_output, stdout_str) if expected_output
+
     # Without a user sink, the graph ends in the default pretty printer: also round-trip
     # it through the CTF writer and reader, which are stricter (e.g. about packets).
-    ctf_roundtrip = sanitized_components.none? { |c| c[:btx_component_type] == 'SINK' } &&
-                    !btx_skip_ctf_roundtrip
-    if ctf_roundtrip
-      run_command(get_graph_execution_command(sanitized_components, btx_connect, write_ctf: true))
-      stdout_str_readctf = run_command(get_ctf_read_execution_command(sanitized_components))
+    return if sanitized_components.any? { |c| c[:btx_component_type] == 'SINK' }
+
+    bug = btx_ctf_roundtrip_bug
+    if bug&.present?
+      # Strict expected failure: make sure the workaround is still needed
+      return unless ctf_roundtrip_works?(sanitized_components, expected_output)
+
+      flunk("CTF round trip works with babeltrace2 #{BT2_VERSION.join('.')}: this bug is gone, " \
+            "update its fixed_in or remove the workaround: #{bug.description}")
+    end
+    if bug && !ENV['METABABEL_BT2_UPSTREAM']
+      flunk("Fixed in babeltrace2 #{bug.fixed_in.join('.')}, which the tests now use: " \
+            "remove the workaround: #{bug.description}")
     end
 
-    # Output validation
-    return unless btx_output_validation
+    run_command(get_graph_execution_command(sanitized_components, btx_connect, write_ctf: true))
+    stdout_str_readctf = run_command(get_ctf_read_execution_command(sanitized_components))
+    assert_equal(expected_output, stdout_str_readctf, 'CTF round trip') if expected_output
+  end
 
-    expected_output = File.read(btx_output_validation)
-    assert_equal(expected_output, stdout_str)
-    assert_equal(expected_output, stdout_str_readctf, 'CTF round trip') if ctf_roundtrip
+  def ctf_roundtrip_works?(components, expected_output)
+    _, _, status = Open3.capture3(get_graph_execution_command(components, btx_connect, write_ctf: true))
+    return false unless status.success?
+
+    stdout_str, _, status = Open3.capture3(get_ctf_read_execution_command(components))
+    status.success? && (expected_output.nil? || stdout_str == expected_output)
   end
 end
 
 module VariableAccessor
-  # btx_skip_ctf_roundtrip: reason (String) to not round-trip the output through CTF
-  attr_reader :btx_components, :btx_output_validation, :btx_connect, :btx_skip_ctf_roundtrip
+  # btx_ctf_roundtrip_bug: CtfRoundtripBug (see below) breaking this test's CTF round trip
+  attr_reader :btx_components, :btx_output_validation, :btx_connect, :btx_ctf_roundtrip_bug
 
   def shutdown
     # Sanitize provide default attributes such as btx_component_path if not provided by the user.
@@ -217,8 +233,8 @@ module VariableClassAccessor
     self.class.btx_output_validation
   end
 
-  def btx_skip_ctf_roundtrip
-    self.class.btx_skip_ctf_roundtrip
+  def btx_ctf_roundtrip_bug
+    self.class.btx_ctf_roundtrip_bug
   end
 end
 
@@ -226,10 +242,20 @@ end
 # (.b: the output can hold non-ASCII text, e.g. the 2.1.3 codename description)
 BT2_VERSION = `babeltrace2 --version`.b[/\d+\.\d+/].split('.').map(&:to_i)
 
-# Reasons for btx_skip_ctf_roundtrip, i.e. babeltrace2 bugs (nil when fixed in BT2_VERSION)
-CTF_ROUNDTRIP_BUG_CLOCK = if (BT2_VERSION <=> [2, 2]).negative?
-                            'src.ctf.fs aborts reading back timestamped events without packets: ' \
-                              'fixed by babeltrace 502ef2f72 (2.2), not in stable-2.1'
-                          end
-CTF_ROUNDTRIP_BUG_BLOB = 'sink.ctf.fs aborts destroying BLOB field classes: ' \
-                         'fs_sink_ctf_field_class_destroy() has no BLOB case (unfixed upstream)'
+# A babeltrace2 bug breaking the CTF round trip, fixed in babeltrace2 `fixed_in`
+# ([major, minor], nil while unfixed upstream). The workaround can't be forgotten:
+# - with a babeltrace2 having the bug, the round trip must still fail, else the test fails;
+# - with a babeltrace2 having the fix, the test fails asking to remove the workaround,
+#   except in the CI job testing upstream babeltrace2 (METABABEL_BT2_UPSTREAM).
+CtfRoundtripBug = Struct.new(:description, :fixed_in) do
+  def present?
+    fixed_in.nil? || (BT2_VERSION <=> fixed_in).negative?
+  end
+end
+
+CTF_ROUNDTRIP_BUG_CLOCK = CtfRoundtripBug.new(
+  'src.ctf.fs aborts reading back timestamped events without packets (babeltrace 502ef2f72)', [2, 2]
+)
+CTF_ROUNDTRIP_BUG_BLOB = CtfRoundtripBug.new(
+  'sink.ctf.fs aborts destroying BLOB field classes (no BLOB case in fs_sink_ctf_field_class_destroy())', nil
+)

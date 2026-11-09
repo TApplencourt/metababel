@@ -23,6 +23,6 @@ class TestBlobDynamic < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/data_types/cases_blob_dynamic/1.btx_log.txt'
-    @btx_skip_ctf_roundtrip = CTF_ROUNDTRIP_BUG_BLOB
+    @btx_ctf_roundtrip_bug = CTF_ROUNDTRIP_BUG_BLOB
   end
 end

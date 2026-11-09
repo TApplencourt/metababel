@@ -43,6 +43,9 @@ jobs:
     # because of bugs only fixed there (see CTF_ROUNDTRIP_BUG_* in test/base_test.rb)
     name: 'Check: gcc, ruby3.3, babeltrace2 master'
     runs-on: ubuntu-latest
+    env:
+      # Bugs fixed upstream but not in the babeltrace2 of the other jobs: don't ask to remove their workaround
+      METABABEL_BT2_UPSTREAM: 1
     steps:
       - uses: actions/checkout@v6
       - uses: awalsh128/cache-apt-pkgs-action@latest

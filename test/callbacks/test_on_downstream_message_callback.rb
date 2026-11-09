@@ -21,7 +21,7 @@ class TestOnDownstreamMessageFilter < Test::Unit::TestCase
       },
     ]
     @btx_output_validation = './test/callbacks/cases_on_downstream_message_callback/1.btx_log_out.txt'
-    @btx_skip_ctf_roundtrip = CTF_ROUNDTRIP_BUG_CLOCK
+    @btx_ctf_roundtrip_bug = CTF_ROUNDTRIP_BUG_CLOCK
   end
 end
 
@@ -45,6 +45,6 @@ class TestOnDownstreamMessageCount < Test::Unit::TestCase
         btx_component_enable_callbacks: 'on_downstream',
       },
     ]
-    @btx_skip_ctf_roundtrip = CTF_ROUNDTRIP_BUG_CLOCK
+    @btx_ctf_roundtrip_bug = CTF_ROUNDTRIP_BUG_CLOCK
   end
 end
