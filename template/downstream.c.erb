@@ -108,16 +108,31 @@ void btx_push_messages_stream_beginning(
     bt_self_message_iterator *self_message_iterator,
     btx_message_iterator_t *message_iterator_private_data) {
 
-  bt_trace *trace =
-      message_iterator_private_data->common_data->downstream_trace;
-  <% stream_classes.each_with_index do |_,i| %>
+  common_data_t *common_data = message_iterator_private_data->common_data;
+  bt_trace *trace = common_data->downstream_trace;
+  <% if stream_classes.any?(&:packet_context_field_class) %>
+  common_data->downstream_packets =
+      (bt_packet **)calloc(<%= stream_classes.size %>, sizeof(bt_packet *));
+  <% end %>
+  <% stream_classes.each_with_index do |s,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
     bt_message *message =
         bt_message_stream_beginning_create(self_message_iterator, stream);
     btx_downstream_push_message(message_iterator_private_data, message);
+    <% if s.packet_context_field_class %>
+    /* The stream class supports packets: all the events of this stream go
+     * in a single packet, opened right after the stream beginning. Its
+     * context fields keep their default values. */
+    bt_packet *packet = bt_packet_create(stream);
+    common_data->downstream_packets[<%= i %>] = packet;
+    btx_downstream_push_message(
+        message_iterator_private_data,
+        bt_message_packet_beginning_create(self_message_iterator, packet));
+    <% end %>
   }
   <% end %>
+  (void)common_data;
   (void)trace;
 }
 
@@ -125,16 +140,30 @@ void btx_push_messages_stream_end(
     bt_self_message_iterator *self_message_iterator,
     btx_message_iterator_t *message_iterator_private_data) {
 
-  bt_trace *trace =
-      message_iterator_private_data->common_data->downstream_trace;
-  <% stream_classes.each_with_index do |_,i| %>
+  common_data_t *common_data = message_iterator_private_data->common_data;
+  bt_trace *trace = common_data->downstream_trace;
+  <% stream_classes.each_with_index do |s,i| %>
   {
     bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+    <% if s.packet_context_field_class %>
+    /* Close the stream's packet before ending the stream */
+    bt_packet *packet = common_data->downstream_packets[<%= i %>];
+    btx_downstream_push_message(
+        message_iterator_private_data,
+        bt_message_packet_end_create(self_message_iterator, packet));
+    bt_packet_put_ref(packet);
+    common_data->downstream_packets[<%= i %>] = NULL;
+    <% end %>
     bt_message *message =
         bt_message_stream_end_create(self_message_iterator, stream);
     btx_downstream_push_message(message_iterator_private_data, message);
   }
   <% end %>
+  <% if stream_classes.any?(&:packet_context_field_class) %>
+  free(common_data->downstream_packets);
+  common_data->downstream_packets = NULL;
+  <% end %>
+  (void)common_data;
   (void)trace;
 }
 
@@ -156,7 +185,21 @@ void btx_push_message_<%= e.name_sanitized %>(
   bt_stream_class *_stream_class = bt_stream_borrow_class(_stream);
   bt_event_class *_event_class = bt_stream_class_borrow_event_class_by_index(
       _stream_class, <%= e.index_event_class %>);
+  <% if stream_classes[e.index_stream_class].packet_context_field_class %>
+  /* The stream class supports packets: the event must belong to one */
+  bt_packet *_packet =
+      common_data->downstream_packets[<%= e.index_stream_class %>];
   <% if !e.default_clock_class %>
+  bt_message *_message = bt_message_event_create_with_packet(
+      common_data->self_message_iterator, _event_class, _packet);
+  <% else %>
+  bt_message *_message =
+      bt_message_event_create_with_packet_and_default_clock_snapshot(
+          common_data->self_message_iterator, _event_class, _packet,
+          _timestamp);
+  <% end %>
+  (void)_stream;
+  <% elsif !e.default_clock_class %>
   bt_message *_message = bt_message_event_create(
       common_data->self_message_iterator, _event_class, _stream);
   <% else %>

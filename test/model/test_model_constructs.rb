@@ -137,7 +137,7 @@ class TestPacketContextField < Test::Unit::TestCase
         btx_log_path: './test/model/cases_model_constructs/9.btx_log.txt',
       },
     ]
-    @btx_output_validation = './test/model/cases_model_constructs/9.btx_log.txt'
+    @btx_output_validation = './test/model/cases_model_constructs/9.btx_log.out'
   end
 end
 

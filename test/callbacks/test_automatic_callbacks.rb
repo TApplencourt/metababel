@@ -21,6 +21,7 @@ class TestCallAutomaticCallbackWithTimestamp < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/callbacks/cases_automatic_callbacks/1.btx_log.txt'
+    @btx_skip_ctf_roundtrip = CTF_ROUNDTRIP_BUG_CLOCK
   end
 end
 

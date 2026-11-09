@@ -66,26 +66,12 @@ def _get_ctf_out_path(components)
   "#{plugin_path}/ctf_tmp"
 end
 
+# Only babeltrace2's own CTF reader runs here, so no point in valgrind
 def get_ctf_read_execution_command(components)
-  command = ''
-  if ENV['METABABEL_VALGRIND']
-    command += <<~TEXT
-      valgrind --suppressions=.valgrind/dlopen.supp
-               --error-exitcode=1
-               --leak-check=full
-               --quiet
-               --
-    TEXT
-  end
-
-  ctf_out_path = _get_ctf_out_path(components)
-  command += <<~TEXT
-    babeltrace2 #{ctf_out_path}
-  TEXT
-  command.split.join(' ')
+  "babeltrace2 #{_get_ctf_out_path(components)}"
 end
 
-def get_graph_execution_command(components, connections, write_ctf=false)
+def get_graph_execution_command(components, connections, write_ctf: false)
   plugin_path = _get_plugin_path(components)
   components_list = components.map do |c|
     uuid = %w[type plugin_name name].map { |l| c[:"btx_component_#{l}"].downcase }.join('.')
@@ -107,18 +93,12 @@ def get_graph_execution_command(components, connections, write_ctf=false)
     TEXT
   end
 
-  extra_args = ''
-  if write_ctf
-    ctf_out_path = _get_ctf_out_path(components)
-    extra_args = "-o ctf -w #{ctf_out_path}"
-  end
-
   command += <<~TEXT
     babeltrace2 --plugin-path=#{plugin_path.join(':')}
                 #{'run' unless components_connections.empty?}
                 #{components_list.join(' ')}
                 #{components_connections.join(' ')}
-                #{extra_args}
+                #{"-o ctf -w #{_get_ctf_out_path(components)}" if write_ctf}
   TEXT
   command.split.join(' ')
 end
@@ -191,15 +171,15 @@ module GenericTest
     end
     return if sanitized_components.empty?
 
-    has_sink = sanitized_components.join(' ').include?('sink')
-
     # Run the Graph
     stdout_str = run_command(get_graph_execution_command(sanitized_components, btx_connect))
 
-    stdout_str_readctf = ''
-    if not has_sink
-      # Round trip through CTF format and back to pretty print
-      run_command(get_graph_execution_command(sanitized_components, btx_connect, true))
+    # Without a user sink, the graph ends in the default pretty printer: also round-trip
+    # it through the CTF writer and reader, which are stricter (e.g. about packets).
+    ctf_roundtrip = sanitized_components.none? { |c| c[:btx_component_type] == 'SINK' } &&
+                    !btx_skip_ctf_roundtrip
+    if ctf_roundtrip
+      run_command(get_graph_execution_command(sanitized_components, btx_connect, write_ctf: true))
       stdout_str_readctf = run_command(get_ctf_read_execution_command(sanitized_components))
     end
 
@@ -208,14 +188,13 @@ module GenericTest
 
     expected_output = File.read(btx_output_validation)
     assert_equal(expected_output, stdout_str)
-    if not has_sink
-      assert_equal(expected_output, stdout_str_readctf)
-    end
+    assert_equal(expected_output, stdout_str_readctf, 'CTF round trip') if ctf_roundtrip
   end
 end
 
 module VariableAccessor
-  attr_reader :btx_components, :btx_output_validation, :btx_connect
+  # btx_skip_ctf_roundtrip: reason (String) to not round-trip the output through CTF
+  attr_reader :btx_components, :btx_output_validation, :btx_connect, :btx_skip_ctf_roundtrip
 
   def shutdown
     # Sanitize provide default attributes such as btx_component_path if not provided by the user.
@@ -237,4 +216,14 @@ module VariableClassAccessor
   def btx_output_validation
     self.class.btx_output_validation
   end
+
+  def btx_skip_ctf_roundtrip
+    self.class.btx_skip_ctf_roundtrip
+  end
 end
+
+# Reasons for btx_skip_ctf_roundtrip, i.e. babeltrace2 (stable-2.1) bugs
+CTF_ROUNDTRIP_BUG_CLOCK = 'src.ctf.fs aborts reading back timestamped events without packets: ' \
+                          'fixed by babeltrace 502ef2f72, not in stable-2.1 yet'
+CTF_ROUNDTRIP_BUG_BLOB = 'sink.ctf.fs aborts destroying BLOB field classes: ' \
+                         'fs_sink_ctf_field_class_destroy() has no BLOB case'
