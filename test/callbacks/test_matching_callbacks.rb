@@ -93,6 +93,7 @@ class TestCallMatchingCallbackWithTimestamp < Test::Unit::TestCase
     ]
 
     @btx_output_validation = './test/callbacks/cases_matching_callbacks/4.btx_log.txt'
+    @btx_ctf_roundtrip_bug = CTF_ROUNDTRIP_BUG_CLOCK
   end
 end
 
