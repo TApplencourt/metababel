@@ -13,13 +13,17 @@ static void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_s
   *status = BTX_SOURCE_END;
 }
 
-/* A source too: drop the second event, push everything else. */
+/* A source too: replace the second event by a new one (value 20). btx_handle is
+ * the component, so btx_push_message_event works here; the new event comes back
+ * to this callback as the third one, and is pushed. */
 static void downstream_message_callback(void *btx_handle, void *usr_data,
                                         const bt_message *message) {
-  if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT && ++*(int *)usr_data == 2)
+  if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT && ++*(int *)usr_data == 2) {
     bt_message_put_ref(message);
-  else
+    btx_push_message_event(btx_handle, 20);
+  } else {
     btx_push_message(btx_handle, message);
+  }
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {

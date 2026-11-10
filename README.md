@@ -42,8 +42,7 @@ the default mode applies.
 - `--downstream-message`: every message the component sends downstream (its own events, its stream
   messages, and what a filter forwards). With `callback`, `btx_register_callbacks_downstream_message`:
   the callback owns the message, and puts it in the output queue with `btx_push_message`, or puts
-  its reference. In this callback, `btx_handle` is the message iterator: use it only with
-  `btx_push_message`.
+  its reference. What it sends with `btx_push_message_<name>` comes back to it.
 
 With `callback` for either option, the upstream model is optional (the callbacks see every event).
 
