@@ -17,7 +17,7 @@ class TestDrop < Test::Unit::TestCase
         btx_component_upstream_model: './test/callbacks/cases_drop/1.btx_model.yaml',
         btx_component_downstream_model: './test/callbacks/cases_drop/1.btx_model.yaml',
         btx_file_usr_callbacks: './test/callbacks/cases_drop/1.callbacks.c',
-        btx_commonent_drop: '',
+        btx_component_upstream_event_fallback: 'drop',
       },
     ]
 

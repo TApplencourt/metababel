@@ -97,11 +97,10 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
 }
 <% end %>
 
-<% if options[:'component-type'] == 'SINK' %>
-<% unless options[:'disable-callbaks'].include?('on_upstream') %>
-void btx_register_on_upstream_message_callback(
-    void *btx_handle, on_upstream_message_callback_f *callback) {
-  ((common_data_t *)btx_handle)->on_upstream_message_callback = (void *)callback;
+<% if options[:'upstream-event-fallback'] == 'callback' %>
+void btx_register_callbacks_upstream_event_fallback(
+    void *btx_handle, upstream_event_fallback_callback_f *callback) {
+  ((common_data_t *)btx_handle)->upstream_event_fallback_callback =
+      (void *)callback;
 }
-<% end %>
 <% end %>

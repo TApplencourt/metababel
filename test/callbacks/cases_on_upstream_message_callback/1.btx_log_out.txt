@@ -1,5 +1,0 @@
-event_a: 1
-on_upstream: event_b
-event_a: 2
-on_upstream: event_b
-on_upstream: 2 other messages

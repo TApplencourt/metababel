@@ -19,17 +19,53 @@ Link with a object file who export the symbol `btx_push_usr_messages(struct xpro
 In the callbacks, and in the `btx_push_usr_messages`, you have access to `btx_push_message_{stream_class_name}_#{event_class_name}(struct xprof_common_data *common_data, ...)`.
 
 
-## Optional callbacks
+## Routing messages
 
-Enabled with `--enable-callbacks NAME[,NAME]`. Both take `(void *btx_handle, void *usr_data, const bt_message *message)`.
+Two options decide what happens to messages, besides the event callbacks:
 
-- `on_downstream` (FILTER): `btx_register_on_downstream_message_callback` receives every message the
-  filter would push downstream (the events it does not dispatch, and its own). The callback owns the
-  message: it pushes it with `btx_push_message` or puts its reference.
-- `on_upstream` (SINK): `btx_register_on_upstream_message_callback` receives every message the sink
-  does not dispatch to an event callback: the events of no registered class, and the other messages
-  (stream, packet, ...). The message is borrowed; the sink puts its reference afterwards. With
-  `on_upstream`, the upstream model is optional.
+| option | component | modes |
+|---|---|---|
+| `--upstream-event-fallback MODE` | FILTER | `passthrough` (default), `drop`, `callback` |
+| | SINK | `drop` (default), `callback` |
+| `--downstream-message MODE` | SOURCE, FILTER | `push` (default), `callback` |
+
+Any other combination is an error. With `callback`, the user registers a
+`(void *btx_handle, void *usr_data, const bt_message *message)` callback; if none is registered,
+the default mode applies.
+
+- `--upstream-event-fallback`: the upstream events no callback is registered for (whether or not
+  their class is in the upstream model). Messages that are not events are always forwarded by a
+  filter and dropped by a sink. With `callback`, `btx_register_callbacks_upstream_event_fallback`:
+  - FILTER: the callback owns the message. It sends it downstream with `btx_forward_message`
+    (through the downstream message callback, if any), or puts its reference.
+  - SINK: the message is borrowed; the sink puts its reference after the callback.
+- `--downstream-message`: every message the component sends downstream (its own events, its stream
+  messages, and what a filter forwards). With `callback`, `btx_register_callbacks_downstream_message`:
+  the callback owns the message, and puts it in the output queue with `btx_push_message`, or puts
+  its reference. In this callback, `btx_handle` is the message iterator: use it only with
+  `btx_push_message`.
+
+With `callback` for either option, the upstream model is optional (the callbacks see every event).
+
+How a filter routes an upstream message:
+
+```
+upstream message
+├─ not an event (stream/packet beginning/end, ...) → forwarded
+└─ event: is a callback registered for its class?
+   ├─ yes → the callbacks run with the decoded fields, then the message is put
+   │        (to send something downstream, they create events with btx_push_message_<name> → forwarded)
+   └─ no  → --upstream-event-fallback
+            ├─ passthrough → forwarded
+            ├─ drop        → put
+            └─ callback    → the callback owns it: btx_forward_message → forwarded, or put
+
+the filter's own stream beginning/end messages → forwarded
+
+forwarded → --downstream-message
+            ├─ push     → output queue
+            └─ callback → the callback owns it: btx_push_message → output queue, or put
+```
 
 # Source Description
 

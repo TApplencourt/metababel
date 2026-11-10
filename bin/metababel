@@ -189,22 +189,42 @@ def parse_argv
   parser.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.')
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
-  parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
+  parser.on('--upstream-event-fallback MODE', %w[passthrough drop callback],
+            '[Optional] What happens to an upstream event no callback is registered for.',
+            'FILTER: passthrough (default), drop, callback. SINK: drop (default), callback.')
+  parser.on('--downstream-message MODE', %w[push callback],
+            '[Optional] What happens to every message the component sends downstream.',
+            'SOURCE, FILTER: push (default), callback.')
   parser.on('--display-shared-callback PLUGIN') do |plugin|
     path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
     puts File.readlines(path)
     exit
   end
-  parser.on('--drop', '[Optional] Drop unknow messages')
 
-  options = { 'disable-callbaks': %w[on_downstream on_upstream].to_set,
-              'component-name': 'btx' }
+  options = { 'component-name': 'btx' }
   parser.parse!(into: options)
   raise OptionParser::MissingArgument if options[:'component-type'].nil?
 
   options[:'plugin-name'] ||= "metababel_#{options[:'component-type'].downcase}"
-  options[:'disable-callbaks'] -= (options[:'enable-callbacks'] || []).to_set
+  set_message_mode(options, :'upstream-event-fallback',
+                   { 'FILTER' => %w[passthrough drop callback], 'SINK' => %w[drop callback] })
+  set_message_mode(options, :'downstream-message',
+                   { 'SOURCE' => %w[push callback], 'FILTER' => %w[push callback] })
   options
+end
+
+# Check the mode the user gave for this component type, or set the default (the first one).
+# The option stays nil for a component type it does not apply to.
+def set_message_mode(options, key, modes_by_type)
+  type = options[:'component-type']
+  modes = modes_by_type[type]
+  if modes.nil?
+    raise "--#{key} applies only to #{modes_by_type.keys.join(' and ')}, not to #{type}" if options[key]
+  elsif options[key].nil?
+    options[key] = modes.first
+  elsif !modes.include?(options[key])
+    raise "--#{key}=#{options[key]} is invalid for #{type}, should be one of: #{modes.join(', ')}"
+  end
 end
 
 def get_dispatch_type(em, default_clock_class, context)
@@ -373,7 +393,7 @@ class ContextBuilder
 
   def downstream
     @downstream ||= begin
-      unless @cli_options[:downstream] || !@cli_options[:'disable-callbaks'].include?('on_downstream')
+      unless @cli_options[:downstream] || @cli_options[:'downstream-message'] == 'callback'
         raise 'Missing downstream model'
       end
 
@@ -411,9 +431,10 @@ class ContextBuilder
 
   def upstream
     @upstream ||= begin
-      # A filter with on_downstream, or a sink with on_upstream, can see every message without a model.
-      unless @cli_options[:upstreams] || !@cli_options[:'disable-callbaks'].include?('on_downstream') ||
-             !@cli_options[:'disable-callbaks'].include?('on_upstream')
+      # Without a model, a callback still sees every upstream event: the fallback callback,
+      # or, in a filter, the downstream message callback.
+      unless @cli_options[:upstreams] || @cli_options[:'upstream-event-fallback'] == 'callback' ||
+             @cli_options[:'downstream-message'] == 'callback'
         raise 'Missing upstreams models'
       end
 

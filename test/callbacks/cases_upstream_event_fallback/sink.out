@@ -1,0 +1,4 @@
+event_a: 1
+fallback: event_b
+event_a: 2
+fallback: event_b

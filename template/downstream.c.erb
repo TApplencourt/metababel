@@ -35,15 +35,14 @@ _btx_push_message(btx_message_iterator_t *message_iterator_private_data,
   DL_APPEND(message_iterator_private_data->queue, elt);
 }
 
-<% unless options[:'disable-callbaks'].include?('on_downstream') %>
+<% if options[:'downstream-message'] == 'callback' %>
 void btx_push_message(void *btx_handle, const bt_message *message) {
   _btx_push_message((btx_message_iterator_t *)btx_handle, message);
 }
 
-void btx_register_on_downstream_message_callback(
-    void *btx_handle, on_downstream_message_callback_f *callback) {
-  ((common_data_t *)btx_handle)->on_downstream_message_callback =
-      (void *)callback;
+void btx_register_callbacks_downstream_message(
+    void *btx_handle, downstream_message_callback_f *callback) {
+  ((common_data_t *)btx_handle)->downstream_message_callback = (void *)callback;
 }
 <% end %>
 // Used internally to push messages downstreams
@@ -51,10 +50,10 @@ void btx_downstream_push_message(
     btx_message_iterator_t *message_iterator_private_data,
     const bt_message *message) {
 
-  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
-  on_downstream_message_callback_f *p =
-      (on_downstream_message_callback_f *)message_iterator_private_data
-          ->common_data->on_downstream_message_callback;
+  <% if options[:'downstream-message'] == 'callback' %>
+  downstream_message_callback_f *p =
+      (downstream_message_callback_f *)message_iterator_private_data
+          ->common_data->downstream_message_callback;
   if (p) {
     p(((void *)message_iterator_private_data),
       message_iterator_private_data->common_data->usr_data, message);
@@ -63,6 +62,16 @@ void btx_downstream_push_message(
   <% end %>
   _btx_push_message(message_iterator_private_data, message);
 }
+
+<% if options[:'upstream-event-fallback'] == 'callback' %>
+void btx_forward_message(void *btx_handle, const bt_message *message) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  btx_downstream_push_message(
+      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+          common_data->self_message_iterator),
+      message);
+}
+<% end %>
 
 // Register callbacks
 bt_trace_class *
