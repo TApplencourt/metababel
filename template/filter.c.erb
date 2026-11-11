@@ -32,7 +32,7 @@ filter_message_iterator_next_finalizing(
           self_message_iterator);
 
   /* No more messages, we can stop the plugin, and transition to END  */
-  if (!message_iterator_private_data->queue) {
+  if (!message_iterator_private_data->queue.len) {
     message_iterator_private_data->state = BTX_FILTER_STATE_FINISHED;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
   }
@@ -61,7 +61,7 @@ filter_message_iterator_next_processing_sending(
 
   /* This should never append. When transitioning to sending,
      we check that we have some messages to send */
-  if (!message_iterator_private_data->queue) {
+  if (!message_iterator_private_data->queue.len) {
     message_iterator_private_data->state = BTX_FILTER_STATE_ERROR;
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_ERROR;
   }
@@ -72,7 +72,7 @@ filter_message_iterator_next_processing_sending(
   /* No more messages to send; we can transition back to reading
      If not, this function will be called again
      in order to minimize memory usage */
-  if (!message_iterator_private_data->queue) {
+  if (!message_iterator_private_data->queue.len) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_READING;
   }
@@ -179,7 +179,7 @@ filter_message_iterator_next_processing_reading(
 
   common_data_t *common_data = message_iterator_private_data->common_data;
 
-  while (!message_iterator_private_data->queue) {
+  while (!message_iterator_private_data->queue.len) {
     /* Consume a batch of messages from the upstream message iterator */
     uint64_t upstream_message_count;
     bt_message_array_const upstream_messages;
@@ -280,7 +280,7 @@ filter_message_iterator_next_initializing(
 
   /* We need to transition to the processing state*/
   message_iterator_private_data->state = BTX_FILTER_STATE_PROCESSING;
-  if (message_iterator_private_data->queue) {
+  if (message_iterator_private_data->queue.len) {
     message_iterator_private_data->processing_state =
         BTX_FILTER_PROCESSING_STATE_SENDING;
   } else {
@@ -509,12 +509,12 @@ static void filter_message_iterator_finalize(
       (btx_message_iterator_t *)bt_self_message_iterator_get_data(
           self_message_iterator);
 
+  /* Put the messages left in the queue, if any, and free it */
   {
-    struct el *elt, *tmp;
-    DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
-      DL_DELETE(message_iterator_private_data->pool, elt);
-      free(elt);
-    }
+    struct btx_message_queue *q = &message_iterator_private_data->queue;
+    for (uint64_t i = 0; i < q->len; i++)
+      bt_message_put_ref(q->messages[(q->head + i) & (q->capacity - 1)]);
+    free(q->messages);
   }
   assert(!message_iterator_private_data->head_mi);
   /* Free the allocated structure */
