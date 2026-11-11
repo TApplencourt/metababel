@@ -21,6 +21,27 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
 <% end %>
 void btx_unregister_callbacks(common_data_t *common_data);
 
+/* The value of a trace environment entry, NULL if the trace has no such entry */
+static inline const bt_value *
+btx_borrow_environment_entry_value(common_data_t *common_data,
+                                   const bt_trace *trace, const char *name) {
+  struct trace_environment_key_s key;
+  memset(&key, 0, sizeof(key));
+  key.trace = trace;
+  key.name = name;
+  trace_environment_entry_t *e = NULL;
+  HASH_FIND(hh, common_data->trace_environment_entries, &key, sizeof(key), e);
+  if (!e) {
+    /* First event of this trace: look the entry up by name, once */
+    e = (trace_environment_entry_t *)malloc(sizeof(*e));
+    e->key = key;
+    e->value = bt_trace_borrow_environment_entry_value_by_name_const(trace, name);
+    bt_trace_get_ref(trace);
+    HASH_ADD(hh, common_data->trace_environment_entries, key, sizeof(key), e);
+  }
+  return e->value;
+}
+
 /* The dispatcher of an upstream event class, NULL if no callback is registered for it */
 static inline name_to_dispatcher_t *
 btx_lookup_dispatcher(common_data_t *common_data,
