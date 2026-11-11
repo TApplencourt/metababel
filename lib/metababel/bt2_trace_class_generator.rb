@@ -148,16 +148,19 @@ module Babeltrace2Gen
                         default_clock_class]
 
     attr_reader :packet_context_field_class, :event_common_context_field_class, :event_classes, :default_clock_class,
-                :id, :name, :get_getter
+                :id, :name, :get_getter, :supports_discarded_events
 
     def initialize(parent:, name: nil, packet_context_field_class: nil, event_common_context_field_class: nil,
                    event_classes: [], id: nil, assigns_automatic_event_class_id: nil, assigns_automatic_stream_id: nil,
-                   default_clock_class: nil)
+                   default_clock_class: nil, supports_discarded_events: nil)
       # Handle clock class property:
       #   https://babeltrace.org/docs/v2.0/libbabeltrace2/group__api-tir-clock-cls.html#gae0f705eb48cd65784da28b1906ca05a5
 
       @parent = parent
       @name = name
+      # Discarded events messages, with default clock snapshots (needs a default clock class)
+      @supports_discarded_events = supports_discarded_events
+      raise 'supports_discarded_events needs a default_clock_class' if supports_discarded_events && !default_clock_class
 
       # Should put assert to check for struct
       @packet_context_field_class = BTFieldClass.from_h(self, packet_context_field_class) if packet_context_field_class
@@ -198,6 +201,8 @@ module Babeltrace2Gen
           pr "bt_clock_class_put_ref(#{clock_class_name});"
         end
       end
+
+      pr "bt_stream_class_set_supports_discarded_events(#{variable}, BT_TRUE, BT_TRUE);" if @supports_discarded_events
 
       if @packet_context_field_class
         # Support for packets required for packet_context_field_class.

@@ -17,9 +17,32 @@ btx_downstream_trace_class_create_rec(bt_self_component *self_component);
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class);
 
-/* Creates the streams of `trace` (one per stream class): after the user
- * initialization callbacks, which may still configure the classes. */
+/* Registers the first downstream trace (created before the user callbacks) */
+void btx_downstream_traces_init(common_data_t *common_data,
+                                bt_self_component *self_component);
+
+/* Creates the streams of each downstream trace (one per stream class): after
+ * the user initialization callbacks, which may still configure the classes.
+ * Then makes the first trace the current one. */
 void btx_downstream_streams_create_rec(common_data_t *common_data);
+
+/* Puts the references of the downstream traces and frees them */
+void btx_downstream_traces_fini(common_data_t *common_data);
+
+/* Adds a downstream trace (another trace class from the same model), makes it
+ * the current one, and returns its index: in the configure_downstream callback
+ * only. The first trace (index 0) always exists. A source reading several
+ * input traces needs one downstream trace each (own clock class, environment). */
+uint64_t btx_downstream_add_trace(void *btx_handle);
+
+/* Makes the downstream trace `index` the current one: btx_push_message_<event>(),
+ * btx_downstream_new_packet_<stream class>(), the environment setters, and
+ * btx_downstream_default_clock_class_<stream class>() then act on it. */
+void btx_downstream_select_trace(void *btx_handle, uint64_t index);
+
+/* The current downstream trace (e.g. to set its name or UUID in the
+ * configure_downstream callback) */
+bt_trace *btx_downstream_trace(void *btx_handle);
 
 void btx_streams_get_ref(bt_trace *trace);
 void btx_streams_put_ref(bt_trace *trace);
@@ -69,6 +92,16 @@ void btx_downstream_set_environment_<%= arg.name%>(
  * frequency, offset, origin...) in the configure_downstream callback only: it
  * is frozen once the streams exist. */
 bt_clock_class *btx_downstream_default_clock_class_<%= sc %>(void *btx_handle);
+<% end %>
+
+<% downstream_discarded_events.each do |i, sc| %>
+/* Sends a discarded events message: `count` events of the stream of the stream
+ * class `<%= sc %>` were discarded between the default clock values `begin`
+ * and `end` (count 0: unknown). */
+void btx_downstream_push_discarded_events_<%= sc %>(void *btx_handle,
+                                                   uint64_t count,
+                                                   uint64_t begin,
+                                                   uint64_t end);
 <% end %>
 
 <% downstream_packets.each do |i, sc, args, body| %>

@@ -442,6 +442,11 @@ class ContextBuilder
         [i, stream_class_id.call(s, i), args.fetch('outputs', []), body]
       end
 
+      # btx_downstream_push_discarded_events_<stream class>()
+      downstream_discarded_events = t.stream_classes.each_with_index.filter_map do |s, i|
+        [i, stream_class_id.call(s, i)] if s.supports_discarded_events
+      end
+
       # btx_downstream_default_clock_class_<stream class>()
       downstream_clock_classes = t.stream_classes.each_with_index.filter_map do |s, i|
         [i, stream_class_id.call(s, i)] if s.default_clock_class
@@ -450,6 +455,7 @@ class ContextBuilder
       { body_declarator_classes: body_declarator_classes,
         downstream_packets: downstream_packets,
         downstream_clock_classes: downstream_clock_classes,
+        downstream_discarded_events: downstream_discarded_events,
         downstream_environements: downstream_environements,
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,

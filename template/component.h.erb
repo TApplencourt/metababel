@@ -81,6 +81,15 @@ typedef struct trace_environment_entry_s trace_environment_entry_t;
 <% end %>
 
 <% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
+// One downstream trace (see btx_downstream_add_trace())
+struct btx_downstream_trace {
+  bt_trace *trace;
+  /* Event classes, by downstream event index */
+  bt_event_class **event_classes;
+  /* Current packet of each stream, indexed like the streams */
+  bt_packet **packets;
+};
+
 // Downstream message queue: a growable ring buffer
 struct btx_message_queue {
   const bt_message **messages; /* `capacity` slots */
@@ -108,6 +117,14 @@ struct common_data_s {
   /* Current packet of each downstream stream, indexed like the streams
    * (NULL for streams whose class doesn't support packets) */
   bt_packet **downstream_packets;
+  /* All the downstream traces: downstream_trace, downstream_event_classes,
+   * and downstream_packets above are those of the current one
+   * (btx_downstream_select_trace()) */
+  struct btx_downstream_trace *downstream_traces;
+  uint64_t downstream_trace_count;
+  uint64_t downstream_trace_index;
+  /* To create more downstream traces (btx_downstream_add_trace()) */
+  bt_self_component *downstream_self_component;
   /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
 };
@@ -163,6 +180,14 @@ struct common_data_s {
   /* Current packet of each downstream stream, indexed like the streams
    * (NULL for streams whose class doesn't support packets) */
   bt_packet **downstream_packets;
+  /* All the downstream traces: downstream_trace, downstream_event_classes,
+   * and downstream_packets above are those of the current one
+   * (btx_downstream_select_trace()) */
+  struct btx_downstream_trace *downstream_traces;
+  uint64_t downstream_trace_count;
+  uint64_t downstream_trace_index;
+  /* To create more downstream traces (btx_downstream_add_trace()) */
+  bt_self_component *downstream_self_component;
   /* Used by downstream.c */
   bt_self_message_iterator *self_message_iterator;
 };

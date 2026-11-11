@@ -100,28 +100,92 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
   return bt_trace_create(trace_class);
 }
 
-void btx_downstream_streams_create_rec(common_data_t *common_data) {
-  bt_trace *trace = common_data->downstream_trace;
-  bt_trace_class *trace_class = bt_trace_borrow_class(trace);
+void btx_downstream_traces_init(common_data_t *common_data,
+                                bt_self_component *self_component) {
+  common_data->downstream_self_component = self_component;
+  common_data->downstream_traces = (struct btx_downstream_trace *)calloc(
+      1, sizeof(struct btx_downstream_trace));
+  common_data->downstream_traces[0].trace = common_data->downstream_trace;
+  common_data->downstream_trace_count = 1;
+  common_data->downstream_trace_index = 0;
+}
 
-  /* Cache the event classes: btx_push_message_<event>() uses them */
-  common_data->downstream_event_classes = (bt_event_class **)calloc(
-      <%= downstream_events.size + 1 %>, sizeof(bt_event_class *));
-  <% downstream_events.each_with_index do |e, ei| %>
-  common_data->downstream_event_classes[<%= ei %>] =
-      bt_stream_class_borrow_event_class_by_index(
-          bt_trace_class_borrow_stream_class_by_index(trace_class,
-                                                      <%= e.index_stream_class %>),
-          <%= e.index_event_class %>);
-  <% end %>
-  <% stream_classes.each_with_index do |_,i| %>
-  {
-    bt_stream_class *stream_class =
-        bt_trace_class_borrow_stream_class_by_index(trace_class, <%= i %>);
-    bt_stream_put_ref(bt_stream_create(stream_class, trace));
+uint64_t btx_downstream_add_trace(void *btx_handle) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  const uint64_t index = common_data->downstream_trace_count++;
+  common_data->downstream_traces = (struct btx_downstream_trace *)realloc(
+      common_data->downstream_traces,
+      common_data->downstream_trace_count * sizeof(struct btx_downstream_trace));
+  bt_trace_class *trace_class = btx_downstream_trace_class_create_rec(
+      common_data->downstream_self_component);
+  struct btx_downstream_trace *t = &common_data->downstream_traces[index];
+  t->trace = btx_downstream_trace_create_rec(trace_class);
+  t->event_classes = NULL;
+  t->packets = NULL;
+  bt_trace_class_put_ref(trace_class);
+  btx_downstream_select_trace(btx_handle, index);
+  return index;
+}
+
+bt_trace *btx_downstream_trace(void *btx_handle) {
+  return ((common_data_t *)btx_handle)->downstream_trace;
+}
+
+void btx_downstream_select_trace(void *btx_handle, uint64_t index) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  struct btx_downstream_trace *t = &common_data->downstream_traces[index];
+  common_data->downstream_trace_index = index;
+  common_data->downstream_trace = t->trace;
+  common_data->downstream_event_classes = t->event_classes;
+  common_data->downstream_packets = t->packets;
+}
+
+void btx_downstream_streams_create_rec(common_data_t *common_data) {
+  for (uint64_t ti = 0; ti < common_data->downstream_trace_count; ti++) {
+    struct btx_downstream_trace *t = &common_data->downstream_traces[ti];
+    bt_trace *trace = t->trace;
+    bt_trace_class *trace_class = bt_trace_borrow_class(trace);
+
+    /* Cache the event classes: btx_push_message_<event>() uses them */
+    t->event_classes = (bt_event_class **)calloc(
+        <%= downstream_events.size + 1 %>, sizeof(bt_event_class *));
+    <% downstream_events.each_with_index do |e, ei| %>
+    t->event_classes[<%= ei %>] =
+        bt_stream_class_borrow_event_class_by_index(
+            bt_trace_class_borrow_stream_class_by_index(trace_class,
+                                                        <%= e.index_stream_class %>),
+            <%= e.index_event_class %>);
+    <% end %>
+    /* Current packet of each stream (set at the stream beginning) */
+    t->packets = (bt_packet **)calloc(<%= stream_classes.size + 1 %>,
+                                      sizeof(bt_packet *));
+    <% stream_classes.each_with_index do |_,i| %>
+    {
+      bt_stream_class *stream_class =
+          bt_trace_class_borrow_stream_class_by_index(trace_class, <%= i %>);
+      bt_stream_put_ref(bt_stream_create(stream_class, trace));
+    }
+    <% end %>
+    btx_streams_get_ref(trace); // ??
+    (void)trace_class;
   }
-  <% end %>
-  (void)trace_class;
+  btx_downstream_select_trace(common_data, 0);
+}
+
+void btx_downstream_traces_fini(common_data_t *common_data) {
+  for (uint64_t ti = 0; ti < common_data->downstream_trace_count; ti++) {
+    struct btx_downstream_trace *t = &common_data->downstream_traces[ti];
+    if (t->event_classes) {
+      /* The streams exist: see btx_downstream_streams_create_rec() */
+      btx_streams_put_ref(t->trace); // ??
+    }
+    bt_trace_put_ref(t->trace);
+    free(t->event_classes);
+    free(t->packets);
+  }
+  free(common_data->downstream_traces);
+  common_data->downstream_traces = NULL;
+  common_data->downstream_trace_count = 0;
 }
 
 // Workaround of a bug where gepping trace alive (and not the stream) provoke
@@ -149,31 +213,30 @@ void btx_push_messages_stream_beginning(
     btx_message_iterator_t *message_iterator_private_data) {
 
   common_data_t *common_data = message_iterator_private_data->common_data;
-  bt_trace *trace = common_data->downstream_trace;
-  <% if stream_classes.any?(&:packet_context_field_class) %>
-  common_data->downstream_packets =
-      (bt_packet **)calloc(<%= stream_classes.size %>, sizeof(bt_packet *));
-  <% end %>
-  <% stream_classes.each_with_index do |s,i| %>
-  {
-    bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
-    bt_message *message =
-        bt_message_stream_beginning_create(self_message_iterator, stream);
-    btx_downstream_push_message(message_iterator_private_data, message);
-    <% if s.packet_context_field_class %>
-    /* The stream class supports packets: all the events of this stream go
-     * in a single packet, opened right after the stream beginning. Its
-     * context fields keep their default values. */
-    bt_packet *packet = bt_packet_create(stream);
-    common_data->downstream_packets[<%= i %>] = packet;
-    btx_downstream_push_message(
-        message_iterator_private_data,
-        bt_message_packet_beginning_create(self_message_iterator, packet));
+  for (uint64_t ti = 0; ti < common_data->downstream_trace_count; ti++) {
+    struct btx_downstream_trace *t = &common_data->downstream_traces[ti];
+    bt_trace *trace = t->trace;
+    <% stream_classes.each_with_index do |s,i| %>
+    {
+      bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+      bt_message *message =
+          bt_message_stream_beginning_create(self_message_iterator, stream);
+      btx_downstream_push_message(message_iterator_private_data, message);
+      <% if s.packet_context_field_class %>
+      /* The stream class supports packets: the events of this stream go in
+       * this packet, opened right after the stream beginning, until
+       * btx_downstream_new_packet_<stream class>() begins another one. Its
+       * context fields keep their default values. */
+      bt_packet *packet = bt_packet_create(stream);
+      t->packets[<%= i %>] = packet;
+      btx_downstream_push_message(
+          message_iterator_private_data,
+          bt_message_packet_beginning_create(self_message_iterator, packet));
+      <% end %>
+    }
     <% end %>
+    (void)trace;
   }
-  <% end %>
-  (void)common_data;
-  (void)trace;
 }
 
 void btx_push_messages_stream_end(
@@ -181,30 +244,28 @@ void btx_push_messages_stream_end(
     btx_message_iterator_t *message_iterator_private_data) {
 
   common_data_t *common_data = message_iterator_private_data->common_data;
-  bt_trace *trace = common_data->downstream_trace;
-  <% stream_classes.each_with_index do |s,i| %>
-  {
-    bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
-    <% if s.packet_context_field_class %>
-    /* Close the stream's packet before ending the stream */
-    bt_packet *packet = common_data->downstream_packets[<%= i %>];
-    btx_downstream_push_message(
-        message_iterator_private_data,
-        bt_message_packet_end_create(self_message_iterator, packet));
-    bt_packet_put_ref(packet);
-    common_data->downstream_packets[<%= i %>] = NULL;
+  for (uint64_t ti = 0; ti < common_data->downstream_trace_count; ti++) {
+    struct btx_downstream_trace *t = &common_data->downstream_traces[ti];
+    bt_trace *trace = t->trace;
+    <% stream_classes.each_with_index do |s,i| %>
+    {
+      bt_stream *stream = bt_trace_borrow_stream_by_index(trace, <%= i %>);
+      <% if s.packet_context_field_class %>
+      /* Close the stream's packet before ending the stream */
+      bt_packet *packet = t->packets[<%= i %>];
+      btx_downstream_push_message(
+          message_iterator_private_data,
+          bt_message_packet_end_create(self_message_iterator, packet));
+      bt_packet_put_ref(packet);
+      t->packets[<%= i %>] = NULL;
+      <% end %>
+      bt_message *message =
+          bt_message_stream_end_create(self_message_iterator, stream);
+      btx_downstream_push_message(message_iterator_private_data, message);
+    }
     <% end %>
-    bt_message *message =
-        bt_message_stream_end_create(self_message_iterator, stream);
-    btx_downstream_push_message(message_iterator_private_data, message);
+    (void)trace;
   }
-  <% end %>
-  <% if stream_classes.any?(&:packet_context_field_class) %>
-  free(common_data->downstream_packets);
-  common_data->downstream_packets = NULL;
-  <% end %>
-  (void)common_data;
-  (void)trace;
 }
 
 <% downstream_events.each_with_index do |e, ei| %>
@@ -270,6 +331,24 @@ bt_clock_class *btx_downstream_default_clock_class_<%= sc %>(void *btx_handle) {
   bt_stream_class *stream_class = bt_trace_class_borrow_stream_class_by_index(
       bt_trace_borrow_class(common_data->downstream_trace), <%= i %>);
   return bt_stream_class_borrow_default_clock_class(stream_class);
+}
+<% end %>
+
+<% downstream_discarded_events.each do |i, sc| %>
+void btx_downstream_push_discarded_events_<%= sc %>(void *btx_handle,
+                                                   uint64_t count,
+                                                   uint64_t begin,
+                                                   uint64_t end) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  bt_message *message =
+      bt_message_discarded_events_create_with_default_clock_snapshots(
+          common_data->self_message_iterator,
+          bt_trace_borrow_stream_by_index(common_data->downstream_trace,
+                                          <%= i %>),
+          begin, end);
+  if (count)
+    bt_message_discarded_events_set_count(message, count);
+  btx_downstream_push_message(_btx_message_iterator(btx_handle), message);
 }
 <% end %>
 
