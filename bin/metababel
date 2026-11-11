@@ -189,12 +189,12 @@ def parse_argv
   parser.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.')
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
-  parser.on('--upstream-event-fallback MODE', %w[passthrough drop callback],
-            '[Optional] What happens to an upstream event no callback is registered for.',
-            'FILTER: passthrough (default), drop, callback. SINK: drop (default), callback.')
-  parser.on('--downstream-message MODE', %w[push callback],
-            '[Optional] What happens to every message the component sends downstream.',
-            'SOURCE, FILTER: push (default), callback.')
+  parser.on('--upstream-event-fallback MODE', %w[passthrough drop],
+            '[Optional] FILTER: what happens to an upstream event no callback is registered for',
+            '(when no upstream event fallback callback is registered): passthrough (default), drop.')
+  parser.on('--enable-additional-callbacks NAMES', Array,
+            '[Optional] Callbacks to enable: upstream_event_fallback (FILTER, SINK),',
+            'downstream_message (SOURCE, FILTER).')
   parser.on('--display-shared-callback PLUGIN') do |plugin|
     path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
     puts File.readlines(path)
@@ -206,24 +206,27 @@ def parse_argv
   raise OptionParser::MissingArgument if options[:'component-type'].nil?
 
   options[:'plugin-name'] ||= "metababel_#{options[:'component-type'].downcase}"
-  set_message_mode(options, :'upstream-event-fallback',
-                   { 'FILTER' => %w[passthrough drop callback], 'SINK' => %w[drop callback] })
-  set_message_mode(options, :'downstream-message',
-                   { 'SOURCE' => %w[push callback], 'FILTER' => %w[push callback] })
+  check_options(options)
   options
 end
 
-# Check the mode the user gave for this component type, or set the default (the first one).
-# The option stays nil for a component type it does not apply to.
-def set_message_mode(options, key, modes_by_type)
+ENABLE_ADDITIONAL_CALLBACKS = { 'upstream_event_fallback' => %w[FILTER SINK],
+                     'downstream_message' => %w[SOURCE FILTER] }.freeze
+
+# Reject an option that does not apply to the component type, and set the defaults.
+def check_options(options)
   type = options[:'component-type']
-  modes = modes_by_type[type]
-  if modes.nil?
-    raise "--#{key} applies only to #{modes_by_type.keys.join(' and ')}, not to #{type}" if options[key]
-  elsif options[key].nil?
-    options[key] = modes.first
-  elsif !modes.include?(options[key])
-    raise "--#{key}=#{options[key]} is invalid for #{type}, should be one of: #{modes.join(', ')}"
+  if type == 'FILTER'
+    options[:'upstream-event-fallback'] ||= 'passthrough'
+  elsif options[:'upstream-event-fallback']
+    raise "--upstream-event-fallback applies only to FILTER, not to #{type}"
+  end
+
+  options[:'enable-additional-callbacks'] = (options[:'enable-additional-callbacks'] || []).uniq
+  options[:'enable-additional-callbacks'].each do |name|
+    types = ENABLE_ADDITIONAL_CALLBACKS[name]
+    raise "--enable-additional-callbacks #{name} is invalid, should be one of: #{ENABLE_ADDITIONAL_CALLBACKS.keys.join(', ')}" unless types
+    raise "--enable-additional-callbacks #{name} applies only to #{types.join(' and ')}, not to #{type}" unless types.include?(type)
   end
 end
 
@@ -393,7 +396,7 @@ class ContextBuilder
 
   def downstream
     @downstream ||= begin
-      unless @cli_options[:downstream] || @cli_options[:'downstream-message'] == 'callback'
+      unless @cli_options[:downstream] || @cli_options[:'enable-additional-callbacks'].include?('downstream_message')
         raise 'Missing downstream model'
       end
 
@@ -433,8 +436,8 @@ class ContextBuilder
     @upstream ||= begin
       # Without a model, a callback still sees every upstream event: the fallback callback,
       # or, in a filter, the downstream message callback.
-      unless @cli_options[:upstreams] || @cli_options[:'upstream-event-fallback'] == 'callback' ||
-             @cli_options[:'downstream-message'] == 'callback'
+      unless @cli_options[:upstreams] || @cli_options[:'enable-additional-callbacks'].include?('upstream_event_fallback') ||
+             @cli_options[:'enable-additional-callbacks'].include?('downstream_message')
         raise 'Missing upstreams models'
       end
 

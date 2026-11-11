@@ -21,7 +21,7 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
 <% end %>
 void btx_unregister_callbacks(common_data_t *common_data);
 
-<% if options[:'upstream-event-fallback'] == 'callback' %>
+<% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
 /* Called with every upstream event no callback above is registered for.
 <% if options[:'component-type'] == 'FILTER' %>
  * The callback owns the message: it sends it downstream with

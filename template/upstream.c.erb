@@ -97,7 +97,7 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
 }
 <% end %>
 
-<% if options[:'upstream-event-fallback'] == 'callback' %>
+<% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
 void btx_register_callback_upstream_event_fallback(
     void *btx_handle, upstream_event_fallback_callback_f *callback) {
   ((common_data_t *)btx_handle)->upstream_event_fallback_callback =

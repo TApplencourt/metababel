@@ -67,7 +67,7 @@ sink_consume(bt_self_component_sink *self_component_sink) {
       (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data,
                                             upstream_message);
     }
-    <% if options[:'upstream-event-fallback'] == 'callback' %>
+    <% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
     else if (common_data->upstream_event_fallback_callback) {
       /* Borrowed: we put the reference below */
       ((upstream_event_fallback_callback_f *)

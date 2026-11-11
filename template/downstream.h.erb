@@ -33,13 +33,13 @@ void btx_push_message_<%= e.name_sanitized %>(
         btx_handle<%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
 <% end %>
 
-<% if options[:'upstream-event-fallback'] == 'callback' %>
+<% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
 /* Send downstream a message the upstream event fallback callback owns, like
  * btx_push_message_<event>: through the downstream message callback, if any. */
 void btx_push_message(void *btx_handle, const bt_message *message);
 <% end %>
 
-<% if options[:'downstream-message'] == 'callback' %>
+<% if options[:'enable-additional-callbacks'].include?('downstream_message') %>
 /* Called with every message the component sends downstream. The callback owns
  * the message: it puts it in the output queue with btx_direct_push_message, or
  * puts its reference. What it sends with btx_push_message or
