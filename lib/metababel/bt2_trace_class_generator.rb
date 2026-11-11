@@ -1139,7 +1139,8 @@ module Babeltrace2Gen
 
     def get_getter(trace:, arg_variables:)
       var_name = bt_get_variable(arg_variables).name
-      pr "const bt_value *#{var_name}_value = bt_trace_borrow_environment_entry_value_by_name_const(#{trace}, \"#{var_name}\");"
+      # Cached per trace (see btx_borrow_environment_entry_value): common_data is the dispatcher's
+      pr "const bt_value *#{var_name}_value = btx_borrow_environment_entry_value(common_data, #{trace}, \"#{var_name}\");"
       pr "#{var_name} = bt_value_#{@type}_get(#{var_name}_value);"
     end
 

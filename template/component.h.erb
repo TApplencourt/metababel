@@ -61,6 +61,23 @@ struct event_class_to_dispatcher_s {
   UT_hash_handle hh;
 };
 typedef struct event_class_to_dispatcher_s event_class_to_dispatcher_t;
+
+/* Cache of the trace environment entries the dispatchers read (e.g. hostname),
+ * so that an entry is looked up by name once per trace, not once per event. A
+ * trace is frozen once it has a stream, so its environment can't change after
+ * its first event. The entry holds a reference on the trace: its address can't
+ * be reused by another trace while it is cached. `name` is the generated
+ * code's string literal. */
+struct trace_environment_key_s {
+  const bt_trace *trace;
+  const char *name;
+};
+struct trace_environment_entry_s {
+  struct trace_environment_key_s key;
+  const bt_value *value;
+  UT_hash_handle hh;
+};
+typedef struct trace_environment_entry_s trace_environment_entry_t;
 <% end %>
 
 <% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
@@ -121,6 +138,7 @@ typedef enum btx_source_status_e btx_source_status_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   event_class_to_dispatcher_t *event_class_to_dispatcher;
+  trace_environment_entry_t *trace_environment_entries;
   static_callbacks_t *static_callbacks;
   <% unless options[:'disable-callbaks'].include?('on_downstream') %>
   void *on_downstream_message_callback;
@@ -179,6 +197,7 @@ typedef struct btx_message_iterator_s btx_message_iterator_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   event_class_to_dispatcher_t *event_class_to_dispatcher;
+  trace_environment_entry_t *trace_environment_entries;
   static_callbacks_t *static_callbacks;
 
   void *usr_data;
@@ -194,6 +213,8 @@ void btx_unregister_callbacks(common_data_t *common_data);
 <% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
 /* Empty the event class -> dispatcher cache, putting the event class references */
 void btx_flush_dispatcher_cache(common_data_t *common_data);
+/* Empty the trace environment cache, putting the trace references */
+void btx_flush_environment_cache(common_data_t *common_data);
 <% end %>
 
 <% static_callback_types.each do |e| %>
