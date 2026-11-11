@@ -50,6 +50,19 @@ struct name_to_dispatcher_s {
 };
 typedef struct name_to_dispatcher_s name_to_dispatcher_t;
 
+<% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
+/* Cache of the dispatcher of each upstream event class, so that the dispatcher is
+ * looked up by name once per class, not once per event. `dispatcher` is NULL when
+ * no callback is registered for the class. The entry holds a reference on the
+ * event class: its address can't be reused by another class while it is cached. */
+struct event_class_to_dispatcher_s {
+  const bt_event_class *event_class;
+  name_to_dispatcher_t *dispatcher;
+  UT_hash_handle hh;
+};
+typedef struct event_class_to_dispatcher_s event_class_to_dispatcher_t;
+<% end %>
+
 <% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
 // Structure for Downstream Message
 struct el {
@@ -107,6 +120,7 @@ typedef enum btx_source_status_e btx_source_status_t;
 <% elsif options[:'component-type'] == 'FILTER' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  event_class_to_dispatcher_t *event_class_to_dispatcher;
   static_callbacks_t *static_callbacks;
   <% unless options[:'disable-callbaks'].include?('on_downstream') %>
   void *on_downstream_message_callback;
@@ -164,6 +178,7 @@ typedef struct btx_message_iterator_s btx_message_iterator_t;
 <% elsif options[:'component-type'] == 'SINK' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  event_class_to_dispatcher_t *event_class_to_dispatcher;
   static_callbacks_t *static_callbacks;
 
   void *usr_data;
@@ -176,6 +191,10 @@ struct common_data_s {
 
 void btx_register_usr_callbacks(void *btx_handle);
 void btx_unregister_callbacks(common_data_t *common_data);
+<% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
+/* Empty the event class -> dispatcher cache, putting the event class references */
+void btx_flush_dispatcher_cache(common_data_t *common_data);
+<% end %>
 
 <% static_callback_types.each do |e| %>
 typedef void <%= e.name_sanitized %>_static_callback_f(

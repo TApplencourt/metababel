@@ -33,6 +33,9 @@ void btx_call_callbacks_<%= e.name_sanitized %>(
 <% end %>
 
 void btx_unregister_callbacks(common_data_t *common_data) {
+  <% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
+  btx_flush_dispatcher_cache(common_data);
+  <% end %>
   name_to_dispatcher_t *current, *tmp;
   HASH_ITER(hh, common_data->name_to_dispatcher, current, tmp) {
     HASH_DEL(common_data->name_to_dispatcher, current);
