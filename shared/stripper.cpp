@@ -23,7 +23,8 @@ static void push_associated_beginnings(void *btx_handle, StreamToMessages_t *h,
 
   auto it_stream = h->stream_beginning.find(stream);
   if (it_stream != h->stream_beginning.end()) {
-    btx_push_message(btx_handle, it_stream->second);
+    btx_direct_push_message(btx_handle, it_stream->second);
+    bt_message_put_ref(it_stream->second);
     h->stream_beginning.erase(it_stream);
   }
 
@@ -31,7 +32,8 @@ static void push_associated_beginnings(void *btx_handle, StreamToMessages_t *h,
     const auto packet = bt_event_borrow_packet_const(event);
     auto it_packet = h->packet_beginning.find(packet);
     if (it_packet != h->packet_beginning.end()) {
-      btx_push_message(btx_handle, it_packet->second);
+      btx_direct_push_message(btx_handle, it_packet->second);
+      bt_message_put_ref(it_packet->second);
       h->packet_beginning.erase(it_packet);
     }
   }
@@ -43,15 +45,14 @@ static void push_or_drop_message(void *btx_handle,
                                  const T *key, const bt_message *message) {
   auto it = stm.find(key);
   if (it == stm.end()) {
-    btx_push_message(btx_handle, message);
+    btx_direct_push_message(btx_handle, message);
   } else {
-    bt_message_put_ref(message);
     bt_message_put_ref(it->second);
     stm.erase(it);
   }
 }
 
-static void on_downstream_message_callback(void *btx_handle, void *usr_data,
+static void downstream_message_callback(void *btx_handle, void *usr_data,
                                            const bt_message *message) {
 
   auto *h = (StreamToMessages_t *)usr_data;
@@ -59,18 +60,20 @@ static void on_downstream_message_callback(void *btx_handle, void *usr_data,
   // Save begins
   case (BT_MESSAGE_TYPE_STREAM_BEGINNING): {
     const bt_stream *stream = bt_message_stream_beginning_borrow_stream_const(message);
+    bt_message_get_ref(message); // kept after the callback returns
     h->stream_beginning.insert({stream, message});
     break;
   }
   case (BT_MESSAGE_TYPE_PACKET_BEGINNING): {
     const bt_packet *packet = bt_message_packet_beginning_borrow_packet_const(message);
+    bt_message_get_ref(message); // kept after the callback returns
     h->packet_beginning.insert({packet, message});
     break;
   }
   // Push event and associated beginnings
   case (BT_MESSAGE_TYPE_EVENT): {
     push_associated_beginnings(btx_handle, h, message);
-    btx_push_message(btx_handle, message);
+    btx_direct_push_message(btx_handle, message);
     break;
   }
   // Drop or push ends
@@ -85,12 +88,12 @@ static void on_downstream_message_callback(void *btx_handle, void *usr_data,
     break;
   }
   default:
-    btx_push_message(btx_handle, message);
+    btx_direct_push_message(btx_handle, message);
   }
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_component(btx_handle, &btx_initialize_usr_data);
   btx_register_callbacks_finalize_component(btx_handle, &btx_finalize_usr_data);
-  btx_register_on_downstream_message_callback(btx_handle, &on_downstream_message_callback);
+  btx_register_callback_downstream_message(btx_handle, &downstream_message_callback);
 }

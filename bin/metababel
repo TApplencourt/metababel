@@ -189,22 +189,45 @@ def parse_argv
   parser.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.')
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
-  parser.on('--enable-callbacks NAME', Array, '[Optional] Enable some callbacks type')
+  parser.on('--upstream-event-default MODE', %w[passthrough drop],
+            '[Optional] FILTER: what happens to an upstream event no callback is registered for',
+            '(when no upstream event fallback callback is registered): passthrough (default), drop.')
+  parser.on('--enable-additional-callbacks NAMES', Array,
+            '[Optional] Callbacks to enable: upstream_event_fallback (FILTER, SINK),',
+            'downstream_message (SOURCE, FILTER).')
   parser.on('--display-shared-callback PLUGIN') do |plugin|
     path = Dir["#{__dir__}/../shared/*#{plugin}*"].first
     puts File.readlines(path)
     exit
   end
-  parser.on('--drop', '[Optional] Drop unknow messages')
 
-  options = { 'disable-callbaks': ['on_downstream'].to_set,
-              'component-name': 'btx' }
+  options = { 'component-name': 'btx' }
   parser.parse!(into: options)
   raise OptionParser::MissingArgument if options[:'component-type'].nil?
 
   options[:'plugin-name'] ||= "metababel_#{options[:'component-type'].downcase}"
-  options[:'disable-callbaks'] -= (options[:'enable-callbacks'] || []).to_set
+  check_options(options)
   options
+end
+
+ENABLE_ADDITIONAL_CALLBACKS = { 'upstream_event_fallback' => %w[FILTER SINK],
+                     'downstream_message' => %w[SOURCE FILTER] }.freeze
+
+# Reject an option that does not apply to the component type, and set the defaults.
+def check_options(options)
+  type = options[:'component-type']
+  if type == 'FILTER'
+    options[:'upstream-event-default'] ||= 'passthrough'
+  elsif options[:'upstream-event-default']
+    raise "--upstream-event-default applies only to FILTER, not to #{type}"
+  end
+
+  options[:'enable-additional-callbacks'] = (options[:'enable-additional-callbacks'] || []).uniq
+  options[:'enable-additional-callbacks'].each do |name|
+    types = ENABLE_ADDITIONAL_CALLBACKS[name]
+    raise "--enable-additional-callbacks #{name} is invalid, should be one of: #{ENABLE_ADDITIONAL_CALLBACKS.keys.join(', ')}" unless types
+    raise "--enable-additional-callbacks #{name} applies only to #{types.join(' and ')}, not to #{type}" unless types.include?(type)
+  end
 end
 
 def get_dispatch_type(em, default_clock_class, context)
@@ -373,7 +396,7 @@ class ContextBuilder
 
   def downstream
     @downstream ||= begin
-      unless @cli_options[:downstream] || !@cli_options[:'disable-callbaks'].include?('on_downstream')
+      unless @cli_options[:downstream] || @cli_options[:'enable-additional-callbacks'].include?('downstream_message')
         raise 'Missing downstream model'
       end
 
@@ -411,7 +434,10 @@ class ContextBuilder
 
   def upstream
     @upstream ||= begin
-      unless @cli_options[:upstreams] || !@cli_options[:'disable-callbaks'].include?('on_downstream')
+      # Without a model, a callback still sees every upstream event: the fallback callback,
+      # or, in a filter, the downstream message callback.
+      unless @cli_options[:upstreams] || @cli_options[:'enable-additional-callbacks'].include?('upstream_event_fallback') ||
+             @cli_options[:'enable-additional-callbacks'].include?('downstream_message')
         raise 'Missing upstreams models'
       end
 
@@ -459,8 +485,8 @@ class ContextBuilder
 end
 
 def wrote_upstream(cb)
-  erb_render_and_save(cb.get_context(%w[upstream]), 'upstream.h', cb.folder)
-  erb_render_and_save(cb.get_context(%w[upstream callback_types]), 'upstream.c', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream options]), 'upstream.h', cb.folder)
+  erb_render_and_save(cb.get_context(%w[upstream callback_types options]), 'upstream.c', cb.folder)
 end
 
 def wrote_downstream(cb)

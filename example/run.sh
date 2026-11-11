@@ -11,14 +11,14 @@ babeltrace2 --plugin-path=. --component=source.metababel_source.btx --component=
 
 # Sink
 ruby -I../lib ../bin/metababel --component-type SINK \
-                               --upstream fake_api.yaml \
+                               --upstreams fake_api.yaml \
                                -o btx_sink
 gcc -g -o btx_sink.so btx_sink/*.c btx_sink/metababel/*.c -I btx_sink/ -I ../include/ ${CFLAGS}
 babeltrace2 --plugin-path=. --component=source.metababel_source.btx --component=sink.metababel_sink.btx
 
 #Filter
 ruby -I../lib ../bin/metababel --component-type FILTER \
-                               --upstream fake_api.yaml \
+                               --upstreams fake_api.yaml \
 			       --downstream fake_api.yaml \
 			       -o btx_filter
 gcc -g -o btx_filter.so btx_filter/*.c btx_filter/metababel/*.c -I btx_filter/ -I ../include/ ${CFLAGS}

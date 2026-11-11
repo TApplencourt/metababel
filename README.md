@@ -19,6 +19,73 @@ Link with a object file who export the symbol `btx_push_usr_messages(struct xpro
 In the callbacks, and in the `btx_push_usr_messages`, you have access to `btx_push_message_{stream_class_name}_#{event_class_name}(struct xprof_common_data *common_data, ...)`.
 
 
+## Routing messages
+
+Besides the event callbacks, which get the decoded fields of the events of their class, two
+*additional callbacks* get the `bt_message` itself. They are enabled at generation time:
+
+| `--enable-additional-callbacks NAMES` | component | callback |
+|---|---|---|
+| `upstream_event_fallback` | FILTER, SINK | an upstream event no callback is registered for |
+| `downstream_message` | SOURCE, FILTER | every message the component sends downstream |
+
+Both are `(void *btx_handle, void *usr_data, const bt_message *message)`, registered with
+`btx_register_callback_<name>`. There is one callback per name (hence `callback`, singular,
+unlike the `btx_register_callbacks_` of the events): registering another one replaces it.
+A registered additional callback always runs; without one, the default applies (like the `default`
+of a `switch`). The message is borrowed: the callback sends it on with a push function, or does
+nothing and it is dropped. Metababel puts the reference after the callback; to keep the message
+after the callback returns, take a reference (`bt_message_get_ref`) and put it when done.
+
+- Upstream event fallback: the upstream events no callback is registered for (whether or not their
+  class is in the upstream model). Messages that are not events are always forwarded by a filter and
+  dropped by a sink.
+  - FILTER: the callback sends it downstream with `btx_push_message`, or drops it. Without a
+    callback, `--upstream-event-default MODE` applies: `passthrough` (default) forwards the event,
+    `drop` puts it.
+  - SINK: without a callback, the event is dropped.
+- Downstream message: every message the component sends downstream (its own events, its stream
+  messages, and what a filter forwards). The callback puts it in the output queue with
+  `btx_direct_push_message`, or drops it. Without a callback, the message goes to the output queue.
+
+`--upstream-event-default` applies to a FILTER only. With an additional callback enabled, the
+upstream model is optional (the callbacks see every event).
+
+### Sending messages downstream
+
+`btx_handle` is the one every callback receives (the component).
+
+| function | sends | through the downstream message callback | exists with |
+|---|---|---|---|
+| `btx_push_message_<name>(btx_handle, ...)` | a new event of the downstream model | yes | always |
+| `btx_push_message(btx_handle, message)` | the message the fallback callback borrows | yes | `--enable-additional-callbacks upstream_event_fallback` (FILTER) |
+| `btx_direct_push_message(btx_handle, message)` | the message the downstream callback borrows, to the output queue | no | `--enable-additional-callbacks downstream_message` |
+
+In the downstream message callback, use `btx_direct_push_message` to let a message through:
+`btx_push_message` would give it back to the same callback, forever. What the callback creates with
+`btx_push_message_<name>` comes back to it, like any message sent downstream.
+
+How a filter routes an upstream message:
+
+```
+upstream message
+├─ not an event (stream/packet beginning/end, ...) → forwarded
+└─ event: is a callback registered for its class?
+   ├─ yes → the callbacks run with the decoded fields, then the message is put
+   │        (to send something downstream, they create events with btx_push_message_<name> → forwarded)
+   └─ no  → is an upstream event fallback callback registered?
+            ├─ yes → the callback: btx_push_message → forwarded, or nothing → put
+            └─ no  → --upstream-event-default
+                     ├─ passthrough → forwarded
+                     └─ drop        → put
+
+the filter's own stream beginning/end messages → forwarded
+
+forwarded → is a downstream message callback registered?
+            ├─ yes → the callback: btx_direct_push_message → output queue, or nothing → put
+            └─ no  → output queue
+```
+
 # Source Description
 
 ## State Machine

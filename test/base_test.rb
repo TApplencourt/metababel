@@ -39,8 +39,8 @@ def get_component_generation_command(component)
     btx_component_upstream_model: '-u',
     btx_component_usr_header_file: '-i',
     btx_component_callbacks: '-m',
-    btx_component_enable_callbacks: '--enable_callbacks',
-    btx_commonent_drop: '--drop',
+    btx_component_upstream_event_default: '--upstream-event-default',
+    btx_component_enable_additional_callbacks: '--enable-additional-callbacks',
   }
   str_ = component.filter_map { |k, v| "#{args[k]} #{[v].flatten.join(',')}" if args.key?(k) }.join(' ')
 

@@ -20,6 +20,13 @@ void btx_downstream_move_messages(
   }
 }
 
+// btx_handle is the component (common_data_t); find its message iterator
+static inline btx_message_iterator_t *__attribute__((unused))
+_btx_message_iterator(void *btx_handle) {
+  return (btx_message_iterator_t *)bt_self_message_iterator_get_data(
+      ((common_data_t *)btx_handle)->self_message_iterator);
+}
+
 static inline void
 _btx_push_message(btx_message_iterator_t *message_iterator_private_data,
                   const bt_message *message) {
@@ -35,34 +42,45 @@ _btx_push_message(btx_message_iterator_t *message_iterator_private_data,
   DL_APPEND(message_iterator_private_data->queue, elt);
 }
 
-<% unless options[:'disable-callbaks'].include?('on_downstream') %>
-void btx_push_message(void *btx_handle, const bt_message *message) {
-  _btx_push_message((btx_message_iterator_t *)btx_handle, message);
+<% if options[:'enable-additional-callbacks'].include?('downstream_message') %>
+void btx_direct_push_message(void *btx_handle, const bt_message *message) {
+  /* The callback borrows the message: the queue takes its own reference */
+  bt_message_get_ref(message);
+  _btx_push_message(_btx_message_iterator(btx_handle), message);
 }
 
-void btx_register_on_downstream_message_callback(
-    void *btx_handle, on_downstream_message_callback_f *callback) {
-  ((common_data_t *)btx_handle)->on_downstream_message_callback =
-      (void *)callback;
+void btx_register_callback_downstream_message(
+    void *btx_handle, downstream_message_callback_f *callback) {
+  ((common_data_t *)btx_handle)->downstream_message_callback = (void *)callback;
 }
 <% end %>
-// Used internally to push messages downstreams
+// Used internally to push messages downstreams. Takes the reference of message.
 void btx_downstream_push_message(
     btx_message_iterator_t *message_iterator_private_data,
     const bt_message *message) {
 
-  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
-  on_downstream_message_callback_f *p =
-      (on_downstream_message_callback_f *)message_iterator_private_data
-          ->common_data->on_downstream_message_callback;
+  <% if options[:'enable-additional-callbacks'].include?('downstream_message') %>
+  downstream_message_callback_f *p =
+      (downstream_message_callback_f *)message_iterator_private_data
+          ->common_data->downstream_message_callback;
   if (p) {
-    p(((void *)message_iterator_private_data),
+    /* The callback borrows the message */
+    p(message_iterator_private_data->common_data,
       message_iterator_private_data->common_data->usr_data, message);
+    bt_message_put_ref(message);
     return;
   }
   <% end %>
   _btx_push_message(message_iterator_private_data, message);
 }
+
+<% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
+void btx_push_message(void *btx_handle, const bt_message *message) {
+  /* The callback borrows the message: take a reference to send it */
+  bt_message_get_ref(message);
+  btx_downstream_push_message(_btx_message_iterator(btx_handle), message);
+}
+<% end %>
 
 // Register callbacks
 bt_trace_class *
@@ -212,10 +230,7 @@ void btx_push_message_<%= e.name_sanitized %>(
   btx_set_message_<%= e.name_sanitized %>(
       _downstream_event<%= e.args.map{ |s| s.name }.join_with_prefix(", ") %>);
 
-  btx_message_iterator_t *_message_iterator_private_data =
-      (btx_message_iterator_t *)bt_self_message_iterator_get_data(
-          common_data->self_message_iterator);
-  btx_downstream_push_message(_message_iterator_private_data, _message);
+  btx_downstream_push_message(_btx_message_iterator(btx_handle), _message);
 }
 <% end %>
 

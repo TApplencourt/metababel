@@ -63,8 +63,8 @@ struct el {
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
-  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
-  void *on_downstream_message_callback;
+  <% if options[:'enable-additional-callbacks'].include?('downstream_message') %>
+  void *downstream_message_callback;
   <% end %>
   void *usr_data;
   const bt_value *params;
@@ -108,8 +108,11 @@ typedef enum btx_source_status_e btx_source_status_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   static_callbacks_t *static_callbacks;
-  <% unless options[:'disable-callbaks'].include?('on_downstream') %>
-  void *on_downstream_message_callback;
+  <% if options[:'enable-additional-callbacks'].include?('downstream_message') %>
+  void *downstream_message_callback;
+  <% end %>
+  <% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
+  void *upstream_event_fallback_callback;
   <% end %>
 
   void *usr_data;
@@ -171,6 +174,9 @@ struct common_data_s {
   btx_params_t *btx_params;
   /* Upstream message iterator (owned by this) */
   bt_message_iterator *message_iterator;
+  <% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
+  void *upstream_event_fallback_callback;
+  <% end %>
 };
 <% end %>
 

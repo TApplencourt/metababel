@@ -117,15 +117,23 @@ static inline void filter_message_iterator_next_call_dispatchers(
     /* Drop message */
     bt_message_put_ref(upstream_message);
   } else {
-    /* Push upstream message to downstream */
-    <% if options[:drop] %>
-      /* Drop message. Including PACKET_{BEGIN,END} messages.
-       * It's ok as ALL message will be drop, so we will never get
-       * any EVENT without BEGIN */
+    /* No callback for this event: the upstream event fallback */
+    <% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
+    upstream_event_fallback_callback_f *fallback =
+        (upstream_event_fallback_callback_f *)
+            common_data->upstream_event_fallback_callback;
+    if (fallback) {
+      /* The callback borrows the message */
+      fallback(common_data, common_data->usr_data, upstream_message);
       bt_message_put_ref(upstream_message);
+      return;
+    }
+    <% end %>
+    <% if options[:'upstream-event-default'] == 'drop' %>
+    bt_message_put_ref(upstream_message);
     <% else %>
-      btx_downstream_push_message(message_iterator_private_data,
-                                  upstream_message);
+    btx_downstream_push_message(message_iterator_private_data,
+                                upstream_message);
     <% end %>
   }
 }
@@ -159,7 +167,7 @@ static inline void filter_message_iterator_next_processing_reading_callbacks(
        upstream_i++) {
     /* Current message */
     const bt_message *upstream_message = upstream_messages[upstream_i];
-    /* Forward all non-event-messages downstream */
+    /* Forward all non-event messages downstream, whatever the fallback */
     if (bt_message_get_type(upstream_message) != BT_MESSAGE_TYPE_EVENT) {
       btx_downstream_push_message(message_iterator_private_data,
                                   upstream_message);
