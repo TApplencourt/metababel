@@ -160,6 +160,8 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   event_class_to_dispatcher_t *event_class_to_dispatcher;
   trace_environment_entry_t *trace_environment_entries;
+  /* Last entry found (fast path: same trace and name as the previous lookup) */
+  trace_environment_entry_t *trace_environment_last;
   static_callbacks_t *static_callbacks;
   <% if options[:'enable-additional-callbacks'].include?('downstream_message') %>
   void *downstream_message_callback;
@@ -232,6 +234,8 @@ struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   event_class_to_dispatcher_t *event_class_to_dispatcher;
   trace_environment_entry_t *trace_environment_entries;
+  /* Last entry found (fast path: same trace and name as the previous lookup) */
+  trace_environment_entry_t *trace_environment_last;
   static_callbacks_t *static_callbacks;
 
   void *usr_data;
