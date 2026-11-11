@@ -31,5 +31,5 @@ void btx_register_usr_callbacks(void *btx_handle) {
                                               &btx_initialize_usr_data);
   btx_register_callbacks_finalize_component(btx_handle, &btx_finalize_usr_data);
   btx_register_callbacks_event(btx_handle, &event_callback);
-  btx_register_callbacks_downstream_message(btx_handle, &downstream_message_callback);
+  btx_register_callback_downstream_message(btx_handle, &downstream_message_callback);
 }

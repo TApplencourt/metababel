@@ -32,7 +32,7 @@ void btx_unregister_callbacks(common_data_t *common_data);
 typedef void upstream_event_fallback_callback_f(void *btx_handle,
                                                 void *usr_data,
                                                 const bt_message *message);
-void btx_register_callbacks_upstream_event_fallback(
+void btx_register_callback_upstream_event_fallback(
     void *btx_handle, upstream_event_fallback_callback_f *callback);
 <% end %>
 

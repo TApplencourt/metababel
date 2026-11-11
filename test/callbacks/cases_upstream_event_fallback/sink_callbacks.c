@@ -15,5 +15,5 @@ static void fallback_callback(void *btx_handle, void *usr_data, const bt_message
 
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_event_a(btx_handle, &event_a_callback);
-  btx_register_callbacks_upstream_event_fallback(btx_handle, &fallback_callback);
+  btx_register_callback_upstream_event_fallback(btx_handle, &fallback_callback);
 }

@@ -31,16 +31,17 @@ Two options decide what happens to messages, besides the event callbacks:
 
 Any other combination is an error. With `callback`, the user registers a
 `(void *btx_handle, void *usr_data, const bt_message *message)` callback; if none is registered,
-the default mode applies.
+the default mode applies. There is one callback per option (hence `btx_register_callback_`, singular,
+unlike the `btx_register_callbacks_` of the events): registering another one replaces it.
 
 - `--upstream-event-fallback`: the upstream events no callback is registered for (whether or not
   their class is in the upstream model). Messages that are not events are always forwarded by a
-  filter and dropped by a sink. With `callback`, `btx_register_callbacks_upstream_event_fallback`:
+  filter and dropped by a sink. With `callback`, `btx_register_callback_upstream_event_fallback`:
   - FILTER: the callback owns the message. It sends it downstream with `btx_push_message`, or
     puts its reference.
   - SINK: the message is borrowed; the sink puts its reference after the callback.
 - `--downstream-message`: every message the component sends downstream (its own events, its stream
-  messages, and what a filter forwards). With `callback`, `btx_register_callbacks_downstream_message`:
+  messages, and what a filter forwards). With `callback`, `btx_register_callback_downstream_message`:
   the callback owns the message, and puts it in the output queue with `btx_direct_push_message`, or
   puts its reference.
 

@@ -47,7 +47,7 @@ void btx_direct_push_message(void *btx_handle, const bt_message *message) {
   _btx_push_message(_btx_message_iterator(btx_handle), message);
 }
 
-void btx_register_callbacks_downstream_message(
+void btx_register_callback_downstream_message(
     void *btx_handle, downstream_message_callback_f *callback) {
   ((common_data_t *)btx_handle)->downstream_message_callback = (void *)callback;
 }

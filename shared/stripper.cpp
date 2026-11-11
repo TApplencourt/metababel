@@ -92,5 +92,5 @@ static void downstream_message_callback(void *btx_handle, void *usr_data,
 void btx_register_usr_callbacks(void *btx_handle) {
   btx_register_callbacks_initialize_component(btx_handle, &btx_initialize_usr_data);
   btx_register_callbacks_finalize_component(btx_handle, &btx_finalize_usr_data);
-  btx_register_callbacks_downstream_message(btx_handle, &downstream_message_callback);
+  btx_register_callback_downstream_message(btx_handle, &downstream_message_callback);
 }
