@@ -380,6 +380,10 @@ class ContextBuilder
         static_callbacks += [StaticDispatcher.new('initialize_processing',
                                                   [GeneratedArg.new('void *', 'usr_data_p')]),
                              StaticDispatcher.new('finalize_processing',
+                                                  [GeneratedArg.new('void *', 'usr_data')]),
+                             # After read_params, before the downstream streams exist: the
+                             # place to configure the downstream classes (clock classes)
+                             StaticDispatcher.new('configure_downstream',
                                                   [GeneratedArg.new('void *', 'usr_data')])]
       end
 
@@ -424,7 +428,28 @@ class ContextBuilder
                                    end
                                  end
 
+      # Name used in the generated functions of a stream class
+      stream_class_id = ->(s, i) { (s.name || "sc#{i}").gsub(/[^0-9A-Za-z-]/, '_') }
+
+      # btx_downstream_new_packet_<stream class>(): one argument per packet context member
+      downstream_packets = t.stream_classes.each_with_index.filter_map do |s, i|
+        next unless s.packet_context_field_class
+
+        args = {}
+        body = "\n" + Babeltrace2Gen.context(indent: 1) do
+          s.packet_context_field_class.get_setter(variable: '_pc_field', arg_variables: args)
+        end
+        [i, stream_class_id.call(s, i), args.fetch('outputs', []), body]
+      end
+
+      # btx_downstream_default_clock_class_<stream class>()
+      downstream_clock_classes = t.stream_classes.each_with_index.filter_map do |s, i|
+        [i, stream_class_id.call(s, i)] if s.default_clock_class
+      end
+
       { body_declarator_classes: body_declarator_classes,
+        downstream_packets: downstream_packets,
+        downstream_clock_classes: downstream_clock_classes,
         downstream_environements: downstream_environements,
         downstream_events: downstream_events,
         stream_classes: t.stream_classes,

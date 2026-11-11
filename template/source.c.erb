@@ -42,7 +42,10 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
         message_iterator_private_data->common_data->usr_data);
 
     message_iterator_private_data->state = BTX_SOURCE_STATE_PROCESSING;
-    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
+    /* Deliver the stream beginning messages right away */
+    btx_downstream_move_messages(message_iterator_private_data, messages,
+                                 capacity, count);
+    return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
   case BTX_SOURCE_STATE_PROCESSING:
     if (message_iterator_private_data->queue) {
       btx_downstream_move_messages(message_iterator_private_data, messages,
@@ -64,6 +67,15 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
       btx_push_messages_stream_end(self_message_iterator,
                                    message_iterator_private_data);
       message_iterator_private_data->state = BTX_SOURCE_STATE_FINALIZING;
+    }
+    /*
+     * Deliver what the user pushed right away. Only return AGAIN if nothing
+     * was pushed: the graph runner may then sleep before calling again.
+     */
+    if (message_iterator_private_data->queue) {
+      btx_downstream_move_messages(message_iterator_private_data, messages,
+                                   capacity, count);
+      return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
     }
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BTX_SOURCE_STATE_FINALIZING:
@@ -106,7 +118,6 @@ source_initialize(bt_self_component_source *self_component_source,
   /* Instantiate a `downstream_trace` of `trace_class` and all the children
    * stream */
   common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
-  btx_streams_get_ref(common_data->downstream_trace); // ??
   bt_trace_class_put_ref(trace_class);
 
   /* Set the component's user data to our private data structure */
@@ -133,6 +144,13 @@ source_initialize(bt_self_component_source *self_component_source,
   /* Call read callbacks */
   btx_call_callbacks_read_params(common_data, common_data->usr_data,
                                  common_data->btx_params);
+
+  /* Let the user configure the downstream classes */
+  btx_call_callbacks_configure_downstream(common_data, common_data->usr_data);
+
+  /* Create the streams now that the user callbacks configured the classes */
+  btx_downstream_streams_create_rec(common_data);
+  btx_streams_get_ref(common_data->downstream_trace); // ??
 
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -178,6 +196,7 @@ static void source_finalize(bt_self_component_source *self_component_source) {
   btx_streams_put_ref(common_data->downstream_trace); // ??
   /* We allocate it, we need to put ref */
   bt_trace_put_ref(common_data->downstream_trace);
+  free(common_data->downstream_event_classes);
 
   /* Delete name_to_dispatchers */
   btx_unregister_callbacks(common_data);

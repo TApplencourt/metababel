@@ -91,7 +91,23 @@ btx_downstream_trace_class_create_rec(bt_self_component *_self_component) {
 }
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
-  bt_trace *trace = bt_trace_create(trace_class);
+  return bt_trace_create(trace_class);
+}
+
+void btx_downstream_streams_create_rec(common_data_t *common_data) {
+  bt_trace *trace = common_data->downstream_trace;
+  bt_trace_class *trace_class = bt_trace_borrow_class(trace);
+
+  /* Cache the event classes: btx_push_message_<event>() uses them */
+  common_data->downstream_event_classes = (bt_event_class **)calloc(
+      <%= downstream_events.size + 1 %>, sizeof(bt_event_class *));
+  <% downstream_events.each_with_index do |e, ei| %>
+  common_data->downstream_event_classes[<%= ei %>] =
+      bt_stream_class_borrow_event_class_by_index(
+          bt_trace_class_borrow_stream_class_by_index(trace_class,
+                                                      <%= e.index_stream_class %>),
+          <%= e.index_event_class %>);
+  <% end %>
   <% stream_classes.each_with_index do |_,i| %>
   {
     bt_stream_class *stream_class =
@@ -99,7 +115,7 @@ bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class) {
     bt_stream_put_ref(bt_stream_create(stream_class, trace));
   }
   <% end %>
-  return trace;
+  (void)trace_class;
 }
 
 // Workaround of a bug where gepping trace alive (and not the stream) provoke
@@ -185,7 +201,7 @@ void btx_push_messages_stream_end(
   (void)trace;
 }
 
-<% downstream_events.each do |e| %>
+<% downstream_events.each_with_index do |e, ei| %>
 static void btx_set_message_<%= e.name_sanitized %>(
     bt_event *
         <%= event_name %><%= e.args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
@@ -198,11 +214,7 @@ void btx_push_message_<%= e.name_sanitized %>(
 
   common_data_t *common_data = (common_data_t *)btx_handle;
 
-  bt_stream *_stream = bt_trace_borrow_stream_by_index(
-      common_data->downstream_trace, <%= e.index_stream_class %>);
-  bt_stream_class *_stream_class = bt_stream_borrow_class(_stream);
-  bt_event_class *_event_class = bt_stream_class_borrow_event_class_by_index(
-      _stream_class, <%= e.index_event_class %>);
+  bt_event_class *_event_class = common_data->downstream_event_classes[<%= ei %>];
   <% if stream_classes[e.index_stream_class].packet_context_field_class %>
   /* The stream class supports packets: the event must belong to one */
   bt_packet *_packet =
@@ -216,13 +228,16 @@ void btx_push_message_<%= e.name_sanitized %>(
           common_data->self_message_iterator, _event_class, _packet,
           _timestamp);
   <% end %>
-  (void)_stream;
-  <% elsif !e.default_clock_class %>
+  <% else %>
+  bt_stream *_stream = bt_trace_borrow_stream_by_index(
+      common_data->downstream_trace, <%= e.index_stream_class %>);
+  <% if !e.default_clock_class %>
   bt_message *_message = bt_message_event_create(
       common_data->self_message_iterator, _event_class, _stream);
   <% else %>
   bt_message *_message = bt_message_event_create_with_default_clock_snapshot(
       common_data->self_message_iterator, _event_class, _stream, _timestamp);
+  <% end %>
   <% end %>
 
   bt_event *_downstream_event = bt_message_event_borrow_event(_message);
@@ -240,5 +255,44 @@ void btx_downstream_set_environment_<%= arg.name%>(
   common_data_t *common_data = (common_data_t *)btx_handle;
   bt_trace *_trace = common_data->downstream_trace;
   <%= body %>
+}
+<% end %>
+
+<% downstream_clock_classes.each do |i, sc| %>
+bt_clock_class *btx_downstream_default_clock_class_<%= sc %>(void *btx_handle) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  bt_stream_class *stream_class = bt_trace_class_borrow_stream_class_by_index(
+      bt_trace_borrow_class(common_data->downstream_trace), <%= i %>);
+  return bt_stream_class_borrow_default_clock_class(stream_class);
+}
+<% end %>
+
+<% downstream_packets.each do |i, sc, args, body| %>
+void btx_downstream_new_packet_<%= sc %>(
+    void *btx_handle<%= args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>) {
+  common_data_t *common_data = (common_data_t *)btx_handle;
+  btx_message_iterator_t *message_iterator_private_data =
+      _btx_message_iterator(btx_handle);
+  bt_packet *old_packet = common_data->downstream_packets[<%= i %>];
+
+  /* End the current packet */
+  if (old_packet) {
+    btx_downstream_push_message(
+        message_iterator_private_data,
+        bt_message_packet_end_create(common_data->self_message_iterator,
+                                     old_packet));
+    bt_packet_put_ref(old_packet);
+  }
+
+  /* Begin the new one */
+  bt_packet *packet = bt_packet_create(
+      bt_trace_borrow_stream_by_index(common_data->downstream_trace, <%= i %>));
+  bt_field *_pc_field = bt_packet_borrow_context_field(packet);
+  <%= body %>
+  common_data->downstream_packets[<%= i %>] = packet;
+  btx_downstream_push_message(
+      message_iterator_private_data,
+      bt_message_packet_beginning_create(common_data->self_message_iterator,
+                                         packet));
 }
 <% end %>

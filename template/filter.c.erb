@@ -404,7 +404,6 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Instantiate a `downstream_trace` of `trace_class` and all the children
    * stream */
   common_data->downstream_trace = btx_downstream_trace_create_rec(trace_class);
-  btx_streams_get_ref(common_data->downstream_trace); // ??
   bt_trace_class_put_ref(trace_class);
 
   /* Read parameters */
@@ -418,6 +417,13 @@ filter_initialize(bt_self_component_filter *self_component_filter,
   /* Call read callbacks */
   btx_call_callbacks_read_params(common_data, common_data->usr_data,
                                  common_data->btx_params);
+
+  /* Let the user configure the downstream classes */
+  btx_call_callbacks_configure_downstream(common_data, common_data->usr_data);
+
+  /* Create the streams now that the user callbacks configured the classes */
+  btx_downstream_streams_create_rec(common_data);
+  btx_streams_get_ref(common_data->downstream_trace); // ??
 
   return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
@@ -499,6 +505,7 @@ static void filter_finalize(bt_self_component_filter *self_component_filter) {
   btx_streams_put_ref(common_data->downstream_trace); // ??
   /* We allocate it, we need to put ref */
   bt_trace_put_ref(common_data->downstream_trace);
+  free(common_data->downstream_event_classes);
 
   /* Delete name_to_dispatchers */
   btx_unregister_callbacks(common_data);

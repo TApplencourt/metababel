@@ -17,6 +17,10 @@ btx_downstream_trace_class_create_rec(bt_self_component *self_component);
 
 bt_trace *btx_downstream_trace_create_rec(bt_trace_class *trace_class);
 
+/* Creates the streams of `trace` (one per stream class): after the user
+ * initialization callbacks, which may still configure the classes. */
+void btx_downstream_streams_create_rec(common_data_t *common_data);
+
 void btx_streams_get_ref(bt_trace *trace);
 void btx_streams_put_ref(bt_trace *trace);
 
@@ -58,6 +62,21 @@ void btx_direct_push_message(void *btx_handle, const bt_message *message);
 <% downstream_environements.each do |arg, body| %>
 void btx_downstream_set_environment_<%= arg.name%>(
     void *btx_handle, <%= arg.type%> <%= arg.name%>);
+<% end %>
+
+<% downstream_clock_classes.each do |i, sc| %>
+/* Default clock class of the stream class `<%= sc %>`, to configure (name,
+ * frequency, offset, origin...) in the configure_downstream callback only: it
+ * is frozen once the streams exist. */
+bt_clock_class *btx_downstream_default_clock_class_<%= sc %>(void *btx_handle);
+<% end %>
+
+<% downstream_packets.each do |i, sc, args, body| %>
+/* Ends the current packet of the stream of the stream class `<%= sc %>` and
+ * begins a new one, of which the context fields get the values of the
+ * arguments. The following events of this stream belong to the new packet. */
+void btx_downstream_new_packet_<%= sc %>(
+    void *btx_handle<%= args.map{ |s| "#{s.type} #{s.name}" }.join_with_prefix(", ") %>);
 <% end %>
 
 #ifdef __cplusplus

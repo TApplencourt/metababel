@@ -100,6 +100,9 @@ struct common_data_s {
   const bt_value *params;
   btx_params_t *btx_params;
   bt_trace *downstream_trace;
+  /* Downstream event classes, by downstream event index (set by
+   * btx_downstream_streams_create_rec()) */
+  bt_event_class **downstream_event_classes;
   /* Current packet of each downstream stream, indexed like the streams
    * (NULL for streams whose class doesn't support packets) */
   bt_packet **downstream_packets;
@@ -153,6 +156,9 @@ struct common_data_s {
   /* Component's input port (weak) */
   const bt_component_filter *component;
   bt_trace *downstream_trace;
+  /* Downstream event classes, by downstream event index (set by
+   * btx_downstream_streams_create_rec()) */
+  bt_event_class **downstream_event_classes;
   /* Current packet of each downstream stream, indexed like the streams
    * (NULL for streams whose class doesn't support packets) */
   bt_packet **downstream_packets;
