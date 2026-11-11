@@ -81,10 +81,12 @@ typedef struct trace_environment_entry_s trace_environment_entry_t;
 <% end %>
 
 <% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
-// Structure for Downstream Message
-struct el {
-  const bt_message *message;
-  struct el *next, *prev;
+// Downstream message queue: a growable ring buffer
+struct btx_message_queue {
+  const bt_message **messages; /* `capacity` slots */
+  uint64_t capacity;           /* 0 or a power of two */
+  uint64_t head;               /* index of the first message */
+  uint64_t len;                /* number of messages */
 };
 
 <% end %>
@@ -125,9 +127,8 @@ struct btx_message_iterator_s {
   common_data_t *common_data;
   btx_source_state_t state;
 
-  /* Handling the downstream message queue */
-  struct el *queue;
-  struct el *pool;
+  /* Downstream message queue */
+  struct btx_message_queue queue;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 
@@ -196,9 +197,8 @@ struct btx_message_iterator_s {
   el_mi *head_mi;
   btx_filter_state_t state;
   btx_filter_processing_state_t processing_state;
-  /* Handling the downstream message queue */
-  struct el *queue;
-  struct el *pool;
+  /* Downstream message queue */
+  struct btx_message_queue queue;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 

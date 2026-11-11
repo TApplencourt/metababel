@@ -47,7 +47,7 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
                                  capacity, count);
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
   case BTX_SOURCE_STATE_PROCESSING:
-    if (message_iterator_private_data->queue) {
+    if (message_iterator_private_data->queue.len) {
       btx_downstream_move_messages(message_iterator_private_data, messages,
                                    capacity, count);
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
@@ -72,14 +72,14 @@ source_message_iterator_next(bt_self_message_iterator *self_message_iterator,
      * Deliver what the user pushed right away. Only return AGAIN if nothing
      * was pushed: the graph runner may then sleep before calling again.
      */
-    if (message_iterator_private_data->queue) {
+    if (message_iterator_private_data->queue.len) {
       btx_downstream_move_messages(message_iterator_private_data, messages,
                                    capacity, count);
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
     }
     return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_AGAIN;
   case BTX_SOURCE_STATE_FINALIZING:
-    if (message_iterator_private_data->queue) {
+    if (message_iterator_private_data->queue.len) {
       btx_downstream_move_messages(message_iterator_private_data, messages,
                                    capacity, count);
       return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_OK;
@@ -215,10 +215,12 @@ static void source_message_iterator_finalize(
       (btx_message_iterator_t *)bt_self_message_iterator_get_data(
           self_message_iterator);
 
-  struct el *elt, *tmp;
-  DL_FOREACH_SAFE(message_iterator_private_data->pool, elt, tmp) {
-    DL_DELETE(message_iterator_private_data->pool, elt);
-    free(elt);
+  /* Put the messages left in the queue, if any, and free it */
+  {
+    struct btx_message_queue *q = &message_iterator_private_data->queue;
+    for (uint64_t i = 0; i < q->len; i++)
+      bt_message_put_ref(q->messages[(q->head + i) & (q->capacity - 1)]);
+    free(q->messages);
   }
 
   /* Free the allocated structure */
