@@ -108,9 +108,7 @@ static inline void filter_message_iterator_next_call_dispatchers(
   const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
   /* Event dispatcher */
-  const char *class_name = bt_event_class_get_name(event_class);
-  name_to_dispatcher_t *s = NULL;
-  HASH_FIND_STR(common_data->name_to_dispatcher, class_name, s);
+  name_to_dispatcher_t *s = btx_lookup_dispatcher(common_data, event_class);
   if (s) {
     (*((dispatcher_t(*))(s->dispatcher)))(s->callbacks, common_data,
                                           upstream_message);

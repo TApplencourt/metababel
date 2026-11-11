@@ -21,6 +21,26 @@ void btx_register_callbacks_<%= dispatch_type.name_sanitized %>(
 <% end %>
 void btx_unregister_callbacks(common_data_t *common_data);
 
+/* The dispatcher of an upstream event class, NULL if no callback is registered for it */
+static inline name_to_dispatcher_t *
+btx_lookup_dispatcher(common_data_t *common_data,
+                      const bt_event_class *event_class) {
+  event_class_to_dispatcher_t *e = NULL;
+  HASH_FIND_PTR(common_data->event_class_to_dispatcher, &event_class, e);
+  if (!e) {
+    /* First event of this class: look its dispatcher up by name, once */
+    e = (event_class_to_dispatcher_t *)malloc(sizeof(*e));
+    e->event_class = event_class;
+    e->dispatcher = NULL;
+    const char *class_name = bt_event_class_get_name(event_class);
+    if (class_name)
+      HASH_FIND_STR(common_data->name_to_dispatcher, class_name, e->dispatcher);
+    bt_event_class_get_ref(event_class);
+    HASH_ADD_PTR(common_data->event_class_to_dispatcher, event_class, e);
+  }
+  return e->dispatcher;
+}
+
 <% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
 /* Called with every upstream event no callback above is registered for.
  * The message is borrowed: metababel puts its reference afterwards.
