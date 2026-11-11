@@ -13,7 +13,7 @@ static void event_a_callback(void *btx_handle, void *usr_data, uint64_t value) {
 static void fallback_callback(void *btx_handle, void *usr_data, const bt_message *message) {
   int *count = (int *)usr_data;
   if ((*count)++ == 0)
-    btx_forward_message(btx_handle, message);
+    btx_push_message(btx_handle, message);
   else
     bt_message_put_ref(message);
 }

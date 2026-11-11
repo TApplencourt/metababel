@@ -43,7 +43,7 @@ _btx_push_message(btx_message_iterator_t *message_iterator_private_data,
 }
 
 <% if options[:'downstream-message'] == 'callback' %>
-void btx_push_message(void *btx_handle, const bt_message *message) {
+void btx_direct_push_message(void *btx_handle, const bt_message *message) {
   _btx_push_message(_btx_message_iterator(btx_handle), message);
 }
 
@@ -71,7 +71,7 @@ void btx_downstream_push_message(
 }
 
 <% if options[:'upstream-event-fallback'] == 'callback' %>
-void btx_forward_message(void *btx_handle, const bt_message *message) {
+void btx_push_message(void *btx_handle, const bt_message *message) {
   btx_downstream_push_message(_btx_message_iterator(btx_handle), message);
 }
 <% end %>

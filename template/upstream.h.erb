@@ -25,7 +25,7 @@ void btx_unregister_callbacks(common_data_t *common_data);
 /* Called with every upstream event no callback above is registered for.
 <% if options[:'component-type'] == 'FILTER' %>
  * The callback owns the message: it sends it downstream with
- * btx_forward_message, or puts its reference. */
+ * btx_push_message, or puts its reference. */
 <% else %>
  * The message is borrowed: the sink puts its reference afterwards. */
 <% end %>

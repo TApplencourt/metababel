@@ -36,15 +36,29 @@ the default mode applies.
 - `--upstream-event-fallback`: the upstream events no callback is registered for (whether or not
   their class is in the upstream model). Messages that are not events are always forwarded by a
   filter and dropped by a sink. With `callback`, `btx_register_callbacks_upstream_event_fallback`:
-  - FILTER: the callback owns the message. It sends it downstream with `btx_forward_message`
-    (through the downstream message callback, if any), or puts its reference.
+  - FILTER: the callback owns the message. It sends it downstream with `btx_push_message`, or
+    puts its reference.
   - SINK: the message is borrowed; the sink puts its reference after the callback.
 - `--downstream-message`: every message the component sends downstream (its own events, its stream
   messages, and what a filter forwards). With `callback`, `btx_register_callbacks_downstream_message`:
-  the callback owns the message, and puts it in the output queue with `btx_push_message`, or puts
-  its reference. What it sends with `btx_push_message_<name>` comes back to it.
+  the callback owns the message, and puts it in the output queue with `btx_direct_push_message`, or
+  puts its reference.
 
 With `callback` for either option, the upstream model is optional (the callbacks see every event).
+
+### Sending messages downstream
+
+`btx_handle` is the one every callback receives (the component).
+
+| function | sends | through the downstream message callback | exists with |
+|---|---|---|---|
+| `btx_push_message_<name>(btx_handle, ...)` | a new event of the downstream model | yes | always |
+| `btx_push_message(btx_handle, message)` | the message the fallback callback owns | yes | `--upstream-event-fallback=callback` |
+| `btx_direct_push_message(btx_handle, message)` | the message the downstream callback owns, to the output queue | no | `--downstream-message=callback` |
+
+In the downstream message callback, use `btx_direct_push_message` to let a message through:
+`btx_push_message` would give it back to the same callback, forever. What the callback creates with
+`btx_push_message_<name>` comes back to it, like any message sent downstream.
 
 How a filter routes an upstream message:
 
@@ -57,13 +71,13 @@ upstream message
    └─ no  → --upstream-event-fallback
             ├─ passthrough → forwarded
             ├─ drop        → put
-            └─ callback    → the callback owns it: btx_forward_message → forwarded, or put
+            └─ callback    → the callback owns it: btx_push_message → forwarded, or put
 
 the filter's own stream beginning/end messages → forwarded
 
 forwarded → --downstream-message
             ├─ push     → output queue
-            └─ callback → the callback owns it: btx_push_message → output queue, or put
+            └─ callback → the callback owns it: btx_direct_push_message → output queue, or put
 ```
 
 # Source Description

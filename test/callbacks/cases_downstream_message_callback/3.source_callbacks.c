@@ -22,7 +22,7 @@ static void downstream_message_callback(void *btx_handle, void *usr_data,
     bt_message_put_ref(message);
     btx_push_message_event(btx_handle, 20);
   } else {
-    btx_push_message(btx_handle, message);
+    btx_direct_push_message(btx_handle, message);
   }
 }
 

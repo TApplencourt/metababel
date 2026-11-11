@@ -10,16 +10,16 @@ static void btx_finalize_usr_data(void *usr_data) { free(usr_data); }
 static void event_a_callback(void *btx_handle, void *usr_data, uint64_t value) {}
 
 static void fallback_callback(void *btx_handle, void *usr_data, const bt_message *message) {
-  btx_forward_message(btx_handle, message);
+  btx_push_message(btx_handle, message);
 }
 
-/* What btx_forward_message sends comes here too: drop the first event. */
+/* What btx_push_message sends comes here too: drop the first event. */
 static void downstream_message_callback(void *btx_handle, void *usr_data,
                                         const bt_message *message) {
   if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT && ++*(int *)usr_data == 1)
     bt_message_put_ref(message);
   else
-    btx_push_message(btx_handle, message);
+    btx_direct_push_message(btx_handle, message);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {
