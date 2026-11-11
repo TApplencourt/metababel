@@ -25,6 +25,11 @@ void btx_unregister_callbacks(common_data_t *common_data);
 static inline const bt_value *
 btx_borrow_environment_entry_value(common_data_t *common_data,
                                    const bt_trace *trace, const char *name) {
+  /* Fast path: usually the same trace and entry as the previous lookup */
+  trace_environment_entry_t *last = common_data->trace_environment_last;
+  if (last && last->key.trace == trace && last->key.name == name)
+    return last->value;
+
   struct trace_environment_key_s key;
   memset(&key, 0, sizeof(key));
   key.trace = trace;
@@ -39,6 +44,7 @@ btx_borrow_environment_entry_value(common_data_t *common_data,
     bt_trace_get_ref(trace);
     HASH_ADD(hh, common_data->trace_environment_entries, key, sizeof(key), e);
   }
+  common_data->trace_environment_last = e;
   return e->value;
 }
 

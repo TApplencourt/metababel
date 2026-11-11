@@ -65,6 +65,7 @@ void btx_flush_dispatcher_cache(common_data_t *common_data) {
 }
 
 void btx_flush_environment_cache(common_data_t *common_data) {
+  common_data->trace_environment_last = NULL;
   trace_environment_entry_t *e, *tmp;
   HASH_ITER(hh, common_data->trace_environment_entries, e, tmp) {
     HASH_DEL(common_data->trace_environment_entries, e);
