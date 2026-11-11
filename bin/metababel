@@ -189,7 +189,7 @@ def parse_argv
   parser.on('-m', '--matching PATH', '[Optional] Path to bt2 YAML matching-callbacks definitions.')
   parser.on('-o', '--output FOLDER', '[Optional] Output folder path.')
   parser.on('-i', '--usr-data-header NAME', '[Optional] User datatypes definitions.')
-  parser.on('--upstream-event-fallback MODE', %w[passthrough drop],
+  parser.on('--upstream-event-default MODE', %w[passthrough drop],
             '[Optional] FILTER: what happens to an upstream event no callback is registered for',
             '(when no upstream event fallback callback is registered): passthrough (default), drop.')
   parser.on('--enable-additional-callbacks NAMES', Array,
@@ -217,9 +217,9 @@ ENABLE_ADDITIONAL_CALLBACKS = { 'upstream_event_fallback' => %w[FILTER SINK],
 def check_options(options)
   type = options[:'component-type']
   if type == 'FILTER'
-    options[:'upstream-event-fallback'] ||= 'passthrough'
-  elsif options[:'upstream-event-fallback']
-    raise "--upstream-event-fallback applies only to FILTER, not to #{type}"
+    options[:'upstream-event-default'] ||= 'passthrough'
+  elsif options[:'upstream-event-default']
+    raise "--upstream-event-default applies only to FILTER, not to #{type}"
   end
 
   options[:'enable-additional-callbacks'] = (options[:'enable-additional-callbacks'] || []).uniq

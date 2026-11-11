@@ -7,7 +7,7 @@ static void event_a_callback(void *btx_handle, void *usr_data, uint64_t value) {
 }
 
 /* event_b is in the model, but no callback is registered for it. The message is
- * borrowed: no bt_message_put_ref. */
+ * borrowed. */
 static void fallback_callback(void *btx_handle, void *usr_data, const bt_message *message) {
   const bt_event *event = bt_message_event_borrow_event_const(message);
   printf("fallback: %s\n", bt_event_class_get_name(bt_event_borrow_class_const(event)));

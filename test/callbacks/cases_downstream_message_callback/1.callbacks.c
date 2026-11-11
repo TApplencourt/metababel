@@ -22,8 +22,6 @@ static void downstream_message_callback(void *btx_handle, void *usr_data,
   if (*(int *)(usr_data) == 1 ||
       bt_message_get_type(message) != BT_MESSAGE_TYPE_EVENT)
     btx_direct_push_message(btx_handle, message);
-  else
-    bt_message_put_ref(message);
 }
 
 void btx_register_usr_callbacks(void *btx_handle) {

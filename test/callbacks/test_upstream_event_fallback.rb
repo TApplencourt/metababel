@@ -2,7 +2,7 @@ require 'base_test'
 
 # The upstream event fallback: an upstream event no callback is registered for goes to the fallback
 # callback (--enable-additional-callbacks upstream_event_fallback) if one is registered, else a filter
-# applies --upstream-event-fallback (passthrough or drop) and a sink drops it.
+# applies --upstream-event-default (passthrough or drop) and a sink drops it.
 
 FALLBACK_CASES = './test/callbacks/cases_upstream_event_fallback'
 
@@ -88,7 +88,7 @@ class TestUpstreamEventFallbackFilterDownstreamMessage < Test::Unit::TestCase
   end
 end
 
-# No fallback callback registered: --upstream-event-fallback applies (default passthrough).
+# No fallback callback registered: --upstream-event-default applies (default passthrough).
 class TestUpstreamEventFallbackFilterUnregistered < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
@@ -100,7 +100,7 @@ class TestUpstreamEventFallbackFilterUnregistered < Test::Unit::TestCase
   end
 end
 
-# A registered fallback callback wins over --upstream-event-fallback drop.
+# A registered fallback callback wins over --upstream-event-default drop.
 class TestUpstreamEventFallbackFilterDropCallback < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
@@ -108,12 +108,12 @@ class TestUpstreamEventFallbackFilterDropCallback < Test::Unit::TestCase
 
   def self.startup
     @btx_components = [FALLBACK_SOURCE,
-                       fallback_filter('filter_callbacks.c', btx_component_upstream_event_fallback: 'drop')]
+                       fallback_filter('filter_callbacks.c', btx_component_upstream_event_default: 'drop')]
     @btx_output_validation = "#{FALLBACK_CASES}/filter.out"
   end
 end
 
-# No fallback callback registered and --upstream-event-fallback drop: everything is dropped.
+# No fallback callback registered and --upstream-event-default drop: everything is dropped.
 class TestUpstreamEventFallbackFilterDropUnregistered < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
@@ -121,7 +121,7 @@ class TestUpstreamEventFallbackFilterDropUnregistered < Test::Unit::TestCase
 
   def self.startup
     @btx_components = [FALLBACK_SOURCE,
-                       fallback_filter('filter_unregistered_callbacks.c', btx_component_upstream_event_fallback: 'drop')]
+                       fallback_filter('filter_unregistered_callbacks.c', btx_component_upstream_event_default: 'drop')]
     @btx_output_validation = "#{FALLBACK_CASES}/filter_drop_unregistered.out"
   end
 end
@@ -158,12 +158,12 @@ class TestUpstreamEventFallbackSourceInvalid < Test::Unit::TestCase
   include VariableClassAccessor
 
   def self.startup
-    @btx_components = [FALLBACK_SOURCE.merge(btx_component_upstream_event_fallback: 'drop',
+    @btx_components = [FALLBACK_SOURCE.merge(btx_component_upstream_event_default: 'drop',
                                              btx_metababel_generation_fail: true)]
   end
 end
 
-# --upstream-event-fallback is for a filter only: a sink always drops.
+# --upstream-event-default is for a filter only: a sink always drops.
 class TestUpstreamEventFallbackSinkInvalid < Test::Unit::TestCase
   include GenericTest
   extend VariableAccessor
@@ -174,7 +174,7 @@ class TestUpstreamEventFallbackSinkInvalid < Test::Unit::TestCase
       {
         btx_component_type: 'SINK',
         btx_component_upstream_model: "#{FALLBACK_CASES}/1.btx_model.yaml",
-        btx_component_upstream_event_fallback: 'drop',
+        btx_component_upstream_event_default: 'drop',
         btx_metababel_generation_fail: true,
       },
     ]

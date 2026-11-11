@@ -24,6 +24,7 @@ static void push_associated_beginnings(void *btx_handle, StreamToMessages_t *h,
   auto it_stream = h->stream_beginning.find(stream);
   if (it_stream != h->stream_beginning.end()) {
     btx_direct_push_message(btx_handle, it_stream->second);
+    bt_message_put_ref(it_stream->second);
     h->stream_beginning.erase(it_stream);
   }
 
@@ -32,6 +33,7 @@ static void push_associated_beginnings(void *btx_handle, StreamToMessages_t *h,
     auto it_packet = h->packet_beginning.find(packet);
     if (it_packet != h->packet_beginning.end()) {
       btx_direct_push_message(btx_handle, it_packet->second);
+      bt_message_put_ref(it_packet->second);
       h->packet_beginning.erase(it_packet);
     }
   }
@@ -45,7 +47,6 @@ static void push_or_drop_message(void *btx_handle,
   if (it == stm.end()) {
     btx_direct_push_message(btx_handle, message);
   } else {
-    bt_message_put_ref(message);
     bt_message_put_ref(it->second);
     stm.erase(it);
   }
@@ -59,11 +60,13 @@ static void downstream_message_callback(void *btx_handle, void *usr_data,
   // Save begins
   case (BT_MESSAGE_TYPE_STREAM_BEGINNING): {
     const bt_stream *stream = bt_message_stream_beginning_borrow_stream_const(message);
+    bt_message_get_ref(message); // kept after the callback returns
     h->stream_beginning.insert({stream, message});
     break;
   }
   case (BT_MESSAGE_TYPE_PACKET_BEGINNING): {
     const bt_packet *packet = bt_message_packet_beginning_borrow_packet_const(message);
+    bt_message_get_ref(message); // kept after the callback returns
     h->packet_beginning.insert({packet, message});
     break;
   }

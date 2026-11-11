@@ -123,12 +123,13 @@ static inline void filter_message_iterator_next_call_dispatchers(
         (upstream_event_fallback_callback_f *)
             common_data->upstream_event_fallback_callback;
     if (fallback) {
-      /* The callback owns the message */
+      /* The callback borrows the message */
       fallback(common_data, common_data->usr_data, upstream_message);
+      bt_message_put_ref(upstream_message);
       return;
     }
     <% end %>
-    <% if options[:'upstream-event-fallback'] == 'drop' %>
+    <% if options[:'upstream-event-default'] == 'drop' %>
     bt_message_put_ref(upstream_message);
     <% else %>
     btx_downstream_push_message(message_iterator_private_data,

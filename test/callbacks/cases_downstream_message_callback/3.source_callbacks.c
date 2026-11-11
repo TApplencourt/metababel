@@ -19,7 +19,6 @@ static void btx_push_usr_messages(void *btx_handle, void *usr_data, btx_source_s
 static void downstream_message_callback(void *btx_handle, void *usr_data,
                                         const bt_message *message) {
   if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT && ++*(int *)usr_data == 2) {
-    bt_message_put_ref(message);
     btx_push_message_event(btx_handle, 20);
   } else {
     btx_direct_push_message(btx_handle, message);

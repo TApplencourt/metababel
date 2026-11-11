@@ -23,12 +23,11 @@ void btx_unregister_callbacks(common_data_t *common_data);
 
 <% if options[:'enable-additional-callbacks'].include?('upstream_event_fallback') %>
 /* Called with every upstream event no callback above is registered for.
+ * The message is borrowed: metababel puts its reference afterwards.
 <% if options[:'component-type'] == 'FILTER' %>
- * The callback owns the message: it sends it downstream with
- * btx_push_message, or puts its reference. */
-<% else %>
- * The message is borrowed: the sink puts its reference afterwards. */
+ * To send it downstream, use btx_push_message; otherwise it is dropped.
 <% end %>
+ * To keep it after the callback returns, take a reference (bt_message_get_ref). */
 typedef void upstream_event_fallback_callback_f(void *btx_handle,
                                                 void *usr_data,
                                                 const bt_message *message);

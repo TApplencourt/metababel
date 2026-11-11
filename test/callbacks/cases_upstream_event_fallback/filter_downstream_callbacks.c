@@ -16,9 +16,7 @@ static void fallback_callback(void *btx_handle, void *usr_data, const bt_message
 /* What btx_push_message sends comes here too: drop the first event. */
 static void downstream_message_callback(void *btx_handle, void *usr_data,
                                         const bt_message *message) {
-  if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT && ++*(int *)usr_data == 1)
-    bt_message_put_ref(message);
-  else
+  if (!(bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT && ++*(int *)usr_data == 1))
     btx_direct_push_message(btx_handle, message);
 }
 
