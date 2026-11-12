@@ -50,11 +50,52 @@ struct name_to_dispatcher_s {
 };
 typedef struct name_to_dispatcher_s name_to_dispatcher_t;
 
+<% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
+/* Cache of the dispatcher of each upstream event class, so that the dispatcher is
+ * looked up by name once per class, not once per event. `dispatcher` is NULL when
+ * no callback is registered for the class. The entry holds a reference on the
+ * event class: its address can't be reused by another class while it is cached. */
+struct event_class_to_dispatcher_s {
+  const bt_event_class *event_class;
+  name_to_dispatcher_t *dispatcher;
+  UT_hash_handle hh;
+};
+typedef struct event_class_to_dispatcher_s event_class_to_dispatcher_t;
+
+/* Direct-mapped cache in front of `event_class_to_dispatcher` (hashing a pointer
+ * with uthash costs more than the rest of the dispatch). Same validity: the hash
+ * entry holds a reference on the event class. */
+#define BTX_DISPATCHER_CACHE_BITS 8
+struct btx_dispatcher_cache_entry_s {
+  const bt_event_class *event_class;
+  name_to_dispatcher_t *dispatcher;
+};
+
+/* Cache of the trace environment entries the dispatchers read (e.g. hostname),
+ * so that an entry is looked up by name once per trace, not once per event. A
+ * trace is frozen once it has a stream, so its environment can't change after
+ * its first event. The entry holds a reference on the trace: its address can't
+ * be reused by another trace while it is cached. `name` is the generated
+ * code's string literal. */
+struct trace_environment_key_s {
+  const bt_trace *trace;
+  const char *name;
+};
+struct trace_environment_entry_s {
+  struct trace_environment_key_s key;
+  const bt_value *value;
+  UT_hash_handle hh;
+};
+typedef struct trace_environment_entry_s trace_environment_entry_t;
+<% end %>
+
 <% if ['SOURCE', 'FILTER'].include?(options[:'component-type']) %>
-// Structure for Downstream Message
-struct el {
-  const bt_message *message;
-  struct el *next, *prev;
+// Downstream message queue: a growable ring buffer
+struct btx_message_queue {
+  const bt_message **messages; /* `capacity` slots */
+  uint64_t capacity;           /* 0 or a power of two */
+  uint64_t head;               /* index of the first message */
+  uint64_t len;                /* number of messages */
 };
 
 <% end %>
@@ -92,9 +133,8 @@ struct btx_message_iterator_s {
   common_data_t *common_data;
   btx_source_state_t state;
 
-  /* Handling the downstream message queue */
-  struct el *queue;
-  struct el *pool;
+  /* Downstream message queue */
+  struct btx_message_queue queue;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 
@@ -107,6 +147,11 @@ typedef enum btx_source_status_e btx_source_status_t;
 <% elsif options[:'component-type'] == 'FILTER' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  event_class_to_dispatcher_t *event_class_to_dispatcher;
+  struct btx_dispatcher_cache_entry_s dispatcher_cache[1 << BTX_DISPATCHER_CACHE_BITS];
+  trace_environment_entry_t *trace_environment_entries;
+  /* Last entry found (fast path: same trace and name as the previous lookup) */
+  trace_environment_entry_t *trace_environment_last;
   static_callbacks_t *static_callbacks;
   <% unless options[:'disable-callbaks'].include?('on_downstream') %>
   void *on_downstream_message_callback;
@@ -155,15 +200,19 @@ struct btx_message_iterator_s {
   el_mi *head_mi;
   btx_filter_state_t state;
   btx_filter_processing_state_t processing_state;
-  /* Handling the downstream message queue */
-  struct el *queue;
-  struct el *pool;
+  /* Downstream message queue */
+  struct btx_message_queue queue;
 };
 typedef struct btx_message_iterator_s btx_message_iterator_t;
 
 <% elsif options[:'component-type'] == 'SINK' %>
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
+  event_class_to_dispatcher_t *event_class_to_dispatcher;
+  struct btx_dispatcher_cache_entry_s dispatcher_cache[1 << BTX_DISPATCHER_CACHE_BITS];
+  trace_environment_entry_t *trace_environment_entries;
+  /* Last entry found (fast path: same trace and name as the previous lookup) */
+  trace_environment_entry_t *trace_environment_last;
   static_callbacks_t *static_callbacks;
 
   void *usr_data;
@@ -176,6 +225,12 @@ struct common_data_s {
 
 void btx_register_usr_callbacks(void *btx_handle);
 void btx_unregister_callbacks(common_data_t *common_data);
+<% if ['FILTER', 'SINK'].include?(options[:'component-type']) %>
+/* Empty the event class -> dispatcher cache, putting the event class references */
+void btx_flush_dispatcher_cache(common_data_t *common_data);
+/* Empty the trace environment cache, putting the trace references */
+void btx_flush_environment_cache(common_data_t *common_data);
+<% end %>
 
 <% static_callback_types.each do |e| %>
 typedef void <%= e.name_sanitized %>_static_callback_f(
