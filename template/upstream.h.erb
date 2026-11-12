@@ -52,6 +52,12 @@ btx_borrow_environment_entry_value(common_data_t *common_data,
 static inline name_to_dispatcher_t *
 btx_lookup_dispatcher(common_data_t *common_data,
                       const bt_event_class *event_class) {
+  struct btx_dispatcher_cache_entry_s *c =
+      &common_data->dispatcher_cache[(((uintptr_t)event_class >> 4) * UINT64_C(0x9E3779B97F4A7C15)) >>
+                                     (64 - BTX_DISPATCHER_CACHE_BITS)];
+  if (c->event_class == event_class)
+    return c->dispatcher;
+
   event_class_to_dispatcher_t *e = NULL;
   HASH_FIND_PTR(common_data->event_class_to_dispatcher, &event_class, e);
   if (!e) {
@@ -65,6 +71,8 @@ btx_lookup_dispatcher(common_data_t *common_data,
     bt_event_class_get_ref(event_class);
     HASH_ADD_PTR(common_data->event_class_to_dispatcher, event_class, e);
   }
+  c->event_class = event_class;
+  c->dispatcher = e->dispatcher;
   return e->dispatcher;
 }
 

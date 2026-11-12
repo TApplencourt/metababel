@@ -62,6 +62,15 @@ struct event_class_to_dispatcher_s {
 };
 typedef struct event_class_to_dispatcher_s event_class_to_dispatcher_t;
 
+/* Direct-mapped cache in front of `event_class_to_dispatcher` (hashing a pointer
+ * with uthash costs more than the rest of the dispatch). Same validity: the hash
+ * entry holds a reference on the event class. */
+#define BTX_DISPATCHER_CACHE_BITS 8
+struct btx_dispatcher_cache_entry_s {
+  const bt_event_class *event_class;
+  name_to_dispatcher_t *dispatcher;
+};
+
 /* Cache of the trace environment entries the dispatchers read (e.g. hostname),
  * so that an entry is looked up by name once per trace, not once per event. A
  * trace is frozen once it has a stream, so its environment can't change after
@@ -138,6 +147,7 @@ typedef enum btx_source_status_e btx_source_status_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   event_class_to_dispatcher_t *event_class_to_dispatcher;
+  struct btx_dispatcher_cache_entry_s dispatcher_cache[1 << BTX_DISPATCHER_CACHE_BITS];
   trace_environment_entry_t *trace_environment_entries;
   /* Last entry found (fast path: same trace and name as the previous lookup) */
   trace_environment_entry_t *trace_environment_last;
@@ -199,6 +209,7 @@ typedef struct btx_message_iterator_s btx_message_iterator_t;
 struct common_data_s {
   name_to_dispatcher_t *name_to_dispatcher;
   event_class_to_dispatcher_t *event_class_to_dispatcher;
+  struct btx_dispatcher_cache_entry_s dispatcher_cache[1 << BTX_DISPATCHER_CACHE_BITS];
   trace_environment_entry_t *trace_environment_entries;
   /* Last entry found (fast path: same trace and name as the previous lookup) */
   trace_environment_entry_t *trace_environment_last;
